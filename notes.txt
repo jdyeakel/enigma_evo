@@ -1,0 +1,4 @@
+
+
+
+From Mathias:We could think on a follow up on invasibility. If we start from an assembled community, how hard is it be invaded? How long does it take for a x% composition turnover? We could also simulate extinctions in different trophic levels and test how similar is the assimptotic community compared to the initial one and how this varies with the type or number of species removed...Does losing an engineer have a higher impact? or a lagged impact (considering the persistence of the abiotic modifier)?
