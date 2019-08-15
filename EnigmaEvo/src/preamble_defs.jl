@@ -1,7 +1,7 @@
 function preamble_defs(intm)
 
     #Boolian matrices
-    a_b = (intm .== 'a')*1;
+    e_b = (intm .== 'e')*1;
     n_b = (intm .== 'n')*1;
     i_b = (intm .== 'i')*1;
     m_b = (intm .== 'm')*1;
@@ -17,7 +17,7 @@ function preamble_defs(intm)
     int_id = collect(1:size(intm)[1]);
 
     return(
-    a_b,
+    e_b,
     n_b,
     i_b,
     m_b,

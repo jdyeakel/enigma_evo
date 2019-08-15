@@ -33,7 +33,7 @@ MaxN = convert(Int64,floor(S + S*lambda));
 intm, tp_m, tind_m, mp_m, mind_m = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
 intm_origin = copy(intm);
 
-a_b,
+e_b,
 n_b,
 i_b,
 m_b,
@@ -42,17 +42,17 @@ sp_v,
 int_id = preamble_defs(intm);
 
 @time sprich,rich,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(
-    intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
+    intm,e_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
     athresh,nthresh,maxits,probmut,cn,ce,cp);
 
-a_b_origin,
+e_b_origin,
 n_b_origin,
 i_b_origin,
 m_b_origin,
 n_b0_origin,
 sp_v,
 int_id = preamble_defs(intm_origin);
-a_b_evo,
+e_b_evo,
 n_b_evo,
 i_b_evo,
 m_b_evo,
@@ -62,11 +62,11 @@ int_id = preamble_defs(intm_evo);
 
 #Rerun *evolved* system with eco-assembly
 @time sprich_evoeco,rich_evoeco,clock_evoeco,CID_evoeco,events_evoeco = assemblyeco(
-intm_evo,a_b_evo,n_b_evo,i_b_evo,m_b_evo,n_b0_evo,sp_v,int_id,lambda,athresh,nthresh,maxits,cn,ce,cp);
+intm_evo,e_b_evo,n_b_evo,i_b_evo,m_b_evo,n_b0_evo,sp_v,int_id,lambda,athresh,nthresh,maxits,cn,ce,cp);
 
 #Rerun from initial state with eco-assembly
 @time sprich_eco,rich_eco,clock_eco,CID_eco,events_eco = assemblyeco(
-intm_origin,a_b_origin,n_b_origin,i_b_origin,m_b_origin,n_b0_origin,sp_v,int_id,lambda,athresh,nthresh,maxits,cn,ce,cp);
+intm_origin,e_b_origin,n_b_origin,i_b_origin,m_b_origin,n_b0_origin,sp_v,int_id,lambda,athresh,nthresh,maxits,cn,ce,cp);
 
 R"""
 plot($sprich / $sprich_eco,pch='.',ylim=c(0,1.5))
@@ -75,8 +75,8 @@ lines(seq(1,$maxits),rep(1,$maxits),lty=3)
 """
 
 
-degree_orig = sum(a_b_origin,dims=1);
-degree_evo = sum(a_b_evo,dims=1);
+degree_orig = sum(e_b_origin,dims=1);
+degree_evo = sum(e_b_evo,dims=1);
 degree_mut_orig = sum(n_b0_origin,dims=1);
 degree_mut_evo = sum(n_b0_evo,dims=1);
 R"""
@@ -120,15 +120,15 @@ plot($freqe,$freqn,pch='.')
 
 md = Array{Float64}(undef,maxits);
 for t=1:maxits
-    md[t] = std(sum(a_b[CID[:,t],CID[:,t]],dims=2));
+    md[t] = std(sum(e_b[CID[:,t],CID[:,t]],dims=2));
 end
 
 
 
-m_origin = copy(a_b_origin);
+m_origin = copy(e_b_origin);
 osort = sortperm(vec(sum(m_origin,dims=2)))
 osort2 = sortperm(vec(sum(m_origin[osort,osort],dims=1)))
-m_evo = copy(a_b_evo);
+m_evo = copy(e_b_evo);
 esort = sortperm(vec(sum(m_evo,dims=2)))
 esort2 = sortperm(vec(sum(m_evo[esort,esort],dims=1)))
 R"""
@@ -141,7 +141,7 @@ image($(m_evo[findall(isodd,vec(CID[:,maxits])),findall(isodd,vec(CID[:,maxits])
 
 
 @time sprich,rich,clock,CID,intm_evo,mutstep,freqe,freqn = assembly(
-    intm_evo,a_b_evo,n_b_evo,i_b_evo,m_b,n_b0_evo,sp_v,int_id,tp_m,tind_m,lambda,
+    intm_evo,e_b_evo,n_b_evo,i_b_evo,m_b,n_b0_evo,sp_v,int_id,tp_m,tind_m,lambda,
     athresh,nthresh,maxits,probmut);
 
 
@@ -158,10 +158,10 @@ pdf($namespace,height=5,width=10)
 #Reorganize to clump objects
 objects = deleteat!(findall(x->x=='i',diag(intm_origin)),1);
 objectssort = objects[sortperm(vec(sum(m_b[objects,objects],dims=1)),rev=true)];
-# objectssort2 = objectssort[sortperm(vec(sum(m_b[objectssort,objectssort].+a_b[objectssort,objectssort].+n_b[objectssort,objectssort],2)),rev=false)];
+# objectssort2 = objectssort[sortperm(vec(sum(m_b[objectssort,objectssort].+e_b[objectssort,objectssort].+n_b[objectssort,objectssort],2)),rev=false)];
 species = setdiff(collect(1:length(diag(intm_origin))),objects);
-speciessort = species[sortperm(vec(sum(a_b[species,species].+n_b[species,species],dims=1)),rev=true)];
-speciessort2 = speciessort[sortperm(vec(sum(a_b[speciessort,speciessort].+n_b[speciessort,speciessort],dims=2)),rev=false)];
+speciessort = species[sortperm(vec(sum(e_b[species,species].+n_b[species,species],dims=1)),rev=true)];
+speciessort2 = speciessort[sortperm(vec(sum(e_b[speciessort,speciessort].+n_b[speciessort,speciessort],dims=2)),rev=false)];
 int_msort = intm_origin[[speciessort2;objectssort],[speciessort2;objectssort]];
 int_v = Array{Int64}(undef,length(int_msort[1,:]),length(int_msort[1,:]));
 int_v[(LinearIndices(int_msort))[findall(x->x=='a',int_msort)]].=1;
@@ -216,7 +216,7 @@ namespace = smartpath(filename);
 R"""
 pdf($namespace,height=5,width=10)
 """
-a_b,
+e_b,
 n_b,
 i_b,
 m_b,
@@ -227,10 +227,10 @@ int_id = preamble_defs(intm_evo);
 #Reorganize to clump objects
 objects = deleteat!(findall(x->x=='i',diag(intm_evo)),1);
 objectssort = objects[sortperm(vec(sum(m_b[objects,objects],dims=1)),rev=true)];
-# objectssort2 = objectssort[sortperm(vec(sum(m_b[objectssort,objectssort].+a_b[objectssort,objectssort].+n_b[objectssort,objectssort],2)),rev=false)];
+# objectssort2 = objectssort[sortperm(vec(sum(m_b[objectssort,objectssort].+e_b[objectssort,objectssort].+n_b[objectssort,objectssort],2)),rev=false)];
 species = setdiff(collect(1:length(diag(intm_evo))),objects);
-speciessort = species[sortperm(vec(sum(a_b[species,species].+n_b[species,species],dims=1)),rev=true)];
-speciessort2 = speciessort[sortperm(vec(sum(a_b[speciessort,speciessort].+n_b[speciessort,speciessort],dims=2)),rev=false)];
+speciessort = species[sortperm(vec(sum(e_b[species,species].+n_b[species,species],dims=1)),rev=true)];
+speciessort2 = speciessort[sortperm(vec(sum(e_b[speciessort,speciessort].+n_b[speciessort,speciessort],dims=2)),rev=false)];
 int_msort = intm_evo[[speciessort2;objectssort],[speciessort2;objectssort]];
 int_v = Array{Int64}(undef,length(int_msort[1,:]),length(int_msort[1,:]));
 int_v[(LinearIndices(int_msort))[findall(x->x=='a',int_msort)]].=1;
@@ -292,8 +292,8 @@ extrate = 1 ./ dt;
 R"hist(1/$dt,col='red',xlim=c(20,100),add=TRUE)"
 
 persistance = sum(CID[2:S,:],dims=2) ./ maxits;
-neats = sum(a_b[2:S,2:S],dims=2);
-npreds = sum(a_b[2:S,2:S],dims=1);
+neats = sum(e_b[2:S,2:S],dims=2);
+npreds = sum(e_b[2:S,2:S],dims=1);
 nneeds = sum(n_b[2:S,2:S],dims=2);
 comp = vec(neats) .- vec(nneeds) .- vec(npreds)
 trophic = trophicalc(2:S,tind_m);
@@ -382,6 +382,6 @@ dev.off()
 
 R"""
 library(bipartite)
-nest = networklevel($a_b,index="NODF")
+nest = networklevel($e_b,index="NODF")
 """
 @rget nest;

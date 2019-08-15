@@ -5,7 +5,7 @@ function assemblystate(S,probs,lambda)
 
     int_m, tp_m, tind_m, mp_m, mind_m = intmatrixv3(S,lambda,probs);
 
-    a_b,
+    e_b,
     n_b,
     i_b,
     m_b,
@@ -27,7 +27,7 @@ function assemblystate(S,probs,lambda)
     keepstates = Array{Int64}(undef,0);
     for i=1:nstates
         speciesobjects = states[i];
-        adjacencymatrix = a_b[speciesobjects,speciesobjects] .+ m_b[speciesobjects,speciesobjects]';
+        adjacencymatrix = e_b[speciesobjects,speciesobjects] .+ m_b[speciesobjects,speciesobjects]';
         g = DiGraph(adjacencymatrix');
         paths = gdistances(g,1)
         if maximum(paths) < N+1;
@@ -62,7 +62,7 @@ function assemblystate(S,probs,lambda)
         # print(string(i,'_'))
         statei = copy(possiblestates[i]);
         deleteat!(statei,1)
-        colonizers = potcol(sp_v,int_id,statei,a_b,n_b0,0,1);
+        colonizers = potcol(sp_v,int_id,statei,e_b,n_b0,0,1);
         # newstates = Array{Array}(undef,length(colonizers));
         newstatesloc = Array{Int64}(undef,length(colonizers));
         for j=1:length(colonizers)

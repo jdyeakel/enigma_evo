@@ -28,7 +28,7 @@ athresh = 0;
 nthresh = 1.0;
 MaxN = convert(Int64,floor(S + S*lambda));
 
-probmutvec = collect(0:0.01:0.5)
+probmutvec = collect(0:0.01:0.9)
 
 @sync @distributed for i=1:length(probmutvec)
 

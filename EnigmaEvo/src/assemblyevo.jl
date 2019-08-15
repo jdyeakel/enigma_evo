@@ -1,4 +1,4 @@
-function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
+function assemblyevo(intm,e_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
     athresh,nthresh,maxits,probmut,cn,ce,cp)
 
     S = length(sp_v) + 1;
@@ -17,12 +17,12 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
     mutstep = zeros(Float64,maxits)
     #NOTE strength matrix can't be built a-priori!
     # #Build the strength matrix apriori
-    # strength = vec(pi*sum(n_b0,dims=2)) .- vec(sqrt(2)*sum(a_b,dims=2)) .- vec(sum(a_b,dims=1));
-    # smatrix = Array{Float64}(copy(a_b));
-    # for i=1:size(a_b)[1]
-    #     smatrix[i,:] .= a_b[i,:] * strength[i];
+    # strength = vec(pi*sum(n_b0,dims=2)) .- vec(sqrt(2)*sum(e_b,dims=2)) .- vec(sum(e_b,dims=1));
+    # smatrix = Array{Float64}(copy(e_b));
+    # for i=1:size(e_b)[1]
+    #     smatrix[i,:] .= e_b[i,:] * strength[i];
     # end
-    # # smatrix[findall(iszero,a_b)] = NaN;
+    # # smatrix[findall(iszero,e_b)] = NaN;
     #
     minstrength = -ce*Float64(S) - cp*Float64(S);
 
@@ -42,10 +42,10 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
 
 
         #COUNT POTENTIAL COLONIZERS
-        trophiclinked = setdiff(int_id[(sum(a_b[:,[1;cid]],dims=2) .> 0)[:,1]],cid);
+        trophiclinked = setdiff(int_id[(sum(e_b[:,[1;cid]],dims=2) .> 0)[:,1]],cid);
         #For each trophiclinked, count number of assimilate and need interactions in system
         #Determine in the proportion that already exists is >= the threshold
-        a_fill = ((sum(a_b[trophiclinked,[1;cid]],dims=2)./sum(a_b[trophiclinked,:],dims=2)) .>= athresh)[:,1];
+        a_fill = ((sum(e_b[trophiclinked,[1;cid]],dims=2)./sum(e_b[trophiclinked,:],dims=2)) .>= athresh)[:,1];
         prop_n = sum(n_b0[trophiclinked,[1;cid]],dims=2)./sum(n_b0[trophiclinked,:],dims=2);
         #If there are no 'need' interactions, proportion filled is always 1, and will always pass
         prop_n[isnan.(prop_n)] .= 1;
@@ -62,7 +62,7 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
         #COUNT POTENTIAL EXTINCT SPECIES
         #1) By not fulfilling Eat/Need thresholds
         #Re-calculate athresh and nthresh (> athresh; >= nthresh)
-        a_fill = ((sum(a_b[spcid,[1;cid]],dims=2)./sum(a_b[spcid,:],dims=2)) .> athresh)[:,1];
+        a_fill = ((sum(e_b[spcid,[1;cid]],dims=2)./sum(e_b[spcid,:],dims=2)) .> athresh)[:,1];
         prop_n = sum(n_b0[spcid,[1;cid]],dims=2)./sum(n_b0[spcid,:],dims=2);
         #If there are no 'need' interactions, proportion filled is always 1, and will always pass
         prop_n[isnan.(prop_n)] .= 1;
@@ -80,16 +80,16 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
             # Strength values change over time so need to ve updated
             # Only record strength values of species (hence the [1:length(spcid)])
             #NOTE: Needs won't change; Eats is based on POTENTIAL niche; Vuln changes per timestep
-            strength = vec(cn*sum(n_b0[spcid,cid],dims=2)) .- vec(ce*sum(a_b[spcid,:],dims=2)) .- (vec(cp*sum(a_b[spcid,cid],dims=1))[1:length(spcid)]);
+            strength = vec(cn*sum(n_b0[spcid,cid],dims=2)) .- vec(ce*sum(e_b[spcid,:],dims=2)) .- (vec(cp*sum(e_b[spcid,cid],dims=1))[1:length(spcid)]);
 
             cmatrix = Array{Float64}(undef,length(spcid),length(cid));
             for i=1:length(spcid)
-                cmatrix[i,:] .= a_b[spcid[i],cid] * strength[i];
+                cmatrix[i,:] .= e_b[spcid[i],cid] * strength[i];
             end
 
-            # cmatrix = a_b[spcid,cid] .* reshape(repeat(strength,outer=length(cid)),length(spcid),length(cid));
+            # cmatrix = e_b[spcid,cid] .* reshape(repeat(strength,outer=length(cid)),length(spcid),length(cid));
 
-            # cmatrix = (a_b[spcid,cid]' * (Matrix{Float64}(I,length(strength),length(strength)) .* strength))'
+            # cmatrix = (e_b[spcid,cid]' * (Matrix{Float64}(I,length(strength),length(strength)) .* strength))'
 
             #'zero' entrees need to be lower than any possible strength
             #So they will be effectively ignored
@@ -104,7 +104,7 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
 
                 #Don't count sun
                 #catalogue prey for all species/objects in the system (excluding sun)
-                ieats = Array{Bool}(a_b[spcid[i],cid]);
+                ieats = Array{Bool}(e_b[spcid[i],cid]);
                 #If you have >= the max strength for any of those prey, you stay
                 #This means that a pure primary producer is not evaluated
                 prext_comp[i] = any(ieats)*(any(strength[i] .>= cmax[ieats])==false);
@@ -200,10 +200,10 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
             intmut = rand(setdiff(collect(2:S),spmut));
             oldint = intm[spmut,intmut];
             #choose new interaction
-            newint = rand(setdiff(['a','i','n'],oldint)); #intmut
+            newint = rand(setdiff(['e','i','n'],oldint)); #intmut
 
             intm_mut = copy(intm);
-            a_bmut = copy(a_b);
+            e_bmut = copy(e_b);
             n_bmut = copy(n_b);
             n_b0mut = copy(n_b0);
             i_bmut = copy(i_b);
@@ -213,16 +213,16 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
 
             #Update interaction matrix
             intm_mut[spmut,intmut] = newint;
-            #Update a_b, n_b, i_b
+            #Update e_b, n_b, i_b
             if oldint == 'i' && newint == 'n'
                 i_bmut[spmut,intmut] = 0;
                 n_bmut[spmut,intmut] = 1;
                 #tally
                 tally = 4.1;
             end
-            if oldint == 'i' && newint == 'a'
+            if oldint == 'i' && newint == 'e'
                 i_bmut[spmut,intmut] = 0;
-                a_bmut[spmut,intmut] = 1;
+                e_bmut[spmut,intmut] = 1;
 
                 # tp_mmut[spmut,intmut] = 1;
                 # tind_mmut[spmut,intmut] = 1;
@@ -236,18 +236,18 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
                 #tally
                 tally = 4.3;
             end
-            if oldint == 'n' && newint == 'a'
+            if oldint == 'n' && newint == 'e'
                 n_bmut[spmut,intmut] = 0;
                 n_b0mut[spmut,intmut] = 0;
-                a_bmut[spmut,intmut] = 1;
+                e_bmut[spmut,intmut] = 1;
 
                 # tp_mmut[spmut,intmut] = 1;
                 # tind_mmut[spmut,intmut] = 1;
                 #tally
                 tally = 4.4;
             end
-            if oldint == 'a' && newint == 'n'
-                a_bmut[spmut,intmut] = 0;
+            if oldint == 'e' && newint == 'n'
+                e_bmut[spmut,intmut] = 0;
                 n_bmut[spmut,intmut] = 1;
                 n_b0mut[spmut,intmut] = 1;
 
@@ -256,8 +256,8 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
                 #tally
                 tally = 4.5;
             end
-            if oldint == 'a' && newint == 'i'
-                a_bmut[spmut,intmut] = 0;
+            if oldint == 'e' && newint == 'i'
+                e_bmut[spmut,intmut] = 0;
                 i_bmut[spmut,intmut] = 1;
 
                 # tp_mmut[spmut,intmut] = 0;
@@ -272,13 +272,13 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
 
                 spmutloc = findall(x->x==spmut,spcid)[1];
                 #Calculate strength
-                strength_mut = (cn*sum(n_b0mut[spmut,cid])) .- (ce*sum(a_bmut[spmut,:])) .- (cp*sum(a_bmut[cid,spmut]));
+                strength_mut = (cn*sum(n_b0mut[spmut,cid])) .- (ce*sum(e_bmut[spmut,:])) .- (cp*sum(e_bmut[cid,spmut]));
 
 
                 if strength_mut > strength[spmutloc]
                     #accept mutation
                     intm = copy(intm_mut);
-                    a_b = copy(a_bmut);
+                    e_b = copy(e_bmut);
                     n_b = copy(n_bmut);
                     n_b0 = copy(n_b0);
                     i_b = copy(i_bmut);
@@ -292,7 +292,7 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
                     if rr < exp(-4*abs(strength[spmutloc] - strength_mut))
                         #accept mutation
                         intm = copy(intm_mut);
-                        a_b = copy(a_bmut);
+                        e_b = copy(e_bmut);
                         n_b = copy(n_bmut);
                         n_b0 = copy(n_b0);
                         i_b = copy(i_bmut);
@@ -303,7 +303,7 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
             else
                 #accept mutation
                 intm = copy(intm_mut);
-                a_b = copy(a_bmut);
+                e_b = copy(e_bmut);
                 n_b = copy(n_bmut);
                 n_b0 = copy(n_b0);
                 i_b = copy(i_bmut);
@@ -316,7 +316,7 @@ function assemblyevo(intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
 
         end
 
-        freqe[it] = sum(a_b[spcid,cid])/(length(cid));
+        freqe[it] = sum(e_b[spcid,cid])/(length(cid));
         freqn[it] = sum(n_b0[spcid,cid])/(length(cid));
 
         #NOTE - updating CID....

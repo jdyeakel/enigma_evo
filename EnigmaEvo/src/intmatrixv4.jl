@@ -106,7 +106,7 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
     mp_m = zeros(Int64,S,S);
 
     #The first true species (row/col 2) is always a primary producer
-    intm[2,1] = 'a'
+    intm[2,1] = 'e'
     tp_m[2,1] = 1;
 
     #Fill in diagonal
@@ -157,14 +157,14 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
                 if r_draw < prob_line[1]
                   rr_draw = rand();
                   if rr_draw < 0.5
-                      intm[i,j] = 'a';
+                      intm[i,j] = 'e';
                       tp_m[i,j] = 1;
                       intm[j,i] = 'n';
                       mp_m[j,i] = 1;
                   else
                       intm[i,j] = 'n';
                       mp_m[i,j] = 1;
-                      intm[j,i] = 'a';
+                      intm[j,i] = 'e';
                       tp_m[j,i] = 1;
                   end
                 end
@@ -196,12 +196,12 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
                 if r_draw > prob_line[3] && r_draw < prob_line[4]
                     rr_draw = rand();
                     if rr_draw < 0.5
-                        intm[i,j] = 'a';
+                        intm[i,j] = 'e';
                         tp_m[i,j] = 1;
                         intm[j,i] = 'i';
                     else
                         intm[i,j] = 'i';
-                        intm[j,i] = 'a';
+                        intm[j,i] = 'e';
                         tp_m[j,i] = 1;
                     end
                 end
@@ -215,8 +215,8 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
                 #I:A - predation
                 #N:N - symmetric mutualism
                 if r_draw > prob_line[5] && r_draw < prob_line[6]
-                  intm[i,j] = 'a'
-                  intm[j,i] = 'a'
+                  intm[i,j] = 'e'
+                  intm[j,i] = 'e'
                   #Update mutualistic network
                   tp_m[i,j] = 1;
                   tp_m[j,i] = 1;
@@ -229,7 +229,7 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
     #We could assume that any species without recorded trophic interactions is a primary producer
     total_trophic = vec(sum(tp_m,dims=2));
     prim_prod = deleteat!(findall(iszero,total_trophic),1); #eliminate row 1
-    intm[prim_prod,1] .= Ref('a');
+    intm[prim_prod,1] .= Ref('e');
     tp_m[prim_prod,1] .= 1;
 
     #SPECIES-OBJECT INTERACTIONS
@@ -260,7 +260,7 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
 
                 #assimilate-ignore
                 if r_draw > so_prob_line[1] && r_draw < so_prob_line[2]
-                    intm[i,j] = 'a';
+                    intm[i,j] = 'e';
                     intm[j,i] = 'i';
                 end
 
@@ -325,7 +325,7 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
     #Document the indirect interactions
     for i=2:S
         for j=1:O
-            if intm[spind[i],obind[j]] == 'a'
+            if intm[spind[i],obind[j]] == 'e'
                 makers = findall(x->x=='m',intm[:,obind[j]]);
                 tind_m[spind[i],makers] .= 1;
             end

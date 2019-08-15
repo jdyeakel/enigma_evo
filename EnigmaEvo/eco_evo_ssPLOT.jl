@@ -21,7 +21,7 @@ for i=1:length(probmutvec)
     namespace = smartpath(filename,indices);
     @load namespace intm_origin intm_evo sprich rich clock CID mutstep freqe freqn events sprich_evoeco rich_evoeco clock_evoeco CID_evoeco events_evoeco sprich_eco rich_eco clock_eco CID_eco events_eco;
     
-    num_mut[i] = length(findall(!isodd,vec(intm_origin .== intm_evo)));
+    num_mut[i] = length(findall(!isodd,vec(intm_origin .== intm_evo))) / (size(intm_origin)[1]*(size(intm_origin)[2]-1));
     
     ssevo[i] = mean(sprich[2000:maxits]);
     sseco[i] = mean(sprich_eco[2000:maxits]);
@@ -42,7 +42,7 @@ filename = "/figures/steadystate2.pdf"
 namespace = smartpath(filename);
 R"""
 pdf($namespace,width=5,height=4)
-plot($num_mut, $ssevo,pch=16,ylim=c(1,200),log='y')
+plot($num_mut, $ssevo,pch=16,ylim=c(1,200))
 points($num_mut, $ssevoeco,pch=16,col='red')
 points($num_mut, $sseco,pch=16,col='blue')
 dev.off()
