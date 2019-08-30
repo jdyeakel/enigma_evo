@@ -134,6 +134,10 @@ function assemblyevo(intm,e_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
         levents = sum([lcol;lspext;lobext]);
         #mutation probability is set (and not dependent on state)
         lmutations = Int64(floor(probmut*levents));
+        #No mutations if there are no interactions in the system
+        if length(spcid) < 2
+            lmutations = 0;
+        end
         #Redefine levents to include lmutations
         levents = sum([lcol;lspext;lobext;lmutations]);
 
@@ -190,14 +194,20 @@ function assemblyevo(intm,e_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
             #tally
             tally = 3;
         end
-
+        
         if re > ((lcol + lspext + lobext)/levents)
 
             #SPECIES MUTATION
             #Choose species
-            spmut = rand(collect(2:S));
+            #select ANY species
+            # spmut = rand(collect(2:S));
+            #select FROM COMMUNITY
+            spmut = rand(spcid);
             #choose interaction to mutate
-            intmut = rand(setdiff(collect(2:S),spmut));
+            #Mutate ANY interaction
+            # intmut = rand(setdiff(collect(2:S),spmut));
+            #OR Mutate realized interactions
+            intmut = rand(setdiff(cid,spmut));
             oldint = intm[spmut,intmut];
             #choose new interaction
             newint = rand(setdiff(['e','i','n'],oldint)); #intmut
@@ -267,40 +277,14 @@ function assemblyevo(intm,e_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
             end
             
             #Does the mutant outcompete the parent?
-            
-            if in(spmut,spcid)
+            # if in(spmut,spcid)
 
-                spmutloc = findall(x->x==spmut,spcid)[1];
-                #Calculate strength
-                strength_mut = (cn*sum(n_b0mut[spmut,cid])) .- (ce*sum(e_bmut[spmut,:])) .- (cp*sum(e_bmut[cid,spmut]));
-
-
-                if strength_mut > strength[spmutloc]
-                    #accept mutation
-                    intm = copy(intm_mut);
-                    e_b = copy(e_bmut);
-                    n_b = copy(n_bmut);
-                    n_b0 = copy(n_b0);
-                    i_b = copy(i_bmut);
-
-                    mutstep[it] = 1.0;
+            spmutloc = findall(x->x==spmut,spcid)[1];
+            #Calculate strength
+            strength_mut = (cn*sum(n_b0mut[spmut,cid])) .- (ce*sum(e_bmut[spmut,:])) .- (cp*sum(e_bmut[cid,spmut]));
 
 
-                else
-                    #With some probability, accept mutation
-                    rr = rand()
-                    if rr < exp(-4*abs(strength[spmutloc] - strength_mut))
-                        #accept mutation
-                        intm = copy(intm_mut);
-                        e_b = copy(e_bmut);
-                        n_b = copy(n_bmut);
-                        n_b0 = copy(n_b0);
-                        i_b = copy(i_bmut);
-
-                        mutstep[it] = 1.0;
-                    end
-                end
-            else
+            if strength_mut > strength[spmutloc]
                 #accept mutation
                 intm = copy(intm_mut);
                 e_b = copy(e_bmut);
@@ -309,7 +293,34 @@ function assemblyevo(intm,e_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
                 i_b = copy(i_bmut);
 
                 mutstep[it] = 1.0;
+
             end
+                #NOTE:Optional accept mutation regardless of competition strength diffs
+                # else
+                #     #With some probability, accept mutation
+                #     rr = rand()
+                #     if rr < exp(-4*abs(strength[spmutloc] - strength_mut))
+                #         #accept mutation
+                #         intm = copy(intm_mut);
+                #         e_b = copy(e_bmut);
+                #         n_b = copy(n_bmut);
+                #         n_b0 = copy(n_b0);
+                #         i_b = copy(i_bmut);
+                # 
+                #         mutstep[it] = 1.0;
+                #     end
+                # end
+            # else
+            # 
+            #     #accept mutation
+            #     intm = copy(intm_mut);
+            #     e_b = copy(e_bmut);
+            #     n_b = copy(n_bmut);
+            #     n_b0 = copy(n_b0);
+            #     i_b = copy(i_bmut);
+            # 
+            #     mutstep[it] = 1.0;
+            # end
 
 
 

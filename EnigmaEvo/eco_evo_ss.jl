@@ -38,7 +38,7 @@ probmutvec = collect(0:0.01:0.9)
     intm, tp_m, tind_m, mp_m, mind_m = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
     intm_origin = copy(intm);
 
-    a_b,
+    e_b,
     n_b,
     i_b,
     m_b,
@@ -47,17 +47,17 @@ probmutvec = collect(0:0.01:0.9)
     int_id = preamble_defs(intm);
 
     sprich,rich,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(
-        intm,a_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
+        intm,e_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
         athresh,nthresh,maxits,probmut,cn,ce,cp);
 
-    a_b_origin,
+    e_b_origin,
     n_b_origin,
     i_b_origin,
     m_b_origin,
     n_b0_origin,
     sp_v,
     int_id = preamble_defs(intm_origin);
-    a_b_evo,
+    e_b_evo,
     n_b_evo,
     i_b_evo,
     m_b_evo,
@@ -67,11 +67,11 @@ probmutvec = collect(0:0.01:0.9)
 
     #Rerun *evolved* system with eco-assembly
     sprich_evoeco,rich_evoeco,clock_evoeco,CID_evoeco,events_evoeco = assemblyeco(
-    intm_evo,a_b_evo,n_b_evo,i_b_evo,m_b_evo,n_b0_evo,sp_v,int_id,lambda,athresh,nthresh,maxits,cn,ce,cp);
+    intm_evo,e_b_evo,n_b_evo,i_b_evo,m_b_evo,n_b0_evo,sp_v,int_id,lambda,athresh,nthresh,maxits,cn,ce,cp);
 
     #Rerun from initial state with eco-assembly
     sprich_eco,rich_eco,clock_eco,CID_eco,events_eco = assemblyeco(
-    intm_origin,a_b_origin,n_b_origin,i_b_origin,m_b_origin,n_b0_origin,sp_v,int_id,lambda,athresh,nthresh,maxits,cn,ce,cp);
+    intm_origin,e_b_origin,n_b_origin,i_b_origin,m_b_origin,n_b0_origin,sp_v,int_id,lambda,athresh,nthresh,maxits,cn,ce,cp);
     
     #Save data
     if i == 1

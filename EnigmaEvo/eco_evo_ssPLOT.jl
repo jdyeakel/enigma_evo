@@ -28,11 +28,11 @@ for i=1:length(probmutvec)
     ssevoeco[i] = mean(sprich_evoeco[2000:maxits]);
 end
 
-filename = "/figures/steadystate.pdf"
+filename = "/figures/steadystate_v2.pdf"
 namespace = smartpath(filename);
 R"""
 pdf($namespace,width=5,height=4)
-plot($num_mut, $ssevo / $sseco,pch=16,ylim=c(0,1.5))
+plot($num_mut, $ssevo / $sseco,pch=16,ylim=c(0,1.5),xlab='Proportion of evolved interactions',ylab='Steady state ratio')
 points($num_mut, $ssevoeco / $sseco,pch=16,col='red')
 lines($num_mut,rep(1,length($num_mut)),lty=3)
 dev.off()
