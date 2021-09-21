@@ -28,6 +28,12 @@ for i=1:length(probmutvec)
     ssevoeco[i] = mean(sprich_evoeco[2000:maxits]);
 end
 
+# NOTE: all of these start with the SAME ORIGINAL interaction matrix
+# ssevo = system that has assembled and evolved
+# ssevoevo = system that has assembled and evolved; saved state + tried to reassemble without evolution
+# ssevo = system that has assembled but not evolved
+
+#Compare SS ratios as a function of mutation frequency
 filename = "/figures/steadystate_v2.pdf"
 namespace = smartpath(filename);
 R"""
@@ -38,6 +44,7 @@ lines($num_mut,rep(1,length($num_mut)),lty=3)
 dev.off()
 """
 
+#Compare SS values as a function of mutation frequency
 filename = "/figures/steadystate2.pdf"
 namespace = smartpath(filename);
 R"""

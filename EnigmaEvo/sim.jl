@@ -7,7 +7,7 @@ end
 # loadfunc = include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl");
 # @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assembly2.jl")
 
-probmut = 0.05;
+probmut = 0.5;
 
 S = 200;
 maxits = 4000;
@@ -26,20 +26,22 @@ cp = 1;
 
 #expected objects per species
 lambda = 0;
-athresh = 0;
-nthresh = 1.0;
+athresh = 0; #always set to 0
+nthresh = 1.0; #always set to 1
 MaxN = convert(Int64,floor(S + S*lambda));
 
+edgelist,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
 intm, tp_m, tind_m, mp_m, mind_m = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
+
 intm_origin = copy(intm);
 
-e_b,
-n_b,
-i_b,
-m_b,
-n_b0,
-sp_v,
-int_id = preamble_defs(intm);
+# e_b,
+# n_b,
+# i_b,
+# m_b,
+# n_b0,
+# sp_v,
+# int_id = preamble_defs(intm);
 
 @time sprich,rich,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(
     intm,e_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,

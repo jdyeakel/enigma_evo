@@ -34,7 +34,7 @@ probmutvec = collect(0:0.01:0.9)
 
     probmut = probmutvec[i];
 
-
+    # Build interaction matrix and Save configuration
     intm, tp_m, tind_m, mp_m, mind_m = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
     intm_origin = copy(intm);
 
@@ -46,6 +46,7 @@ probmutvec = collect(0:0.01:0.9)
     sp_v,
     int_id = preamble_defs(intm);
 
+    # Run evo sim and allow interactions to evolve over time
     sprich,rich,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(
         intm,e_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
         athresh,nthresh,maxits,probmut,cn,ce,cp);

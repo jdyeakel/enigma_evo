@@ -20,15 +20,12 @@ using Images
 if homedir() == "/home/z840"
 
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/smartpath.jl")
-
-    #Interaction matrix
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intmatrixv3.jl")
-
-		#Alternative 4x4 Interaction matrix
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intmatrixv4.jl")
-
-    #Community dynamics
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/preamble_defs.jl")
+    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intmatrixv4.jl")
+    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intmatrixv5.jl")
+    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intadd.jl")
+    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intfind.jl")
+
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblyeco.jl")
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblyevo.jl")
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblystate.jl")
@@ -41,7 +38,7 @@ if homedir() == "/home/z840"
     #Analysis functions
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/trophicalc2.jl")
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/roverlap.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/potcol.jl")
+    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/potcol2.jl")
 
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/nichemodelweb.jl")
 
@@ -51,13 +48,13 @@ else
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/smartpath.jl")
 
     #Interaction matrix
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intmatrixv3.jl")
-
-		#Alternative 4x4 Interaction matrix
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intmatrixv4.jl")
-
-    #Community dynamics
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/preamble_defs.jl")
+    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intmatrixv5.jl")
+    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intadd.jl")
+    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intfind.jl")
+
+    
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblyeco.jl")
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblyevo.jl")
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblystate.jl")
@@ -71,7 +68,7 @@ else
     #Analysis functions
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/trophicalc2.jl")
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/roverlap.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/potcol.jl")
+    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/potcol2.jl")
 
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/nichemodelweb.jl")
 end
