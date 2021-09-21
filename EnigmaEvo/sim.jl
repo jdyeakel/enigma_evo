@@ -12,8 +12,8 @@ probmut = 0.5;
 S = 200;
 maxits = 4000;
 SOprobs = (
-p_n=0.002,
-p_a=0.01
+p_n=0.000, #0.002,
+p_a=0.01 #0.01
 );
 SSmult = 1.0; OOmult = 0.0;
 SSprobs = (p_n = SSmult .* SOprobs.p_n , p_a = SSmult .* SOprobs.p_a);
@@ -25,9 +25,9 @@ cp = 1;
 
 
 #expected objects per species
-lambda = 0;
-athresh = 0; #always set to 0
-nthresh = 1.0; #always set to 1
+lambda = 0.1;
+e_t = 0; #always set to 0
+n_t = 1.0; #always set to 1
 MaxN = convert(Int64,floor(S + S*lambda));
 
 edgelist,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);

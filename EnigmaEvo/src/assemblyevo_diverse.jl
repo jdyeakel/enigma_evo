@@ -60,9 +60,10 @@ function assemblyevo(edgelist,sID,oID,lambda,
 
         # EXTINCTION
         #COUNT POTENTIAL EXTINCT SPECIES ~ PRIMARY
-        primext = potextinct(spcid,cid,e_b,n_b0);
+        primext = potextinct2(edgelist,spcid,cid);
+        
         #COUNT POTENTIAL EXTINCT SPECIES ~ SECONDARY
-        secext = potsecextinct(spcid,cid,e_b,n_b0,cn,ce,cp,minstrength)
+        secext = potsecextinct2(edgelist,spcid,cid,cn,ce,cp)
 
         spext = unique([primext;secext]);
         lspext = length(spext);
