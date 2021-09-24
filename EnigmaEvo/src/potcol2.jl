@@ -1,4 +1,4 @@
-function potcol2(edgelist,splist,cid,e_t,n_t)
+function potcol2(edgelist::Array{Int64},splist::Array{Int64},cid::Array{Int64},e_t::Float64,n_t::Float64)::Array{Int64}
     #Species not in the community
     notcid = setdiff(splist,cid);
     
@@ -21,7 +21,5 @@ function potcol2(edgelist,splist,cid,e_t,n_t)
     trophiclinked = notcid[trophiclinked_bool];
     servicelinked = notcid[servicelinked_bool];
     col = intersect(trophiclinked,servicelinked);
-    lcol = length(col);
-
-    return col,lcol
+    return col
 end

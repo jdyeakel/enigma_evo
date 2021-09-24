@@ -342,7 +342,7 @@ function intmatrixv5(S::Int64, lambda::Float64, SSprobs, SOprobs, OOprobs)::Tupl
                         else
                             # intm[i,j] = 'i';
                             # intm[j,i] = 'n';
-                            edgelist = intadd(edgelist,[j i], 1)
+                            edgelist = intadd(edgelist,[j i], 2)
                         end
                     end
 
@@ -363,7 +363,7 @@ function intmatrixv5(S::Int64, lambda::Float64, SSprobs, SOprobs, OOprobs)::Tupl
         end
         return edgelist
     end
-    edgelist = estobjobjinteractionlinks(edgelist,so_pw_prob,S,N);
+    edgelist = estobjobjinteractionlinks(edgelist,oo_pw_prob,S,N);
 
     # #A matrix for Direct + Indirect trophic interactions
     # tind_m = copy(tp_m);

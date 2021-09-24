@@ -7,12 +7,15 @@ end
 # loadfunc = include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl");
 # @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assembly2.jl")
 
-probmut = 0.5;
+#Probability of event-mutation
+probmut = 0.0;
+#This is the threshold for diversification
+div_t = 1.0
 
 S = 200;
-maxits = 4000;
+maxits = 1000;
 SOprobs = (
-p_n=0.000, #0.002,
+p_n=0.004, #0.002,
 p_a=0.01 #0.01
 );
 SSmult = 1.0; OOmult = 0.0;
@@ -20,18 +23,47 @@ SSprobs = (p_n = SSmult .* SOprobs.p_n , p_a = SSmult .* SOprobs.p_a);
 OOprobs = (p_n = OOmult * SOprobs.p_n, p0 = 0.0);
 
 cn = sqrt(2);
-ce = pi;
-cp = 1;
+ce = Float64(pi);
+cp = 1.;
 
 
 #expected objects per species
-lambda = 0.1;
-e_t = 0; #always set to 0
-n_t = 1.0; #always set to 1
-MaxN = convert(Int64,floor(S + S*lambda));
+lambda = 0.0;
+e_t = 0.; #always set to 0
+n_t = 1.; #always set to 1
+# MaxN = convert(Int64,floor(S + S*lambda));
 
-edgelist,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
-intm, tp_m, tind_m, mp_m, mind_m = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
+edgelist_origin,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
+
+@time sprich,obrich,clock,edgelist,cid,evID,mutstep,freqe,freqn,events = assemblyevo_diverse(edgelist_origin,sID,oID,e_t,n_t,maxits,probmut,cn,ce,cp,div_t);
+R"plot($clock,$sprich,type='l')"
+evopos = findall(x->floor(x)==4,events);
+R"points($(clock[evopos]),$(sprich[evopos]),pch=16,col='red',cex=0.8)"
+lineplot(log.(freqn))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 intm_origin = copy(intm);
 

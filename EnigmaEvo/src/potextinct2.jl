@@ -1,4 +1,4 @@
-function potextinct2(edgelist,spcid,cid)
+function potextinct2(edgelist::Array{Int64},spcid::Array{Int64},cid::Array{Int64})::Array{Int64}
      #COUNT POTENTIAL EXTINCT SPECIES
     #1) By not fulfilling Eat/Need thresholds
 
