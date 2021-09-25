@@ -21,8 +21,8 @@ using UnicodePlots
 if homedir() == "/home/z840"
 
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/smartpath.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/preamble_defs.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intmatrixv4.jl")
+    # @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/preamble_defs.jl")
+    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intmatrixv4integer.jl")
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intmatrixv5.jl")
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intadd.jl")
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intfind.jl")
@@ -57,8 +57,8 @@ else
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/smartpath.jl")
 
     #Interaction matrix
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intmatrixv4.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/preamble_defs.jl")
+    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intmatrixv4integer.jl")
+    # @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/preamble_defs.jl")
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intmatrixv5.jl")
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intadd.jl")
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intfind.jl")

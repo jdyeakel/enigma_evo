@@ -89,6 +89,12 @@ function assemblyevo_diverse(edgelist,sID,oID,e_t,n_t,maxits,probmut,cn,ce,cp,di
         levents = Int64(floor((lecoevents)/(1-probevo))); 
         # lmutations = levents - lecoevents;
         
+        if levents == 0
+            clock[(it+1):end] .= clock[it];
+            sprich[(it+1):end] .= sprich[it];
+            obrich[(it+1):end] .= obrich[it];
+            break
+        end
         
         
         #Redefine levents to include lmutations

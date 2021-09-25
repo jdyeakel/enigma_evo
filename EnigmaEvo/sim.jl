@@ -15,7 +15,7 @@ div_t = 1.0
 S = 200;
 maxits = 1000;
 SOprobs = (
-p_n=0.004, #0.002,
+p_n=0.002, #0.002,
 p_a=0.01 #0.01
 );
 SSmult = 1.0; OOmult = 0.0;
@@ -28,12 +28,14 @@ cp = 1.;
 
 
 #expected objects per species
-lambda = 0.0;
+lambda = 0.1;
 e_t = 0.; #always set to 0
 n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
 
 edgelist_origin,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
+# length(findall(x->x==1,edgelist_origin[:,3]))/S^2
+# length(findall(x->x==2,edgelist_origin[:,3]))/S^2
 
 @time sprich,obrich,clock,edgelist,cid,evID,mutstep,freqe,freqn,events = assemblyevo_diverse(edgelist_origin,sID,oID,e_t,n_t,maxits,probmut,cn,ce,cp,div_t);
 R"plot($clock,$sprich,type='l')"
@@ -41,6 +43,24 @@ evopos = findall(x->floor(x)==4,events);
 R"points($(clock[evopos]),$(sprich[evopos]),pch=16,col='red',cex=0.8)"
 lineplot(log.(freqn))
 
+reps = 30;
+spr = SharedArray{Int64}(maxits,reps);
+clk = SharedArray{Float64}(maxits,reps);
+@sync @distributed for i=1:reps
+    edgelist_origin,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
+    sprich,obrich,clock,edgelist,cid,evID,mutstep,freqe,freqn,events = assemblyevo_diverse(edgelist_origin,sID,oID,e_t,n_t,maxits,probmut,cn,ce,cp,div_t);
+    spr[:,i] = sprich;
+    clk[:,i] = clock;
+end
+R"""
+plot($(clk[:,1]),$(spr[:,1]),type='l',ylim=c(0,200),xlim=c(1,400),log='x')
+"""
+for i = 2:reps
+    R"lines($(clk[:,i]),$(spr[:,i]))"
+end
+
+
+intm, eb, nb, nb0 = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
 
 
 
@@ -62,10 +82,6 @@ lineplot(log.(freqn))
 
 
 
-
-
-
-intm_origin = copy(intm);
 
 # e_b,
 # n_b,
@@ -75,10 +91,11 @@ intm_origin = copy(intm);
 # sp_v,
 # int_id = preamble_defs(intm);
 
-@time sprich,rich,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(
-    intm,e_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
-    athresh,nthresh,maxits,probmut,cn,ce,cp);
-
+# @time sprich,rich,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(
+    # intm,e_b,n_b,i_b,m_b,n_b0,sp_v,int_id,lambda,
+    # athresh,nthresh,maxits,probmut,cn,ce,cp);
+intm, tp_m, tind_m, mp_m, mind_m = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
+intm_origin = copy(intm);
 e_b_origin,
 n_b_origin,
 i_b_origin,
@@ -86,13 +103,13 @@ m_b_origin,
 n_b0_origin,
 sp_v,
 int_id = preamble_defs(intm_origin);
-e_b_evo,
-n_b_evo,
-i_b_evo,
-m_b_evo,
-n_b0_evo,
-sp_v,
-int_id = preamble_defs(intm_evo);
+# e_b_evo,
+# n_b_evo,
+# i_b_evo,
+# m_b_evo,
+# n_b0_evo,
+# sp_v,
+# int_id = preamble_defs(intm_evo);
 
 #Rerun *evolved* system with eco-assembly
 @time sprich_evoeco,rich_evoeco,clock_evoeco,CID_evoeco,events_evoeco = assemblyeco(
