@@ -7,7 +7,7 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
 		#The SO quadrant has all e-n-i-m interactions, so do this one first
 
     SOp_n=SOprobs.p_n;
-    SOp_a=SOprobs.p_a;
+    SOp_e=SOprobs.p_e;
 
     #Draw the number of objects made per species
     #Done many times, the mean will be lambda*S
@@ -32,12 +32,12 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
     #Expected size of the system
     # O = convert(Int64,round(lambda*S,0));
     N = S + O;
-    spind = collect(1:S);
+    # spind = collect(1:S);
     obind = collect(S+1:N);
     engind = collect(S-E+1:S);
 
     SOp_m = (sum(obindpS))/(N^2);
-    SOp_i = 1 - (SOp_n + SOp_a + SOp_m);
+    SOp_i = 1 - (SOp_n + SOp_e + SOp_m);
 
 
     # exp_p_m = S*lambda/((S + S*lambda*(1-exp(-1)))^2)
@@ -45,27 +45,27 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
 		#SO interactions: E-N-I-M
 
     SOpwp = (
-      na = SOp_n*(SOp_a/(SOp_a+SOp_n+SOp_i+SOp_m)) + SOp_a*(SOp_n/(SOp_a+SOp_i+SOp_n)),
-      nn = SOp_n*(SOp_n/(SOp_a+SOp_n+SOp_i+SOp_m)),
-      ni = SOp_n*(SOp_i/(SOp_a+SOp_n+SOp_i+SOp_m)) + SOp_i*(SOp_n/(SOp_a+SOp_n+SOp_i)),
-      nm = SOp_n*(SOp_m/(SOp_a+SOp_n+SOp_i+SOp_m)) + SOp_m*1, #(SOp_n/SOp_n),
-      ia = SOp_i*(SOp_a/(SOp_a+SOp_n+SOp_i)) + SOp_a*(SOp_i/(SOp_a+SOp_i+SOp_n)),
-      ii = SOp_i*(SOp_i/(SOp_a+SOp_n+SOp_i)),
-      aa = SOp_a*(SOp_a/(SOp_i+SOp_n+SOp_a))
+      ne = SOp_n*(SOp_e/(SOp_e+SOp_n+SOp_i+SOp_m)) + SOp_e*(SOp_n/(SOp_e+SOp_i+SOp_n)),
+      nn = SOp_n*(SOp_n/(SOp_e+SOp_n+SOp_i+SOp_m)),
+      ni = SOp_n*(SOp_i/(SOp_e+SOp_n+SOp_i+SOp_m)) + SOp_i*(SOp_n/(SOp_e+SOp_n+SOp_i)),
+      nm = SOp_n*(SOp_m/(SOp_e+SOp_n+SOp_i+SOp_m)) + SOp_m*1, #(SOp_n/SOp_n),
+      ie = SOp_i*(SOp_e/(SOp_e+SOp_n+SOp_i)) + SOp_e*(SOp_i/(SOp_e+SOp_i+SOp_n)),
+      ii = SOp_i*(SOp_i/(SOp_e+SOp_n+SOp_i)),
+      ee = SOp_e*(SOp_e/(SOp_i+SOp_n+SOp_e))
     );
 
 		#SS interactions: E-N-I
 		SSp_n = SSprobs.p_n;
-    SSp_a = SSprobs.p_a;
-		SSp_i = 1 - SSp_a - SSp_n;
+    SSp_e = SSprobs.p_e;
+		SSp_i = 1 - SSp_e - SSp_n;
 
 		SSpwp = (
-      na = SSp_n*(SSp_a/(SSp_a+SSp_n+SSp_i)) + SSp_a*(SSp_n/(SSp_a+SSp_i+SSp_n)),
-      nn = SSp_n*(SSp_n/(SSp_a+SSp_n+SSp_i)),
-      ni = SSp_n*(SSp_i/(SSp_a+SSp_n+SSp_i)) + SSp_i*(SSp_n/(SSp_a+SSp_n+SSp_i)),
-      ia = SSp_i*(SSp_a/(SSp_a+SSp_n+SSp_i)) + SSp_a*(SSp_i/(SSp_a+SSp_i+SSp_n)),
-      ii = SSp_i*(SSp_i/(SSp_a+SSp_n+SSp_i)),
-      aa = SSp_a*(SSp_a/(SSp_i+SSp_n+SSp_a))
+      ne = SSp_n*(SSp_e/(SSp_e+SSp_n+SSp_i)) + SSp_e*(SSp_n/(SSp_e+SSp_i+SSp_n)),
+      nn = SSp_n*(SSp_n/(SSp_e+SSp_n+SSp_i)),
+      ni = SSp_n*(SSp_i/(SSp_e+SSp_n+SSp_i)) + SSp_i*(SSp_n/(SSp_e+SSp_n+SSp_i)),
+      ie = SSp_i*(SSp_e/(SSp_e+SSp_n+SSp_i)) + SSp_e*(SSp_i/(SSp_e+SSp_i+SSp_n)),
+      ii = SSp_i*(SSp_i/(SSp_e+SSp_n+SSp_i)),
+      ee = SSp_e*(SSp_e/(SSp_i+SSp_n+SSp_e))
     );
 
 		#OO interactions: N-I
@@ -102,9 +102,9 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
 
     #Matrix of trophic-only interactions
     #The number of species in the trophic and mutualistic matrices will all start out the sames size as intm, however, the objects will be trimmed later
-    tp_m = zeros(Int64,S,S);
+    # tp_m = zeros(Int64,S,S);
     #Matrix of mutualistic interactions
-    mp_m = zeros(Int64,S,S);
+    # mp_m = zeros(Int64,S,S);
 
     #The first true species (row/col 2) is always a primary producer
     intm[2,1] = 1;
@@ -129,16 +129,16 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
 
     #Eliminate n-a, i-a, a-a, n-m interactions, which are already determined
 
-    # 1) pr_na
+    # 1) pr_ne
     # 2) pr_nn **
     # 3) pr_ni **
     # 4) pr_nm
-    # 5) pr_ia
+    # 5) pr_ie
     # 6) pr_ii **
-    # 7) pr_aa
+    # 7) pr_ee
     # deleteat!(pw_prob_new,[1,4,5,7])
     # pw_prob_new = pw_prob_init[[1,2,3,5,6,7]];
-    pw_prob_new = [SSpwp.na,SSpwp.nn,SSpwp.ni,SSpwp.ia,SSpwp.ii,SSpwp.aa];
+    pw_prob_new = [SSpwp.ne,SSpwp.nn,SSpwp.ni,SSpwp.ie,SSpwp.ii,SSpwp.ee];
     pw_prob_new = pw_prob_new/sum(pw_prob_new);
 
 
@@ -154,7 +154,7 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
 
                 r_draw = rand()
 
-                #N:A - asymmetric mutualism
+                #N:I - asymmetric mutualism
                 if r_draw < prob_line[1]
                   rr_draw = rand();
                   if rr_draw < 0.5
@@ -193,7 +193,7 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
                     end
                 end
 
-                #I:A - predation
+                #I:E - predation
                 if r_draw > prob_line[3] && r_draw < prob_line[4]
                     rr_draw = rand();
                     if rr_draw < 0.5
@@ -213,7 +213,7 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
                   intm[j,i] = 0
                 end
 
-                #I:A - predation
+                #I:E - predation
                 #N:N - symmetric mutualism
                 if r_draw > prob_line[5] && r_draw < prob_line[6]
                   intm[i,j] = 1
@@ -228,23 +228,24 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
     end #i
 
     #We could assume that any species without recorded trophic interactions is a primary producer
-    total_trophic = vec(sum(tp_m,dims=2));
+    tpm = (intm .== 1);
+    total_trophic = vec(sum(tpm[1:S,1:S],dims=2));
     prim_prod = deleteat!(findall(iszero,total_trophic),1); #eliminate row 1
     intm[prim_prod,1] .= 1;
     # tp_m[prim_prod,1] .= 1;
 
     #SPECIES-OBJECT INTERACTIONS
 
-    # 1) pr_na
+    # 1) pr_ne
     # 2) pr_nn
     # 3) pr_ni **
     # 4) pr_nm
-    # 5) pr_ia
+    # 5) pr_ie
     # 6) pr_ii **
-    # 7) pr_aa
+    # 7) pr_ee
 
     # so_pw_prob = pw_prob_init[[3,5,6]];
-    so_pw_prob = [SOpwp.ni,SOpwp.ia,SOpwp.ii];
+    so_pw_prob = [SOpwp.ni,SOpwp.ie,SOpwp.ii];
     so_pw_prob = so_pw_prob/sum(so_pw_prob);
     so_prob_line = cumsum(so_pw_prob);
 
@@ -259,7 +260,7 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
                     intm[j,i] = 0;
                 end
 
-                #assimilate-ignore
+                #eat-ignore
                 if r_draw > so_prob_line[1] && r_draw < so_prob_line[2]
                     intm[i,j] = 1;
                     intm[j,i] = 0;

@@ -1,9 +1,14 @@
-function assemblyevo(intm,eb,nb,i_b,m_b,nb0,sp_v,int_id,lambda,
+function assemblyevo(S,intm,eb,nb,m_b,nb0,
     e_t,n_t,maxits,probmut,cn,ce,cp)
 
-    S = length(sp_v) + 1;
+    # S = length(spv) + 1;
+    # Total size of the species + objects
     N = size(intm)[1];
-    MaxN = convert(Int64,floor(S + S*lambda));
+    # A list of the species ids
+    spv = collect(Int64,2:1:S);
+    spobv = collect(Int64,1:1:N);
+
+    # MaxN = convert(Int64,floor(S + S*lambda));
     cid = Array{Int64}(undef,0);
     sprich = Array{Int64}(undef,0);
     rich = Array{Int64}(undef,0);
@@ -39,25 +44,25 @@ function assemblyevo(intm,eb,nb,i_b,m_b,nb0,sp_v,int_id,lambda,
 
         cid_old = copy(cid);
         #Which are species?
-        spcid = intersect(sp_v,cid);
+        spcid = intersect(spv,cid);
         #Which are objects?
         ocid = setdiff(cid,spcid);
 
 
         #COUNT POTENTIAL COLONIZERS
-        trophiclinked = setdiff(int_id[(sum(eb[:,[1;cid]],dims=2) .> 0)[:,1]],cid);
+        trophiclinked = setdiff(spobv[vec(sum(eb[:,[1;cid]],dims=2) .> 0)],cid);
         #For each trophiclinked, count number of assimilate and need interactions in system
         #Determine in the proportion that already exists is >= the threshold
-        a_fill = ((sum(eb[trophiclinked,[1;cid]],dims=2)./sum(eb[trophiclinked,:],dims=2)) .>= e_t)[:,1];
+        e_fill = ((sum(eb[trophiclinked,[1;cid]],dims=2)./sum(eb[trophiclinked,:],dims=2)) .>= e_t)[:,1];
         prop_n = sum(nb0[trophiclinked,[1;cid]],dims=2)./sum(nb0[trophiclinked,:],dims=2);
         #If there are no 'need' interactions, proportion filled is always 1, and will always pass
         prop_n[isnan.(prop_n)] .= 1;
         n_fill = (prop_n .>= n_t)[:,1];
         #Build a list of those that pass each individual test
-        a_pass = trophiclinked[a_fill];
+        e_pass = trophiclinked[e_fill];
         n_pass = trophiclinked[n_fill];
         #Build a list of those that pass both tests (potential colonizers)
-        col = intersect(a_pass,n_pass);
+        col = intersect(e_pass,n_pass);
         #Count the number that pass
         lcol = length(col);
 
@@ -65,16 +70,16 @@ function assemblyevo(intm,eb,nb,i_b,m_b,nb0,sp_v,int_id,lambda,
         #COUNT POTENTIAL EXTINCT SPECIES
         #1) By not fulfilling Eat/Need thresholds
         #Re-calculate e_t and n_t (> e_t; >= n_t)
-        a_fill = ((sum(eb[spcid,[1;cid]],dims=2)./sum(eb[spcid,:],dims=2)) .> e_t)[:,1];
+        e_fill = ((sum(eb[spcid,[1;cid]],dims=2)./sum(eb[spcid,:],dims=2)) .> e_t)[:,1];
         prop_n = sum(nb0[spcid,[1;cid]],dims=2)./sum(nb0[spcid,:],dims=2);
         #If there are no 'need' interactions, proportion filled is always 1, and will always pass
         prop_n[isnan.(prop_n)] .= 1;
         n_fill = (prop_n .>= n_t)[:,1];
         #Build a list of those that pass each individual test
-        a_pass = spcid[a_fill];
+        e_pass = spcid[e_fill];
         n_pass = spcid[n_fill];
         #which species pass?
-        survivors = intersect(a_pass,n_pass);
+        survivors = intersect(e_pass,n_pass);
         spext1 = setdiff(spcid,survivors);
 
         if length(spcid) > 0
@@ -83,10 +88,14 @@ function assemblyevo(intm,eb,nb,i_b,m_b,nb0,sp_v,int_id,lambda,
             # Strength values change over time so need to ve updated
             # Only record strength values of species (hence the [1:length(spcid)])
             #NOTE: Needs won't change; Eats is based on POTENTIAL niche; Vuln changes per timestep
-            strength = vec(cn*sum(nb0[spcid,cid],dims=2)) .- vec(ce*sum(eb[spcid,:],dims=2)) .- (vec(cp*sum(eb[spcid,cid],dims=1))[1:length(spcid)]);
-
+            
+            #NOTE: trying a new strength function here
+            # strength = vec(cn*sum(nb0[spcid,cid],dims=2)) .- vec(ce*sum(eb[spcid,:],dims=2)) .- (vec(cp*sum(eb[spcid,cid],dims=1))[1:length(spcid)]);
+            
+            strength = Array{Float64}(undef,length(spcid));
             cmatrix = Array{Float64}(undef,length(spcid),length(cid));
             for i=1:length(spcid)
+                strength[i] = strengthcalc(nb0,eb,cid,spcid[i],cn,ce,cp);
                 cmatrix[i,:] .= eb[spcid[i],cid] * strength[i];
             end
 
@@ -241,8 +250,8 @@ function assemblyevo(intm,eb,nb,i_b,m_b,nb0,sp_v,int_id,lambda,
 
             spmutloc = findall(x->x==spmut,spcid)[1];
             #Calculate strength
-            strength_mut = (cn*sum(nb0mut[spmut,cid])) .- (ce*sum(ebmut[spmut,:])) .- (cp*sum(ebmut[cid,spmut]));
-
+            # strength_mut = (cn*sum(nb0mut[spmut,cid])) .- (ce*sum(ebmut[spmut,:])) .- (cp*sum(ebmut[cid,spmut]));
+            strength_mut = strength2(nb0mut,ebmut,cid,spmut,cn,ce,cp);
 
             if strength_mut > strength[spmutloc]
                 #accept mutation

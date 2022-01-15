@@ -16,10 +16,10 @@ S = 200;
 maxits = 1000;
 SOprobs = (
 p_n=0.002, #0.002,
-p_a=0.01 #0.01
+p_e=0.01 #0.01
 );
 SSmult = 1.0; OOmult = 0.0;
-SSprobs = (p_n = SSmult .* SOprobs.p_n , p_a = SSmult .* SOprobs.p_a);
+SSprobs = (p_n = SSmult .* SOprobs.p_n , p_e = SSmult .* SOprobs.p_e);
 OOprobs = (p_n = OOmult * SOprobs.p_n, p0 = 0.0);
 
 cn = sqrt(2);
@@ -32,6 +32,9 @@ lambda = 0.1;
 e_t = 0.; #always set to 0
 n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
+
+intm,eb,nb,nb0 = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
+N = size(intm)[1];
 
 edgelist_origin,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
 # length(findall(x->x==1,edgelist_origin[:,3]))/S^2
