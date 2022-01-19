@@ -340,8 +340,8 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
     #Boolian matrices
 
     
-    eb,nb,nb0 = intbool(intm);
+    eb,nb,nb0,mb = intbool(intm);
 
-    return(intm,eb,nb,nb0) #, tp_m, tind_m, mp_m, mind_m
+    return(intm,eb,nb,nb0,mb) #, tp_m, tind_m, mp_m, mind_m
 
 end

@@ -39,7 +39,7 @@ if homedir() == "/home/z840"
 
 
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblyeco.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblyevo.jl")
+    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblyevo2.jl")
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblyevo_diverse.jl")
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblystate.jl")
 
@@ -78,7 +78,7 @@ else
 
     
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblyeco.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblyevo.jl")
+    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblyevo2.jl")
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblyevo_diverse.jl")
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblystate.jl")
 

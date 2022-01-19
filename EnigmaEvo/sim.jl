@@ -8,7 +8,7 @@ end
 # @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assembly2.jl")
 
 #Probability of event-mutation
-probmut = 0.0;
+probmut = 0.5;
 #This is the threshold for diversification
 div_t = 1.0
 
@@ -33,12 +33,22 @@ e_t = 0.; #always set to 0
 n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
 
-intm,eb,nb,nb0 = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
+intm,eb,nb,nb0,mb = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
 N = size(intm)[1];
 
-edgelist_origin,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
+# edgelist_origin,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
 # length(findall(x->x==1,edgelist_origin[:,3]))/S^2
 # length(findall(x->x==2,edgelist_origin[:,3]))/S^2
+
+@time sprich,
+rich,
+clock,
+CID,
+intm_evo,
+mutstep,
+freqe,
+freqn,
+events = assemblyevo(S,intm,eb,nb,mb,nb0,e_t,n_t,maxits,probmut,cn,ce,cp);
 
 @time sprich,obrich,clock,edgelist,cid,evID,mutstep,freqe,freqn,events = assemblyevo_diverse(edgelist_origin,sID,oID,e_t,n_t,maxits,probmut,cn,ce,cp,div_t);
 R"plot($clock,$sprich,type='l')"
