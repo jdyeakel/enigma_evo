@@ -37,6 +37,7 @@ if homedir() == "/home/z840"
     # @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/strength.jl")
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/strength2.jl")
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/secexteval.jl")
+    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/mutation.jl")
 
 
     @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblyeco.jl")
@@ -77,6 +78,7 @@ else
     # @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/strength.jl")
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/strength2.jl")
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/secexteval.jl")
+    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/mutation.jl")
 
     
     @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblyeco.jl")
