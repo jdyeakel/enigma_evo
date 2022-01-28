@@ -107,6 +107,7 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
     # mp_m = zeros(Int64,S,S);
 
     #The first true species (row/col 2) is always a primary producer
+    #But this primary producer could still 'need' things, so may not be a first colonizer
     intm[2,1] = 1;
     # tp_m[2,1] = 1;
 

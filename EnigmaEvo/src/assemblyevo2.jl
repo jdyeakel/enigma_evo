@@ -1,5 +1,4 @@
-function assemblyevo(S,intm,eb,nb,mb,nb0,
-    e_t,n_t,maxits,probmut,cn,ce,cp)
+function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cn,ce,cp)
 
     # S = length(spv) + 1;
     # Total size of the species + objects
@@ -10,16 +9,19 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
 
     # MaxN = convert(Int64,floor(S + S*lambda));
     cid = Array{Int64}(undef,0);
-    sprich = Array{Int64}(undef,0);
-    rich = Array{Int64}(undef,0);
-    clock = Array{Float64}(undef,0);
-    events = Array{Float64}(undef,0);
+
+    sprich = Array{Int64}(undef,maxits);
+    rich = Array{Int64}(undef,maxits);
+    mstrength = Array{Float64}(undef,maxits);
+    clock = Array{Float64}(undef,maxits);
+    events = Array{Float64}(undef,maxits);
     CID = falses(N,maxits);
 
     freqe = Array{Float64}(undef,maxits);
     freqn = Array{Float64}(undef,maxits);
 
     mutstep = zeros(Float64,maxits)
+    evolvedstrength = zeros(Float64,maxits);
     #NOTE strength matrix can't be built a-priori!
     # #Build the strength matrix apriori
     # strength = vec(pi*sum(nb0,dims=2)) .- vec(sqrt(2)*sum(eb,dims=2)) .- vec(sum(eb,dims=1));
@@ -29,7 +31,8 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
     # end
     # # smatrix[findall(iszero,eb)] = NaN;
     #
-    minstrength = -ce*Float64(S) - cp*Float64(S);
+    minstrength = 0 -ce*Float64(N) - cp*Float64(S);
+    maxstrength = cn*Float64(N) - ce*1 -cp*0;
 
     evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
     tallytable = [4.1 4.2 5.1 4.3 4.4 5.2 4.5 4.6 5.3 6.1 6.2 6.3];
@@ -62,25 +65,17 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
         e_pass = trophiclinked[e_fill];
         n_pass = trophiclinked[n_fill];
         #Build a list of those that pass both tests (potential colonizers)
-        col = intersect(e_pass,n_pass);
+        # col = intersect(e_pass,n_pass);
+        #NOTE: alternative: Free colonization with one eat.
+        col = copy(e_pass);
         #Count the number that pass
         lcol = length(col);
 
 
         #COUNT POTENTIAL EXTINCT SPECIES
-        #1) By not fulfilling Eat/Need thresholds
+        #1) SECONDARY EXTINCTIONS By not fulfilling Eat/Need thresholds
         #Re-calculate e_t and n_t (> e_t; >= n_t)
-        e_fill = ((sum(eb[spcid,[1;cid]],dims=2)./sum(eb[spcid,:],dims=2)) .> e_t)[:,1];
-        prop_n = sum(nb0[spcid,[1;cid]],dims=2)./sum(nb0[spcid,:],dims=2);
-        #If there are no 'need' interactions, proportion filled is always 1, and will always pass
-        prop_n[isnan.(prop_n)] .= 1;
-        n_fill = (prop_n .>= n_t)[:,1];
-        #Build a list of those that pass each individual test
-        e_pass = spcid[e_fill];
-        n_pass = spcid[n_fill];
-        #which species pass?
-        survivors = intersect(e_pass,n_pass);
-        spext1 = setdiff(spcid,survivors);
+        secext = secexteval(spcid,cid,eb,nb0,e_t,n_t);
 
         if length(spcid) > 0
 
@@ -126,16 +121,17 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
                 prext_comp[i] = any(ieats)*(any(strength[i] .>= cmax[ieats])==false);
 
             end
-            spext2 = spcid[prext_comp];
+            primext = spcid[prext_comp];
         else
-            spext2 = Array{Int64}(undef,0);
+            strength = minstrength;
+            primext = Array{Int64}(undef,0);
         end
 
-        primext = copy(spext2);
-        secext = copy(spext1);
+        # primext = copy(spext2);
+        # secext = copy(spext1);
         #
         # spext2 = Array{Int64}(0);
-        spext = unique([spext1;spext2]);
+        spext = unique([secext;primext]);
         lspext = length(spext);
 
 
@@ -169,12 +165,14 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
 
         t += dt;
         it += 1;
-        push!(clock,t);
+        # push!(clock,t);
+        clock[it] = t;
 
         #Choose a random event
         re = rand();
         tally = -10;
 
+        #DRAW COLONIZATION
         if re < (lcol/levents)
 
             #COLONIZATION FUNCTION
@@ -192,6 +190,7 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
             tally = 0;
         end
 
+        #DRAW EXTINCTION
         if re > (lcol/levents) && re < ((lcol + lspext)/levents)
 
             #SPECIES EXTINCTION FUNCTION
@@ -210,6 +209,7 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
             end
         end
 
+        #DRAW OBJECT EXTINCTION
         if re > ((lcol + lspext)/levents) && re < ((lcol + lspext + lobext)/levents)
 
             #OBJECT EXTINCTION FUNCTION
@@ -219,6 +219,7 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
             tally = 3;
         end
         
+        #DRAW EVOLUTION
         if re > ((lcol + lspext + lobext)/levents)
 
             #SPECIES MUTATION
@@ -240,8 +241,9 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
             intm_mut = copy(intm);
             
             #choose new interaction
+            #If the mutated interaction is with a species
             if in(intmut,spcid)
-                #For species, randomly choose ignore, eat, need,
+                #For species in-degree interactions, randomly choose ignore, eat, need,
                 newint_in = rand(setdiff([0,1,2],oldint_in))[1];
                 newint_out = rand(setdiff([0,1,2],oldint_out))[1];
                 # Select evolution of either in degree interaction or out-degree interaction
@@ -257,6 +259,7 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
                     intm_mut[intmut,spmut] = newint;
                     evol_type = 2.;
                 end
+            #If the mutated interaction is with an object
             else
                 #For objects, randomly choose ignore, eat, need, make
                 newint_in = rand(setdiff([0,1,2,3],oldint_in))[1];
@@ -264,12 +267,19 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
                 oldint = oldint_in;
                 intm_mut[spmut,intmut] = newint;
                 evol_type = 1.;
+
+                #RECIPROCAL OBJECT NEEDS
+                #If an object is newly made, it now needs the species
+                if newint == 3;
+                    intm_mut[intmut,spmut] = 2;
+                end
+                #If an object is newly unmade, it now does not need the species
+                if oldint == 3;
+                    intm_mut[intmut,spmut] = 0;
+                end
             end
 
-            #If an object is newly made, it now needs the species
-            if newint == 3;
-                intm_mut[intmut,spmut] = 2;
-            end
+            
 
             #Update interaction matrix
             # evol_type_draw = rand();
@@ -296,12 +306,41 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
             # spmutloc = findall(x->x==spmut,spcid)[1];
             #Calculate strength
             # strength_mut = (cn*sum(nb0mut[spmut,cid])) .- (ce*sum(ebmut[spmut,:])) .- (cp*sum(ebmut[cid,spmut]));
-            strength_mut = strengthcalc(nb0mut,ebmut,cid,spmut,cn,ce,cp);
+            strengthmut = strengthcalc(nb0mut,ebmut,cid,spmut,cn,ce,cp);
+            #Evaluate if spmut will go secondarily extinct (through disconnection)
+            # secextmut = secexteval(zeros(Int64,1).+spmut,cid,ebmut,nb0mut,e_t,n_t);
+            #If it does probability is 1
+            # probsecextmut = (length(secextmut) > 0)*1.;
+            # probsecextmut = 0.
 
             #Right now, ONLY mutations with > interaction strengths prevail
             #NOTE: But we could evaluate as per shared resources (as we do for primary extinctions)
             #NOTE: Right now, this records an evolution tally whether or not the mutant is selected to remain
-            if strength_mut > strength[spcid.==spmut][1]
+            
+            spmutpos = findall(x->x==spmut,spcid)[1];
+
+            # if strength_mut > strength[spmutpos][1]
+            #If strength is great for any of its food... 
+            #NOTE: but this is not updated food!
+            muteats = Array{Bool}(ebmut[spmut,cid]);
+            spmutstrength = muteats * strengthmut;
+            spmutstrength[spmutstrength.==0] .= minstrength;
+            # Original species competition strength
+            spstrength = cmatrix[spmutpos,:];
+            
+            # cmatrixmut = copy(cmatrix);
+            # cmatrixmut[spmutpos,:] .= muteats * strengthmut;
+            # cmatrixmut[cmatrixmut.==0] .= minstrength;
+            # cmaxmut = findmax(cmatrixmut,dims=1)[1];
+            # ismutaloser = any(muteats)*(any(strengthmut .>= cmaxmut[muteats])==false);
+            
+            # if ismutaloser == false #|| strengthmut > strength[spmutpos][1]
+            # if any(strengthmut .>= cmatrix[spmutpos,:])
+            # if strengthmut > strength[spmutpos]
+            #Is the mutant competitively superior to the original for ANY resource?
+            #Is the mutant still connected to the system with minimal threshold needs and eats?
+            
+            if any(spmutstrength .> spstrength) #&& probsecextmut != 1.
                 #accept mutation
                 intm = copy(intm_mut);
                 eb = copy(ebmut);
@@ -311,6 +350,7 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
                 # i_b = copy(i_bmut);
 
                 mutstep[it] = 1.0;
+                evolvedstrength[it] = strengthmut - strength[spmutpos];
 
             end
                 
@@ -323,9 +363,14 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
 
         #NOTE - updating CID....
         CID[cid,it] .= true;
-        push!(sprich,length(spcid));
-        push!(rich,length(cid));
-        push!(events,tally);
+        sprich[it] = length(spcid);
+        rich[it] = length(cid);
+        #NOTE: standardize mean strength between 0 and 1
+        mstrength[it] = (mean(strength) - minstrength)/(maxstrength - minstrength); #make strengths positive with a minimum of 1
+        events[it] = tally;
+        # push!(sprich,length(spcid));
+        # push!(rich,length(cid));
+        # push!(events,tally);
     end #end time steps
 
     intm_evo = copy(intm);
@@ -335,6 +380,8 @@ function assemblyevo(S,intm,eb,nb,mb,nb0,
     return(
     sprich,
     rich,
+    mstrength,
+    evolvedstrength,
     clock,
     CID,
     intm_evo,

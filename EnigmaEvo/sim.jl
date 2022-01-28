@@ -22,8 +22,13 @@ SSmult = 1.0; OOmult = 0.0;
 SSprobs = (p_n = SSmult .* SOprobs.p_n , p_e = SSmult .* SOprobs.p_e);
 OOprobs = (p_n = OOmult * SOprobs.p_n, p0 = 0.0);
 
-cn = sqrt(2);
-ce = Float64(pi);
+#Competitive gain of a make
+cm = Float64(pi);
+#Competitive gain of a need
+cn = exp(1);
+#Competitive loss of an eat
+ce = sqrt(2);
+#Competitive loss from a predator
 cp = 1.;
 
 
@@ -34,21 +39,16 @@ n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
 
 intm,eb,nb,nb0,mb = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
-N = size(intm)[1];
 
 # edgelist_origin,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
 # length(findall(x->x==1,edgelist_origin[:,3]))/S^2
 # length(findall(x->x==2,edgelist_origin[:,3]))/S^2
 
-@time sprich,
-rich,
-clock,
-CID,
-intm_evo,
-mutstep,
-freqe,
-freqn,
-events = assemblyevo(S,intm,eb,nb,mb,nb0,e_t,n_t,maxits,probmut,cn,ce,cp);
+@time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cn,ce,cp);
+eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
+
+
+
 
 @time sprich,obrich,clock,edgelist,cid,evID,mutstep,freqe,freqn,events = assemblyevo_diverse(edgelist_origin,sID,oID,e_t,n_t,maxits,probmut,cn,ce,cp,div_t);
 R"plot($clock,$sprich,type='l')"
