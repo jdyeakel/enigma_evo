@@ -43,7 +43,7 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
     # exp_p_m = S*lambda/((S + S*lambda*(1-exp(-1)))^2)
 
 		#SO interactions: E-N-I-M
-
+    #[SOpwp.ni,SOpwp.ie,SOpwp.ii]
     SOpwp = (
       ne = SOp_n*(SOp_e/(SOp_e+SOp_n+SOp_i+SOp_m)) + SOp_e*(SOp_n/(SOp_e+SOp_i+SOp_n)),
       nn = SOp_n*(SOp_n/(SOp_e+SOp_n+SOp_i+SOp_m)),
@@ -343,6 +343,6 @@ function intmatrixv4(S, lambda, SSprobs, SOprobs, OOprobs)
     
     eb,nb,nb0,mb = intbool(intm);
 
-    return(intm,eb,nb,nb0,mb) #, tp_m, tind_m, mp_m, mind_m
+    return(intm,eb,nb,nb0,mb,SSpwp,SOpwp) #, tp_m, tind_m, mp_m, mind_m
 
 end

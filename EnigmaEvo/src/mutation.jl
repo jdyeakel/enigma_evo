@@ -1,4 +1,4 @@
-function mutation(spmut,intmut,intm,spv,tallytable,evolutiontable)
+function mutation(spmut,intmut,spints,obints,intm,spv,tallytable,evolutiontable)
 
     oldint_in = intm[spmut,intmut];
     #how intmut interacts with spmut
@@ -7,8 +7,8 @@ function mutation(spmut,intmut,intm,spv,tallytable,evolutiontable)
     intm_mut = copy(intm);
     
     if in(intmut,spv)
-        newint_in = rand(setdiff([0,1,2],oldint_in))[1];
-        newint_out = rand(setdiff([0,1,2],oldint_out))[1];
+        newint_in = rand(setdiff(spints,oldint_in))[1];
+        newint_out = rand(setdiff(spints,oldint_out))[1];
         # Select evolution of either in degree interaction or out-degree interaction
         evol_type_draw = rand();
         if evol_type_draw < 0.5
@@ -25,7 +25,7 @@ function mutation(spmut,intmut,intm,spv,tallytable,evolutiontable)
     #If the mutated interaction is with an object
     else
         #For objects, randomly choose ignore, eat, need, make
-        newint_in = rand(setdiff([0,1,2,3],oldint_in))[1];
+        newint_in = rand(setdiff(obints,oldint_in))[1];
         newint = newint_in;
         oldint = oldint_in;
         intm_mut[spmut,intmut] = newint;

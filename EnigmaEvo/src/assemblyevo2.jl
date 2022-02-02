@@ -7,6 +7,9 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cn,ce,cp)
     spv = collect(Int64,2:1:S);
     spobv = collect(Int64,1:1:N);
 
+    # Make a copy of the original interaction matrix
+    intm_orig = copy(intm);
+
     # MaxN = convert(Int64,floor(S + S*lambda));
     cid = Array{Int64}(undef,0);
 
@@ -20,7 +23,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cn,ce,cp)
     freqe = Array{Float64}(undef,maxits);
     freqn = Array{Float64}(undef,maxits);
 
-    mutstep = Array{Float64}(undef,0);
+    mutstep = zeros(Float64,maxits);
     evolvedstrength = Array{Float64}(undef,0);
     #NOTE strength matrix can't be built a-priori!
     # #Build the strength matrix apriori
@@ -236,7 +239,9 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cn,ce,cp)
                 #OR Mutate realized interactions
                 intmut = rand(setdiff(cid,spmut));
 
-                intm_mut, ebmut, nbmut, nb0mut, mbmut, tally = mutation(spmut,intmut,intm,spv,tallytable,evolutiontable);
+                spints = [0,1,2];
+                obints = [0,1,2,3];
+                intm_mut, ebmut, nbmut, nb0mut, mbmut, tally = mutation(spmut,intmut,spints,obints,intm,spv,tallytable,evolutiontable);
 
                 #Does the mutant outcompete the parent?
                 strengthmut = strengthcalc(nb0mut,ebmut,cid,spmut,cn,ce,cp);
@@ -262,7 +267,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cn,ce,cp)
                     mb = copy(mbmut)
                     # i_b = copy(i_bmut);
 
-                    push!(mutstep,1.0);
+                    mutstep[it] = 1.0
                     push!(evolvedstrength, strengthmut - strength[spmutpos]);
 
                 end
@@ -276,15 +281,29 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cn,ce,cp)
                 spmut = rand(sppool);
                 intmut = rand(setdiff([sppool;obpool],spmut));
 
-                intm_mut, ebmut, nbmut, nb0mut, mbmut, tally = mutation(spmut,intmut,intm,spv,tallytable,evolutiontable);
+                # Random mutation
+                spints = [0,1,2];
+                obints = [0,1,2,3];
+                # spints = vec(((eb .* 1) .+ (nb0 .* 2))[2:S,1:S]);
+                # obints = vec(((eb .* 1) .+ (nb0 .* 2))[2:S,(S+1):N]);
+                intm_mut, ebmut, nbmut, nb0mut, mbmut, tally = mutation(spmut,intmut,spints,obints,intm,spv,tallytable,evolutiontable);
+
+                # NOTE: this section doesn't work yet (maybe not necessary)
+                # Mutate back to original
+                # diffsp = findall(isodd,vec(sum(intm[[sppool;obpool],:] .!= intm_orig[[sppool;obpool],:],dims=2)));
+                # evolvedinteractions = findall(isodd,);
+                # rand(collect(1:length(evolvedinteractions)));
                 
-                #accept mutation
-                intm = copy(intm_mut);
-                eb = copy(ebmut);
-                nb = copy(nbmut);
-                nb0 = copy(nb0mut);
-                mb = copy(mbmut)
-                # i_b = copy(i_bmut);
+                #accept mutation if spmut still has something it consumes (don't allow it to de-evolve interactions completely)
+                if sum(eb_mut[spmut,:]) >= 1
+                    intm = copy(intm_mut);
+                    eb = copy(ebmut);
+                    nb = copy(nbmut);
+                    nb0 = copy(nb0mut);
+                    mb = copy(mbmut)
+                    # i_b = copy(i_bmut);
+                    mutstep[it] = 2.0;
+                end
 
             end
 

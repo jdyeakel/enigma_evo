@@ -35,7 +35,7 @@ e_t = 0.; #always set to 0
 n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
 
-intm,eb,nb,nb0,mb = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
+intm,eb,nb,nb0,mb,SSpwp,SOpwp = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
 
 # edgelist_origin,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
 # length(findall(x->x==1,edgelist_origin[:,3]))/S^2
