@@ -47,7 +47,7 @@ its = size(parametervec)[1];
  #save data
  filename = "data/nicheconstruction/simsettings.jld";
  namespace_settings = smartpath(filename);
- @save namespace_settings S lambda SSprobs SOprobs OOprobs e_t n_t maxits probmut cn ce cp;
+ @save namespace_settings S lambda SSprobs SOprobs OOprobs e_t n_t maxits probmut cn ce cp cmvec lcmvec reps parametervec its;
 
 @sync @distributed for i=1:its
     
@@ -63,7 +63,7 @@ its = size(parametervec)[1];
     # length(findall(x->x==1,edgelist_origin[:,3]))/S^2
     # length(findall(x->x==2,edgelist_origin[:,3]))/S^2
 
-    @time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cn,ce,cp); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
+    @time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cp); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
 
 
     #save data
@@ -73,6 +73,6 @@ its = size(parametervec)[1];
     
     # @save namespace mass1 mass2 epsilonvec clock popstate toothdrop state toothlength1 toothlength2;
     
-    @save namespace intm eb nb nb0 mb SSpwp SOpwp sprich rich mstrength evolvedstrength clock CID intm_evo mutstep freqe freqn events
+    @save namespace intm eb nb nb0 mb SSpwp SOpwp sprich rich mstrength evolvedstrength clock CID intm_evo mutstep freqe freqn events eb_evo nb_evo nb0_evo mb_evo;
 
 end
