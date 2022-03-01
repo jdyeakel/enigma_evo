@@ -43,11 +43,31 @@ intm,eb,nb,nb0,mb,SSpwp,SOpwp = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
 
 @time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cn,ce,cp); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
 
-R"barplot(cbind($(sum(eb)),$(sum(eb_evo)),$(sum(nb0)),$(sum(nb0_evo)),$(sum(mb)),$(sum(mb_evo))),names=c('eb','ebevo','nb0','nb0evo','mb','mb0evo'))"
+R"""
+plot($sprich,type='l')
+"""
+
+R"""
+barplot(cbind($(sum(eb)),$(sum(eb_evo)),$(sum(nb0)),$(sum(nb0_evo)),$(sum(mb)),$(sum(mb_evo))),names=c('eb','ebevo','nb0','nb0evo','mb','mb0evo'))
+"""
 
 sum(mutstep)/length(findall(x->x>=4,events))
 
-R"plot($mstrength,type='l',log='y')"
+R"""
+plot($(mstrength),type='l',log='y')
+"""
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
