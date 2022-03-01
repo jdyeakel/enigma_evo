@@ -20,41 +20,41 @@ using UnicodePlots
 
 if homedir() == "/home/z840"
 
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/smartpath.jl")
-    # @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/preamble_defs.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intmatrixv4integer.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intbool.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/smartpath.jl")
+    # @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/preamble_defs.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intmatrixv4integer.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intbool.jl")
 
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intmatrixv5.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intadd.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intfind.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intfind_out.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/intfind_inout.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/potcol2.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/potextinct2.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/potsecextinct2.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/potobextinct2.jl")
-    # @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/strength.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/strength2.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/secexteval.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/mutation.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intmatrixv5.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intadd.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intfind.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intfind_out.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intfind_inout.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/potcol2.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/potextinct2.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/potsecextinct2.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/potobextinct2.jl")
+    # @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/strength.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/strength2.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/secexteval.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/mutation.jl")
 
 
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblyeco.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblyevo2.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblyevo_diverse.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/assemblystate.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/assemblyeco.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/assemblyevo2.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/assemblyevo_diverse.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/assemblystate.jl")
 
     #Analysis Calculations
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/structure.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/dynstructure.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/sortassembly.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/structure.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/dynstructure.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/sortassembly.jl")
 
     #Analysis functions
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/trophicalc2.jl")
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/roverlap.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/trophicalc2.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/roverlap.jl")
 
-    @everywhere include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/nichemodelweb.jl")
+    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/nichemodelweb.jl")
 
 
 else
