@@ -44,10 +44,10 @@ lcmvec = length(cmvec);
 parametervec = [repeat(collect(1:lcmvec),inner=reps) repeat(collect(1:reps),outer=lcmvec)];
 its = size(parametervec)[1];
 
- #save data
- filename = "data/nicheconstruction/simsettings.jld";
- namespace_settings = smartpath(filename);
- @save namespace_settings S lambda SSprobs SOprobs OOprobs e_t n_t maxits probmut cn ce cp cmvec lcmvec reps parametervec its;
+#save data
+filename = "data/nicheconstruction/simsettings.jld";
+namespace_settings = smartpath(filename);
+@save namespace_settings S lambda SSprobs SOprobs OOprobs e_t n_t maxits probmut cn ce cp cmvec lcmvec reps parametervec its;
 
 @sync @distributed for i=1:its
     
