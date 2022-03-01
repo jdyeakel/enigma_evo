@@ -1,5 +1,5 @@
 if homedir() == "/home/z840"
-    loadfunc = include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl");
+    loadfunc = include("$(homedir())/enigma_evo/EnigmaEvo/src/loadfuncs.jl");
 else
     loadfunc = include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl");
 end
@@ -37,7 +37,7 @@ n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
 
 
-reps = 100;
+reps = 10;
 cmvec = [0,Float64(pi)];
 lcmvec = length(cmvec);
 
