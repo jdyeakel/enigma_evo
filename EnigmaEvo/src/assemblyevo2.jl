@@ -1,4 +1,4 @@
-function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cp)
+function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred)
 
     # S = length(spv) + 1;
     # Total size of the species + objects
@@ -34,8 +34,8 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cp)
     # end
     # # smatrix[findall(iszero,eb)] = NaN;
     #
-    minstrength = 0 -ce*Float64(N) - cp*Float64(S);
-    maxstrength = cn*Float64(N) - ce*1 -cp*0;
+    minstrength = 0 -ce*Float64(N) - cpred*Float64(S);
+    maxstrength = cn*Float64(N) - ce*1 -cpred*0;
 
     evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
     tallytable = [4.1 4.2 5.1 4.3 4.4 5.2 4.5 4.6 5.3 6.1 6.2 6.3];
@@ -88,12 +88,12 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cp)
             #NOTE: Needs won't change; Eats is based on POTENTIAL niche; Vuln changes per timestep
             
             #NOTE: trying a new strength function here
-            # strength = vec(cn*sum(nb0[spcid,cid],dims=2)) .- vec(ce*sum(eb[spcid,:],dims=2)) .- (vec(cp*sum(eb[spcid,cid],dims=1))[1:length(spcid)]);
+            # strength = vec(cn*sum(nb0[spcid,cid],dims=2)) .- vec(ce*sum(eb[spcid,:],dims=2)) .- (vec(cpred*sum(eb[spcid,cid],dims=1))[1:length(spcid)]);
             
             strength = Array{Float64}(undef,length(spcid));
             cmatrix = Array{Float64}(undef,length(spcid),length(cid));
             for i=1:length(spcid)
-                strength[i] = strengthcalc(nb0,eb,cid,spcid[i],cm,cn,ce,cp);
+                strength[i] = strengthcalc(nb0,eb,cid,spcid[i],cm,cn,ce,cpred);
                 cmatrix[i,:] .= eb[spcid[i],cid] * strength[i];
             end
 
@@ -244,7 +244,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cp)
                 intm_mut, ebmut, nbmut, nb0mut, mbmut, tally = mutation(spmut,intmut,spints,obints,intm,spv,tallytable,evolutiontable);
 
                 #Does the mutant outcompete the parent?
-                strengthmut = strengthcalc(nb0mut,ebmut,cid,spmut,cm,cn,ce,cp);
+                strengthmut = strengthcalc(nb0mut,ebmut,cid,spmut,cm,cn,ce,cpred);
                 #Evaluate if spmut will go secondarily extinct (through disconnection)
                 # secextmut = secexteval(zeros(Int64,1).+spmut,cid,ebmut,nb0mut,e_t,n_t);
                 #If it does probability is 1
