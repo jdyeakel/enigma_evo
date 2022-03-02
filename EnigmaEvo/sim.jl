@@ -10,7 +10,7 @@ probmut = 0.5;
 div_t = 1.0
 
 S = 200;
-maxits = 1000;
+maxits = 5000;
 SOprobs = (
 p_n=0.002, #0.002,
 p_e=0.01 #0.01
@@ -26,7 +26,7 @@ cn = exp(1);
 #Competitive loss of an eat
 ce = sqrt(2);
 #Competitive loss from a predator
-cp = 1.;
+cpred = 1.;
 
 
 #expected objects per species
@@ -41,10 +41,12 @@ intm,eb,nb,nb0,mb,SSpwp,SOpwp = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
 # length(findall(x->x==1,edgelist_origin[:,3]))/S^2
 # length(findall(x->x==2,edgelist_origin[:,3]))/S^2
 
-@time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cn,ce,cp); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
+@time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
+collapsetime = clock[maxits - findall(!iszero,reverse(diff(sprich)))[1]];
 
 R"""
-plot($sprich,type='l')
+plot($clock,$sprich,type='l')
+points($(collapsetime),$(last(sprich)),cex=2,col='red')
 """
 
 R"""
