@@ -38,7 +38,7 @@ n_t = 1.; #always set to 1
 
 
 reps = 100;
-cmvec = collect(0.:Float64(pi)/20:2*Float64(pi));
+cmvec = collect(0.:Float64(pi)/20:5*Float64(pi));
 lcmvec = length(cmvec);
 
 parametervec = [repeat(collect(1:lcmvec),inner=reps) repeat(collect(1:reps),outer=lcmvec)];
