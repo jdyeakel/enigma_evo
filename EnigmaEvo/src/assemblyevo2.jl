@@ -93,7 +93,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred)
             strength = Array{Float64}(undef,length(spcid));
             cmatrix = Array{Float64}(undef,length(spcid),length(cid));
             for i=1:length(spcid)
-                strength[i] = strengthcalc(nb0,eb,cid,spcid[i],cm,cn,ce,cpred);
+                strength[i] = strengthcalc(nb0,eb,mb,cid,spcid[i],cm,cn,ce,cpred);
                 cmatrix[i,:] .= eb[spcid[i],cid] * strength[i];
             end
 
@@ -244,7 +244,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred)
                 intm_mut, ebmut, nbmut, nb0mut, mbmut, tally = mutation(spmut,intmut,spints,obints,intm,spv,tallytable,evolutiontable);
 
                 #Does the mutant outcompete the parent?
-                strengthmut = strengthcalc(nb0mut,ebmut,cid,spmut,cm,cn,ce,cpred);
+                strengthmut = strengthcalc(nb0mut,ebmut,mbmut,cid,spmut,cm,cn,ce,cpred);
                 #Evaluate if spmut will go secondarily extinct (through disconnection)
                 # secextmut = secexteval(zeros(Int64,1).+spmut,cid,ebmut,nb0mut,e_t,n_t);
                 #If it does probability is 1
