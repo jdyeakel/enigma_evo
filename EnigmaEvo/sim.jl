@@ -30,7 +30,7 @@ cpred = 1.;
 
 
 #expected objects per species
-lambda = 0.1;
+lambda = 1.;
 e_t = 0.; #always set to 0
 n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
