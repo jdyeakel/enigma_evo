@@ -37,7 +37,7 @@ n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
 
 
-reps = 100;
+reps = 1000;
 cmvec = collect(0.:Float64(pi)/20:5*Float64(pi));
 lcmvec = length(cmvec);
 

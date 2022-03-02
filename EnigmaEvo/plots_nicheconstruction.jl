@@ -40,7 +40,14 @@ collapsetime = SharedArray{Float64}(lcmvec,reps);
 
 end
 
+decaytime = collapsetime .- maxsprichtime;
 
-avgmaxsprich = mean(maxsprich,dims=2);
-avgmaxsprichtime = mean(maxsprichtime,dims=2);
-avgcollapsetime = mean(collapsetime,dims=2);
+avgmaxsprich = vec(mean(maxsprich,dims=2));
+avgmaxsprichtime = vec(mean(maxsprichtime,dims=2));
+avgcollapsetime = vec(mean(collapsetime,dims=2));
+avgdecaytime = vec(mean(decaytime,dims=2));
+
+scatterplot(avgmaxsprich)
+scatterplot(avgmaxsprichtime)
+scatterplot(avgcollapsetime)
+scatterplot(avgdecaytime)

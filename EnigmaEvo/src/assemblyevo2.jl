@@ -225,7 +225,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred)
         #DRAW EVOLUTION
         if re > ((lcol + lspext + lobext)/levents)
 
-            re2 = 0.; #rand();
+            re2 = 0.; #rand(); #NOTE: turned off if re2 = 0.
             lcom = length(cid);
             lpool = N - lcom;
             levents2 = lcom + lpool;
