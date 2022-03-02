@@ -37,7 +37,7 @@ n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
 
 
-reps = 100;
+reps = 1000;
 cmvec = [0.,0.5*Float64(pi),1*Float64(pi),1.5*Float64(pi)];
 lcmvec = length(cmvec);
 
@@ -49,7 +49,7 @@ filename = "data/nicheconstruction/simsettings.jld";
 namespace_settings = smartpath(filename);
 @save namespace_settings S lambda SSprobs SOprobs OOprobs e_t n_t maxits probmut cn ce cpred cmvec lcmvec reps parametervec its;
 
-@sync @distributed for i=1:its
+@time @sync @distributed for i=1:its
     
     cm_pos = parametervec[i,1];
     cm = cmvec[cm_pos];
