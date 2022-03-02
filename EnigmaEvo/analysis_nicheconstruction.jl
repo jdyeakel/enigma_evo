@@ -37,8 +37,8 @@ n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
 
 
-reps = 10;
-cmvec = [0,Float64(pi)];
+reps = 100;
+cmvec = [0.,0.5*Float64(pi),1*Float64(pi),1.5*Float64(pi)];
 lcmvec = length(cmvec);
 
 parametervec = [repeat(collect(1:lcmvec),inner=reps) repeat(collect(1:reps),outer=lcmvec)];
