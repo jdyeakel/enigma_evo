@@ -1,11 +1,15 @@
-function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred)
+function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,diverse)
 
     # S = length(spv) + 1;
+   
+    # A list of the species ids
+
+    #These will be updated if diverse = 1
     # Total size of the species + objects
     N = size(intm)[1];
-    # A list of the species ids
     spv = collect(Int64,2:1:S);
     spobv = collect(Int64,1:1:N);
+    espv = Array{Int64}(undef,0);
 
     # Make a copy of the original interaction matrix
     intm_orig = copy(intm);
@@ -34,8 +38,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred)
     # end
     # # smatrix[findall(iszero,eb)] = NaN;
     #
-    minstrength = 0 -ce*Float64(N) - cpred*Float64(S);
-    maxstrength = cn*Float64(N) - ce*1 -cpred*0;
+   
 
     evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
     tallytable = [4.1 4.2 5.1 4.3 4.4 5.2 4.5 4.6 5.3 6.1 6.2 6.3];
@@ -45,12 +48,15 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred)
     it = 0;
     while it < maxits
 
+        minstrength = 0 + 0 -ce*Float64(N) - cpred*Float64(S);
+        maxstrength = cm*Float64(S) + cn*Float64(N) - ce*1 -cpred*0;
+
         #does sorting CID make a difference?
         sort!(cid);
 
         cid_old = copy(cid);
         #Which are species?
-        spcid = intersect(spv,cid);
+        spcid = intersect([spv;espv],cid);
         #Which are objects?
         ocid = setdiff(cid,spcid);
 
@@ -258,7 +264,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred)
                 # Original species competition strength
                 # spstrength = cmatrix[spmutpos,:];
                 
-                if any(spmutstrength[muteats] .> cmax[muteats]) #&& probsecextmut != 1.
+                if diverse == 0 && any(spmutstrength[muteats] .> cmax[muteats]) #&& probsecextmut != 1.
                     #accept mutation
                     intm = copy(intm_mut);
                     eb = copy(ebmut);
@@ -269,6 +275,29 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred)
 
                     mutstep[it] = 1.0
                     push!(evolvedstrength, strengthmut - strength[spmutpos]);
+                end
+                if diverse == 1
+                    #Diversify the interaction matrix
+                    intm_div = Array{Int64}(undef,N+1,N+1);
+                    intm_div[1:N,1:N] = intm;
+                    intm_div[N+1,1:N] = intm_mut[spmut,1:N];
+                    intm_div[1:N,N+1] = intm_mut[1:N,spmut];
+                    intm_div[N+1,N+1] = 2;
+                    
+
+                    intm = copy(intm_div);
+                    eb,nb,nb0,mb = intbool(intm_div);
+
+
+                    push!(espv,N+1);
+                    push!(spobv,N+1);
+                    
+                    S += 1; #species + evolved species
+                    N += 1; #species + objects + evolved species
+                    
+
+
+
 
                 end
             else
@@ -313,7 +342,9 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred)
         freqn[it] = sum(nb0[spcid,cid])/(length(cid));
 
         #NOTE - updating CID....
-        CID[cid,it] .= true;
+        if diverse == 0
+            CID[cid,it] .= true;
+        end
         sprich[it] = length(spcid);
         rich[it] = length(cid);
         #NOTE: standardize mean strength between 0 and 1

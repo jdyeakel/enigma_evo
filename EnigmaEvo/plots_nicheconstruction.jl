@@ -51,3 +51,29 @@ scatterplot(avgmaxsprich)
 scatterplot(avgmaxsprichtime)
 scatterplot(avgcollapsetime)
 scatterplot(avgdecaytime)
+
+filename = "figures/fig_nicheconstruction_richness.pdf";
+namespace = smartpath(filename);
+R"""
+library(RColorBrewer)
+library(fields)
+# pal = colorRampPalette(rev(brewer.pal(11,'Spectral')))(50)
+pal = brewer.pal(3,'Set1')
+pdf($namespace,width=6,height=5)
+plot($cmvec,$avgmaxsprich,xlab='Niche construction strength',ylab='Peak richness',pch=16)
+dev.off()
+"""
+
+
+filename = "figures/fig_nicheconstruction_collapse.pdf";
+namespace = smartpath(filename);
+R"""
+library(RColorBrewer)
+library(fields)
+# pal = colorRampPalette(rev(brewer.pal(11,'Spectral')))(50)
+pal = brewer.pal(3,'Set1')
+pdf($namespace,width=6,height=5)
+plot($cmvec,$avgcollapsetime,xlab='Niche construction strength',ylab='Time to collapse',pch=16)
+dev.off()
+"""
+

@@ -4,6 +4,7 @@ else
     loadfunc = include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl");
 end
 
+diverse = 1;
 #Probability of event-mutation
 probmut = 0.5;
 #This is the threshold for diversification
@@ -30,7 +31,7 @@ cpred = 1.;
 
 
 #expected objects per species
-lambda = 1.;
+lambda = 0.1;
 e_t = 0.; #always set to 0
 n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
@@ -41,7 +42,7 @@ intm,eb,nb,nb0,mb,SSpwp,SOpwp = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
 # length(findall(x->x==1,edgelist_origin[:,3]))/S^2
 # length(findall(x->x==2,edgelist_origin[:,3]))/S^2
 
-@time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
+@time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,diverse); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
 collapsetime = clock[maxits - findall(!iszero,reverse(diff(sprich)))[1]];
 
 R"""

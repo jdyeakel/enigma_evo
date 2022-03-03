@@ -4,7 +4,7 @@ else
     loadfunc = include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl");
 end
 
-
+diverse = 0;
 #Probability of event-mutation
 probmut = 0.5;
 #This is the threshold for diversification
@@ -68,7 +68,7 @@ namespace_settings = smartpath(filename);
     # length(findall(x->x==1,edgelist_origin[:,3]))/S^2
     # length(findall(x->x==2,edgelist_origin[:,3]))/S^2
 
-    @time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
+    @time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,diverse); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
 
 
     #save data
