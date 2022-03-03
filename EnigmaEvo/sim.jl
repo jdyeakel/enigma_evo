@@ -11,7 +11,7 @@ probmut = 0.5;
 div_t = 1.0
 
 S = 200;
-maxits = 5000;
+maxits = 1000;
 SOprobs = (
 p_n=0.002, #0.002,
 p_e=0.01 #0.01

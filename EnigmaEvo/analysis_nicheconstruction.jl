@@ -47,7 +47,7 @@ its = size(parametervec)[1];
 #save data
 filename = "data/nicheconstruction/simsettings.jld";
 namespace_settings = smartpath(filename);
-@save namespace_settings S lambda SSprobs SOprobs OOprobs e_t n_t maxits probmut cn ce cpred cmvec lcmvec reps parametervec its;
+@save namespace_settings S lambda SSprobs SOprobs OOprobs e_t n_t maxits probmut cn ce cpred cmvec lcmvec reps parametervec its diverse;
 
 @time @sync @distributed for i=1:its
     

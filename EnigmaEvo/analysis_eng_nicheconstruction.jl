@@ -49,7 +49,7 @@ its = size(parametervec)[1];
 #save data
 filename = "data/eng_nicheconstruction/simsettings.jld";
 namespace_settings = smartpath(filename);
-@save namespace_settings S lambdavec llambdavec SSprobs SOprobs OOprobs e_t n_t maxits probmut cn ce cpred cmvec lcmvec reps parametervec its;
+@save namespace_settings S lambdavec llambdavec SSprobs SOprobs OOprobs e_t n_t maxits probmut cn ce cpred cmvec lcmvec reps parametervec its diverse;
 
 @time @sync @distributed for i=1:its
     
@@ -73,7 +73,7 @@ namespace_settings = smartpath(filename);
 
     #save data
     filename = "data/eng_nicheconstruction/simdata.jld";
-    indices = [cm_pos,r];
+    indices = [lambda_pos,cm_pos,r];
     namespace = smartpath(filename,indices);
     
     # @save namespace mass1 mass2 epsilonvec clock popstate toothdrop state toothlength1 toothlength2;

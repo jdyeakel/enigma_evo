@@ -283,6 +283,10 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
                     intm_div[N+1,1:N] = intm_mut[spmut,1:N];
                     intm_div[1:N,N+1] = intm_mut[1:N,spmut];
                     intm_div[N+1,N+1] = 2;
+
+                    #How does new species interact with its parent taxon?
+                    intm_div[N+1,spmut] = 0;
+                    intm_div[spmut,N+1] = 0;
                     
 
                     intm = copy(intm_div);
@@ -296,7 +300,8 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
                     N += 1; #species + objects + evolved species
                     
 
-
+                    #Add that species to the community
+                    
 
 
                 end
