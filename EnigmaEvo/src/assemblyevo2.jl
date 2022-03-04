@@ -38,6 +38,8 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
     # end
     # # smatrix[findall(iszero,eb)] = NaN;
     #
+    rates = (rc = 1., re = 1., reo = 1., revo = 1., rext = 1.);
+
    
 
     evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
@@ -152,14 +154,27 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
 
         # lmutations = length(cid);
 
-        lecoevents = sum([lcol;lspext;lobext]);
-        if length(spcid) < 2
-            probevo = 0.;
-        else
-            probevo = copy(probmut);
-        end
-        #Total number of events include ECO events + EVO event
-        levents = Int64(floor((lecoevents)/(1-probevo))); 
+        # lecoevents = sum([lcol;lspext;lobext]);
+        # if length(spcid) < 2
+        #     probevo = 0.;
+        # else
+        #     probevo = copy(probmut);
+        # end
+        # #Total number of events include ECO events + EVO event
+        # levents = Int64(floor((lecoevents)/(1-probevo))); 
+
+        #number of evolutionary events
+        levo = length(spcid);
+        #number of permanent extinction events
+        lext = size(intm)[1];
+
+        Rate = rates.rc*lcol + rates.re*lspext + rates.reo*lobext + rates.revo*levo + rates.rext*lext;
+
+        probc = (rates.rc*lcol)/Rate;
+        probe = (rates.re*lspext)/Rate;
+        probeo = (rates.reo*lobext)/Rate;
+        probevo = (rates.revo*levo)/Rate;
+        probext = (rates.rext*lext)/Rate;
        
         # #mutation probability is set (and not dependent on state)
         # lmutations = Int64(floor(probmut*levents));
@@ -170,8 +185,8 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
         # #Redefine levents to include lmutations
         # levents = sum([lcol;lspext;lobext;lmutations]);
 
-        dt = 1/levents;
-
+        # dt = 1/levents;
+        dt = 1/Rate;
         t += dt;
         it += 1;
         # push!(clock,t);
@@ -182,7 +197,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
         tally = -10;
 
         #DRAW COLONIZATION
-        if re < (lcol/levents)
+        if re < probc #(lcol/levents)
 
             #COLONIZATION FUNCTION
             c_sp = rand(col);
@@ -200,7 +215,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
         end
 
         #DRAW EXTINCTION
-        if re > (lcol/levents) && re < ((lcol + lspext)/levents)
+        if re > probc && re < (probc + probe)#(lcol/levents) && re < ((lcol + lspext)/levents)
 
             #SPECIES EXTINCTION FUNCTION
             #select species to go extinct
@@ -219,7 +234,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
         end
 
         #DRAW OBJECT EXTINCTION
-        if re > ((lcol + lspext)/levents) && re < ((lcol + lspext + lobext)/levents)
+        if re > (probc + probe) && re < (probc + probe + probeo) #((lcol + lspext)/levents) && re < ((lcol + lspext + lobext)/levents)
 
             #OBJECT EXTINCTION FUNCTION
             ob_bye = rand(obext,1);
@@ -229,119 +244,122 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
         end
         
         #DRAW EVOLUTION
-        if re > ((lcol + lspext + lobext)/levents)
+        if re > (probc + probe + probeo) && re < (probc + probe + probeo + probevo)#((lcol + lspext + lobext)/levents)
 
-            re2 = 0.; #rand(); #NOTE: turned off if re2 = 0.
-            lcom = length(cid);
-            lpool = N - lcom;
-            levents2 = lcom + lpool;
+            # re2 = 0.; #rand(); #NOTE: turned off if re2 = 0.
+            # lcom = length(cid);
+            # lpool = N - lcom;
+            # levents2 = lcom + lpool;
 
             # EVOLUTION OF SPECIES IN THE COMMUNITY
-            if re2 < lcom/levents2
+            # if re2 < lcom/levents2
 
-                #SPECIES MUTATION
-                #select FROM COMMUNITY
-                spmut = rand(spcid);
-                #OR Mutate realized interactions
-                intmut = rand(setdiff(cid,spmut));
+            #SPECIES MUTATION
+            #select FROM COMMUNITY
+            spmut = rand(spcid);
+            #OR Mutate realized interactions
+            intmut = rand(setdiff(cid,spmut));
 
-                spints = [0,1,2];
-                obints = [0,1,2,3];
-                intm_mut, ebmut, nbmut, nb0mut, mbmut, tally = mutation(spmut,intmut,spints,obints,intm,spv,tallytable,evolutiontable);
+            spints = [0,1,2];
+            obints = [0,1,2,3];
+            intm_mut, ebmut, nbmut, nb0mut, mbmut, tally = mutation(spmut,intmut,spints,obints,intm,spv,tallytable,evolutiontable);
 
-                #Does the mutant outcompete the parent?
-                strengthmut = strengthcalc(nb0mut,ebmut,mbmut,cid,spmut,cm,cn,ce,cpred);
-                #Evaluate if spmut will go secondarily extinct (through disconnection)
-                # secextmut = secexteval(zeros(Int64,1).+spmut,cid,ebmut,nb0mut,e_t,n_t);
-                #If it does probability is 1
-                # probsecextmut = (length(secextmut) > 0)*1.;
-                # probsecextmut = 0.
-                
-                spmutpos = findall(x->x==spmut,spcid)[1];
-                muteats = ebmut[spmut,cid] .== 1;
-                spmutstrength = muteats * strengthmut;
-                spmutstrength[spmutstrength.==0] .= minstrength;
-                # Original species competition strength
-                # spstrength = cmatrix[spmutpos,:];
-                
-                if diverse == 0 && any(spmutstrength[muteats] .> cmax[muteats]) #&& probsecextmut != 1.
-                    #accept mutation
-                    intm = copy(intm_mut);
-                    eb = copy(ebmut);
-                    nb = copy(nbmut);
-                    nb0 = copy(nb0mut);
-                    mb = copy(mbmut)
-                    # i_b = copy(i_bmut);
+            #Does the mutant outcompete the parent?
+            strengthmut = strengthcalc(nb0mut,ebmut,mbmut,cid,spmut,cm,cn,ce,cpred);
+            #Evaluate if spmut will go secondarily extinct (through disconnection)
+            # secextmut = secexteval(zeros(Int64,1).+spmut,cid,ebmut,nb0mut,e_t,n_t);
+            #If it does probability is 1
+            # probsecextmut = (length(secextmut) > 0)*1.;
+            # probsecextmut = 0.
+            
+            spmutpos = findall(x->x==spmut,spcid)[1];
+            muteats = ebmut[spmut,cid] .== 1;
+            spmutstrength = muteats * strengthmut;
+            spmutstrength[spmutstrength.==0] .= minstrength;
+            # Original species competition strength
+            # spstrength = cmatrix[spmutpos,:];
+            
+            if diverse == 0 && any(spmutstrength[muteats] .> cmax[muteats]) #&& probsecextmut != 1.
+                #accept mutation
+                intm = copy(intm_mut);
+                eb = copy(ebmut);
+                nb = copy(nbmut);
+                nb0 = copy(nb0mut);
+                mb = copy(mbmut)
+                # i_b = copy(i_bmut);
 
-                    mutstep[it] = 1.0
-                    push!(evolvedstrength, strengthmut - strength[spmutpos]);
-                end
-                if diverse == 1
-                    #Diversify the interaction matrix
-                    intm_div = Array{Int64}(undef,N+1,N+1);
-                    intm_div[1:N,1:N] = intm;
-                    intm_div[N+1,1:N] = intm_mut[spmut,1:N];
-                    intm_div[1:N,N+1] = intm_mut[1:N,spmut];
-                    intm_div[N+1,N+1] = 2;
-
-                    #How does new species interact with its parent taxon?
-                    intm_div[N+1,spmut] = 0;
-                    intm_div[spmut,N+1] = 0;
-                    
-
-                    intm = copy(intm_div);
-                    eb,nb,nb0,mb = intbool(intm_div);
-
-
-                    push!(espv,N+1);
-                    push!(spobv,N+1);
-                    
-                    S += 1; #species + evolved species
-                    N += 1; #species + objects + evolved species
-                    
-
-                    #Add that species to the community
-                    
-
-
-                end
-            else
-                
-                # RANDOM EVOLUTION OF SPECIES IN THE POOL
-                #species pool
-                sppool = setdiff(spv,cid);
-                #Object pool
-                obpool = setdiff(spobv,cid);
-                spmut = rand(sppool);
-                intmut = rand(setdiff([sppool;obpool],spmut));
-
-                # Random mutation
-                spints = [0,1,2];
-                obints = [0,1,2,3];
-                # spints = vec(((eb .* 1) .+ (nb0 .* 2))[2:S,1:S]);
-                # obints = vec(((eb .* 1) .+ (nb0 .* 2))[2:S,(S+1):N]);
-                intm_mut, ebmut, nbmut, nb0mut, mbmut, tally = mutation(spmut,intmut,spints,obints,intm,spv,tallytable,evolutiontable);
-
-                # NOTE: this section doesn't work yet (maybe not necessary)
-                # Mutate back to original
-                # diffsp = findall(isodd,vec(sum(intm[[sppool;obpool],:] .!= intm_orig[[sppool;obpool],:],dims=2)));
-                # evolvedinteractions = findall(isodd,);
-                # rand(collect(1:length(evolvedinteractions)));
-                
-                #accept mutation if spmut still has something it consumes (don't allow it to de-evolve interactions completely)
-                if sum(eb_mut[spmut,:]) >= 1
-                    intm = copy(intm_mut);
-                    eb = copy(ebmut);
-                    nb = copy(nbmut);
-                    nb0 = copy(nb0mut);
-                    mb = copy(mbmut)
-                    # i_b = copy(i_bmut);
-                    mutstep[it] = 2.0;
-                end
-
+                mutstep[it] = 1.0
+                push!(evolvedstrength, strengthmut - strength[spmutpos]);
             end
+            if diverse == 1
+                #Diversify the interaction matrix
+                intm_div = Array{Int64}(undef,N+1,N+1);
+                intm_div[1:N,1:N] = intm;
+                intm_div[N+1,1:N] = intm_mut[spmut,1:N];
+                intm_div[1:N,N+1] = intm_mut[1:N,spmut];
+                intm_div[N+1,N+1] = 2;
 
+                #How does new species interact with its parent taxon?
+                intm_div[N+1,spmut] = 0;
+                intm_div[spmut,N+1] = 0;
+                
+
+                intm = copy(intm_div);
+                eb,nb,nb0,mb = intbool(intm_div);
+
+
+                push!(espv,N+1);
+                push!(spobv,N+1);
+                
+                S += 1; #species + evolved species
+                N += 1; #species + objects + evolved species
+                
+
+                #Add that species to the community
+                #Note: does not seem to be needed to enable growth
+            end
+            # else
+                
+            #     # RANDOM EVOLUTION OF SPECIES IN THE POOL
+            #     #species pool
+            #     sppool = setdiff(spv,cid);
+            #     #Object pool
+            #     obpool = setdiff(spobv,cid);
+            #     spmut = rand(sppool);
+            #     intmut = rand(setdiff([sppool;obpool],spmut));
+
+            #     # Random mutation
+            #     spints = [0,1,2];
+            #     obints = [0,1,2,3];
+            #     # spints = vec(((eb .* 1) .+ (nb0 .* 2))[2:S,1:S]);
+            #     # obints = vec(((eb .* 1) .+ (nb0 .* 2))[2:S,(S+1):N]);
+            #     intm_mut, ebmut, nbmut, nb0mut, mbmut, tally = mutation(spmut,intmut,spints,obints,intm,spv,tallytable,evolutiontable);
+
+            #     # NOTE: this section doesn't work yet (maybe not necessary)
+            #     # Mutate back to original
+            #     # diffsp = findall(isodd,vec(sum(intm[[sppool;obpool],:] .!= intm_orig[[sppool;obpool],:],dims=2)));
+            #     # evolvedinteractions = findall(isodd,);
+            #     # rand(collect(1:length(evolvedinteractions)));
+                
+            #     #accept mutation if spmut still has something it consumes (don't allow it to de-evolve interactions completely)
+            #     if sum(eb_mut[spmut,:]) >= 1
+            #         intm = copy(intm_mut);
+            #         eb = copy(ebmut);
+            #         nb = copy(nbmut);
+            #         nb0 = copy(nb0mut);
+            #         mb = copy(mbmut)
+            #         # i_b = copy(i_bmut);
+            #         mutstep[it] = 2.0;
+            #     end
+
+            # end
         end
+        # PERMANENT EXTINCTION
+        if re > (probc + probe + probeo + probevo)
+            
+            
+        end
+        # Note: build in permanent extinction
 
         freqe[it] = sum(eb[spcid,cid])/(length(cid));
         freqn[it] = sum(nb0[spcid,cid])/(length(cid));
