@@ -70,7 +70,7 @@ namespace_settings = smartpath(filename);
     # length(findall(x->x==1,edgelist_origin[:,3]))/S^2
     # length(findall(x->x==2,edgelist_origin[:,3]))/S^2
 
-    @time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,diverse); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
+    @time sprich,rich,pool,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,diverse); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
 
 
     #save data

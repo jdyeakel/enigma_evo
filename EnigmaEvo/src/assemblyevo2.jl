@@ -21,6 +21,7 @@ function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,di
 
     sprich = Array{Int64}(undef,maxits);
     rich = Array{Int64}(undef,maxits);
+    pool = Array{Int64}(undef,maxits);
     mstrength = Array{Float64}(undef,maxits);
     clock = Array{Float64}(undef,maxits);
     events = Array{Float64}(undef,maxits);
@@ -472,6 +473,7 @@ function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,di
         end
         sprich[it] = length(spcid);
         rich[it] = length(cid);
+        pool[it] = N;
         #NOTE: standardize mean strength between 0 and 1
         mstrength[it] = (mean(strength) - minstrength)/(maxstrength - minstrength); #make strengths positive with a minimum of 1
         events[it] = tally;
@@ -487,6 +489,7 @@ function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,di
     return(
     sprich,
     rich,
+    pool,
     mstrength,
     evolvedstrength,
     clock,

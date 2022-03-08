@@ -35,7 +35,7 @@ n_t = 1.; #always set to 1
 #reo = Local object extinction rate
 #revo = Evolutionary rate
 #rext = Global extinction rate
-rates0 = (rc = 1., re = 1., reo = 1., revo = 0.05, rext = 0.02);
+rates0 = (rc = 1., re = 1., reo = 1., revo = 0.05, rext = 0.035);
 #Turn diversification dynamic on or off
 # 0 = off
 # 1 = on
@@ -48,7 +48,7 @@ intm,eb,nb,nb0,mb,SSpwp,SOpwp = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
 # length(findall(x->x==1,edgelist_origin[:,3]))/S^2
 # length(findall(x->x==2,edgelist_origin[:,3]))/S^2
 
-@time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,diverse); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
+@time sprich,rich,pool,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,diverse); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
 collapsetime = clock[maxits - findall(!iszero,reverse(diff(sprich)))[1]];
 lineplot(clock,sprich)
 
