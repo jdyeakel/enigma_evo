@@ -4,11 +4,6 @@ else
     loadfunc = include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl");
 end
 
-diverse = 0;
-#Probability of event-mutation
-probmut = 0.1;
-
-
 S = 200;
 maxits = 2000;
 SOprobs = (
@@ -35,13 +30,25 @@ e_t = 0.; #always set to 0
 n_t = 1.; #always set to 1
 # MaxN = convert(Int64,floor(S + S*lambda));
 
+#rc = Colonization rates
+#re = Local species extinction rate
+#reo = Local object extinction rate
+#revo = Evolutionary rate
+#rext = Global extinction rate
+rates0 = (rc = 1., re = 1., reo = 1., revo = 1., rext = 0.0);
+#Turn diversification dynamic on or off
+# 0 = off
+# 1 = on
+diverse = 0;
+
+
 intm,eb,nb,nb0,mb,SSpwp,SOpwp = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
 
 # edgelist_origin,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
 # length(findall(x->x==1,edgelist_origin[:,3]))/S^2
 # length(findall(x->x==2,edgelist_origin[:,3]))/S^2
 
-@time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,diverse); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
+@time sprich,rich,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,diverse); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
 collapsetime = clock[maxits - findall(!iszero,reverse(diff(sprich)))[1]];
 lineplot(clock,sprich)
 

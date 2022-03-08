@@ -1,4 +1,4 @@
-function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,diverse)
+function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,diverse)
 
     # S = length(spv) + 1;
    
@@ -12,7 +12,7 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
     espv = Array{Int64}(undef,0);
 
     # Make a copy of the original interaction matrix
-    intm_orig = copy(intm);
+    # intm_orig = copy(intm);
 
     # MaxN = convert(Int64,floor(S + S*lambda));
     cid = Array{Int64}(undef,0);
@@ -38,13 +38,20 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
     # end
     # # smatrix[findall(iszero,eb)] = NaN;
     #
-    rates = (rc = 1., re = 1., reo = 1., revo = 1., rext = 1.);
+    # rates = (rc = 1., re = 1., reo = 1., revo = 1., rext = 1.);
 
    
 
     evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
     tallytable = [4.1 4.2 5.1 4.3 4.4 5.2 4.5 4.6 5.3 6.1 6.2 6.3];
 
+
+    # If diversification is turned off, rates.rext -> 0
+    if diverse == 1
+        rates = (rc = rates0.rc,re = rates0.re,reo = rates0.reo,revo = rates0.revo,rext = rates0.rext);
+    else
+        rates = (rc = rates0.rc,re = rates0.re,reo = rates0.reo,revo = rates0.revo,rext = 0.);
+    end
 
     t=0;
     it = 0;
@@ -163,18 +170,24 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
         # #Total number of events include ECO events + EVO event
         # levents = Int64(floor((lecoevents)/(1-probevo))); 
 
-        #number of evolutionary events
-        levo = length(spcid);
-        #number of permanent extinction events
+        #COUNT POTENTIAL evolutionary events (size of community)
+        levo = maximum([length(spcid) - 2,0]); #means evolution can only occur if community has more than >2 species
+
+
+        #COUNT POTENTIAL global extinction events (size of pool)
         lext = size(intm)[1];
 
+
+        # Calculate the full Rate
         Rate = rates.rc*lcol + rates.re*lspext + rates.reo*lobext + rates.revo*levo + rates.rext*lext;
 
+        # Calculate event probabilities
         probc = (rates.rc*lcol)/Rate;
         probe = (rates.re*lspext)/Rate;
         probeo = (rates.reo*lobext)/Rate;
         probevo = (rates.revo*levo)/Rate;
         probext = (rates.rext*lext)/Rate;
+        # sum([probc,probe,probeo,probevo,probext])
        
         # #mutation probability is set (and not dependent on state)
         # lmutations = Int64(floor(probmut*levents));
@@ -354,12 +367,25 @@ function assemblyevo(S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,probmut,cm,cn,ce,cpred,d
 
             # end
         end
-        # PERMANENT EXTINCTION
+        # Global EXTINCTION
         if re > (probc + probe + probeo + probevo)
             
+            #Choose species subject to extinction
+            sp_globalext = rand([spv;espv],1);
+            #Is it in the community?
+            if in(sp_globalext,spcid)
+                cid = setdiff(cid_old,sp_bye);
+                spcid = setdiff(spcid,sp_bye);
+
+                #NOTE: we have to RENAME EVERYONE
+                
+
+            else
+
+            end
             
         end
-        # Note: build in permanent extinction
+        # Note: build in global extinction
 
         freqe[it] = sum(eb[spcid,cid])/(length(cid));
         freqn[it] = sum(nb0[spcid,cid])/(length(cid));
