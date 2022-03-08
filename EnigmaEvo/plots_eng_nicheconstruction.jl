@@ -51,10 +51,25 @@ end
 
 decaytime = collapsetime .- maxsprichtime;
 
-avgmaxsprich = vec(mean(maxsprich,dims=3));
-avgmaxsprichtime = vec(mean(maxsprichtime,dims=3));
-avgcollapsetime = vec(mean(collapsetime,dims=3));
-avgdecaytime = vec(mean(decaytime,dims=3));
+# avgmaxsprich = mean(maxsprich,dims=3)[:,:,1];
+# avgmaxsprichtime = mean(maxsprichtime,dims=3)[:,:,1];
+# avgcollapsetime = mean(collapsetime,dims=3)[:,:,1];
+# avgdecaytime = mean(decaytime,dims=3)[:,:,1];
+
+#There are sometimes NANs, so a pain!
+for i=1:llambdavec
+    for j=1:lcmvec
+        avgmaxsprich[i,j] = mean(maxsprich[i,j,findall(!isinf,maxsprich[i,j,:])]);
+        avgmaxsprichtime[i,j] = mean(maxsprichtime[i,j,findall(!isinf,maxsprichtime[i,j,:])]);
+        avgcollapsetime[i,j] = mean(collapsetime[i,j,findall(!isinf,collapsetime[i,j,:])]);
+        avgdecaytime[i,j] = mean(decaytime[i,j,findall(!isinf,decaytime[i,j,:])]);
+    end
+end
+
+
+
+
+
 
 scatterplot(avgmaxsprich)
 scatterplot(avgmaxsprichtime)
@@ -74,15 +89,18 @@ dev.off()
 """
 
 
-filename = "figures/fig_nicheconstruction_collapse.pdf";
+filename = "figures/fig_eng_nicheconstruction_collapse.pdf";
 namespace = smartpath(filename);
 R"""
 library(RColorBrewer)
 library(fields)
 # pal = colorRampPalette(rev(brewer.pal(11,'Spectral')))(50)
-pal = brewer.pal(3,'Set1')
-pdf($namespace,width=6,height=5)
-plot($cmvec,$avgcollapsetime,xlab='Niche construction strength',ylab='Time to collapse',pch=16)
+pal = brewer.pal(4,'Set1')
+pdf($namespace,width=5,height=5)
+plot($cmvec,$(avgcollapsetime[1,:]),xlab='Niche construction strength',ylab='Time to collapse',pch=16,col=pal[1],ylim=c(20,70))
+points($cmvec,$(avgcollapsetime[2,:]),pch=16,col=pal[2])
+points($cmvec,$(avgcollapsetime[6,:]),pch=16,col=pal[3])
+points($cmvec,$(avgcollapsetime[11,:]),pch=16,col=pal[4])
 dev.off()
 """
 

@@ -7,8 +7,10 @@ function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,di
     #These will be updated if diverse = 1
     # Total size of the species + objects
     N = size(intm)[1];
+    #Number of objects
+    O = N-S;
     spv = collect(Int64,2:1:S);
-    spobv = collect(Int64,1:1:N);
+    spobv = collect(Int64,2:1:N); #NOTE: fixed this to start at 2 on 3/8/2022
     espv = Array{Int64}(undef,0);
 
     # Make a copy of the original interaction matrix
@@ -71,7 +73,7 @@ function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,di
 
 
         #COUNT POTENTIAL COLONIZERS
-        trophiclinked = setdiff(spobv[vec(sum(eb[:,[1;cid]],dims=2) .> 0)],cid);
+        trophiclinked = setdiff(spobv[vec(sum(eb[spobv,[1;cid]],dims=2) .> 0)],cid);
         #For each trophiclinked, count number of assimilate and need interactions in system
         #Determine in the proportion that already exists is >= the threshold
         e_fill = ((sum(eb[trophiclinked,[1;cid]],dims=2)./sum(eb[trophiclinked,:],dims=2)) .>= e_t)[:,1];
@@ -175,7 +177,7 @@ function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,di
 
 
         #COUNT POTENTIAL global extinction events (size of pool)
-        lext = size(intm)[1];
+        lext = (N - O) - 2; #-2 to account for basal resource + species 2, which is restricted
 
 
         # Calculate the full Rate
@@ -371,26 +373,100 @@ function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,di
         if re > (probc + probe + probeo + probevo)
             
             #Choose species subject to extinction
-            sp_globalext = rand([spv;espv],1);
-            #Is it in the community?
-            if in(sp_globalext,spcid)
-                cid = setdiff(cid_old,sp_bye);
-                spcid = setdiff(spcid,sp_bye);
+            #Do not choose species 2, which is protected
+            sp_globalext = rand(setdiff([spv;espv],2),1)[1];
+            
+            #1) First remove from the local community
+            #If its not in the local community, this won't do anything
+            #setdiff! appears to be faster than renaming
+            setdiff!(cid,sp_globalext);
+            setdiff!(spcid,sp_globalext);
+            
+            #2) update intm
+            intm_ext = Array{Int64}(undef,N-1,N-1);
+            intm_ext[1:(sp_globalext-1),1:(sp_globalext-1)] = intm[1:(sp_globalext-1),1:(sp_globalext-1)];
+            intm_ext[1:(sp_globalext-1),sp_globalext:(N-1)] = intm[1:(sp_globalext-1),(sp_globalext+1):N];
+            intm_ext[sp_globalext:(N-1),1:(sp_globalext-1)] = intm[(sp_globalext+1):N,1:(sp_globalext-1)];
+            intm_ext[sp_globalext:(N-1),sp_globalext:(N-1)] = intm[(sp_globalext+1):N,(sp_globalext+1):N];
 
-                #NOTE: we have to RENAME EVERYONE
-                
+            intm = copy(intm_ext);
+            eb,nb,nb0,mb = intbool(intm_ext);
 
-            else
-
+            #3) update labels
+            #If an original species have to change S and S-dependencies
+            if sp_globalext <= S
+                S -= 1;
+                #reset original species id vector
+                spv = collect(Int64,2:1:S);
             end
             
+            #If original or evolved, have to change N and N-dependencies
+            N -= 1;
+            #NOTE: number of objects O always stays the same (for now)
+
+            #this vector is the same size, but ids reduced by 1
+            espv = collect(Int64,(S+O+1):1:N);
+            spobv = collect(Int64,2:1:N);
+
+            #4) Rename species in the community according to new positions in intm matrix
+            cid[findall(x->x>sp_globalext,cid)] .-= 1;
+            spcid[findall(x->x>sp_globalext,spcid)] .-= 1;
+
+            # #Is it an original species?
+            # if sp_globalext <= S
+                
+            #     #1) update intm
+            #     intm_ext = Array{Int64}(undef,N-1,N-1);
+            #     intm_ext[1:(sp_globalext-1),1:(sp_globalext-1)] = intm[1:(sp_globalext-1),1:(sp_globalext-1)];
+            #     if sp_globalext < N
+            #         intm_ext[(sp_globalext+1):N,(sp_globalext+1):N] = intm_ext[(sp_globalext+1):N,(sp_globalext+1):N];
+            #     end
+            #     intm = copy(intm_ext);
+            #     eb,nb,nb0,mb = intbool(intm_ext);
+
+            #     #2) update labels
+            #     S -= 1;
+            #     N -= 1;
+            #     #reset original species id vector
+            #     spv = collect(Int64,2:1:S);
+            #     #this vector is the same size, but ids reduced by 1
+            #     espv .-= 1; 
+            #     spobv = collect(Int64,2:1:N);
+
+            #     #Rename species in the community according to new positions in intm matrix
+            #     cid[findall(x->x>sp_globalext,cid)] .-= 1;
+            #     spcid[findall(x->x>sp_globalext,cid)] .-= 1;
+
+            # #Or is it an evolved species?
+            # else
+            #     #1) update intm
+            #     intm_ext = Array{Int64}(undef,N-1,N-1);
+            #     intm_ext[1:(sp_globalext-1),1:(sp_globalext-1)] = intm[1:(sp_globalext-1),1:(sp_globalext-1)];
+            #     if sp_globalext < N
+            #         intm_ext[(sp_globalext+1):N,(sp_globalext+1):N] = intm_ext[(sp_globalext+1):N,(sp_globalext+1):N];
+            #     end
+            #     intm = copy(intm_ext);
+            #     eb,nb,nb0,mb = intbool(intm_ext);
+
+            #     #2) update labels
+            #     N -= 1;
+            #     espv = collect(Int64,(S+O+1):1:N);
+            #     spobv = collect(Int64,2:1:N);
+
+            #     #Rename species in the community according to new positions in intm matrix
+            #     cid[findall(x->x>sp_globalext,cid)] .-= 1;
+            #     spcid[findall(x->x>sp_globalext,cid)] .-= 1;
+
+            # end
+            
         end
-        # Note: build in global extinction
+        
 
         freqe[it] = sum(eb[spcid,cid])/(length(cid));
         freqn[it] = sum(nb0[spcid,cid])/(length(cid));
 
-        #NOTE - updating CID....
+        #NOTE: - updating CID only without diversification dynamics
+        #Because the size of CID will change dynamically w/ diversification/global extinction
         if diverse == 0
             CID[cid,it] .= true;
         end
