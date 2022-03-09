@@ -42,7 +42,11 @@ function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,di
     # # smatrix[findall(iszero,eb)] = NaN;
     #
     # rates = (rc = 1., re = 1., reo = 1., revo = 1., rext = 1.);
-
+    treenames = Array{String}(undef,N-O);
+    for i=1:(N-O)
+        treenames[i] = randstring[i];
+    end
+    tree = spzeros((N-O),(N-O));
    
 
     evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
@@ -330,6 +334,10 @@ function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,di
                 S += 1; #species + evolved species
                 N += 1; #species + objects + evolved species
                 
+                #NOTE:not working yet
+                # Record TREE information
+                # newid = randstring(10);
+                # treenames, tree = updatetree(treenames,tree,newid,spmut);
 
                 #Add that species to the community
                 #Note: does not seem to be needed to enable growth

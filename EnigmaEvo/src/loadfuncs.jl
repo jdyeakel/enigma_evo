@@ -15,6 +15,7 @@ using UnicodePlots
 @everywhere using SpecialFunctions
 @everywhere using LightGraphs
 @everywhere using RCall
+@everywhere using Random
 # @everywhere using HDF5
 @everywhere using JLD2
 
