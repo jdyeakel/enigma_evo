@@ -42,11 +42,11 @@ function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,di
     # # smatrix[findall(iszero,eb)] = NaN;
     #
     # rates = (rc = 1., re = 1., reo = 1., revo = 1., rext = 1.);
-    treenames = Array{String}(undef,N-O);
-    for i=1:(N-O)
-        treenames[i] = randstring[i];
-    end
-    tree = spzeros((N-O),(N-O));
+    # treenames = Array{String}(undef,N-O);
+    # for i=1:(N-O)
+    #     treenames[i] = randstring[i];
+    # end
+    # tree = spzeros((N-O),(N-O));
    
 
     evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
@@ -312,7 +312,7 @@ function assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,di
                 push!(evolvedstrength, strengthmut - strength[spmutpos]);
             end
             if diverse == 1
-                #Diversify the interaction matrix
+                #Add species to the interaction matrix
                 intm_div = Array{Int64}(undef,N+1,N+1);
                 intm_div[1:N,1:N] = intm;
                 intm_div[N+1,1:N] = intm_mut[spmut,1:N];
