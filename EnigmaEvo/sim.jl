@@ -1,57 +1,59 @@
-if homedir() == "/home/z840"
-    loadfunc = include("$(homedir())/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl");
-else
-    loadfunc = include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl");
+if homedir() == "/home/z840"    #for downward compatibility ;)
+    localpath::String = "$(homedir())/2019_Lego_Evo/EnigmaEvo/src/";
+elseif isfile("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl")
+    localpath::String = "$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/";
+else                            #othserwise use relite paths
+    localpath::String = "src/";
 end
 
+include(localpath*"loadfuncs.jl");
 
-S = 200;
-maxits = 2000;
-SOprobs = (
+#Random.seed!(7); #for debugging
+
+S::Int64 = 200;
+maxits::Int64 = 2000;
+const SOprobs = (   #as link types are mutually exclusive pn + pe + pm <= 1 must be fulfilled!!! (pm aprox = )
 p_n=0.002, #0.002,
 p_e=0.01 #0.01
 );
-SSmult = 1.0; OOmult = 0.0;
-SSprobs = (p_n = SSmult .* SOprobs.p_n , p_e = SSmult .* SOprobs.p_e);
-OOprobs = (p_n = OOmult * SOprobs.p_n, p0 = 0.0);
+const SSmult = 1.0; OOmult = 0.0;
+const SSprobs = (p_n = SSmult .* SOprobs.p_n , p_e = SSmult .* SOprobs.p_e);
+const OOprobs = (p_n = OOmult * SOprobs.p_n, p0 = 0.0);
 
 #Competitive gain of a make
-cm = Float64(pi);
+const cm = Float64(pi);
 #Competitive gain of a need
-cn = exp(1);
+const cn = exp(1);
 #Competitive loss of an eat
-ce = sqrt(2);
+const ce = sqrt(2);
 #Competitive loss from a predator
-cpred = 1.;
-
+const cf = 1.;
 
 #expected objects per species
-lambda = 0.1;
-e_t = 0.; #always set to 0
-n_t = 1.; #always set to 1
-# MaxN = convert(Int64,floor(S + S*lambda));
+const lambda = 0.1;
+const e_t = 0.; #always set to 0
+
+const n_t = 1.; #always set to 1
 
 #rc = Colonization rates
 #re = Local species extinction rate
 #reo = Local object extinction rate
 #revo = Evolutionary rate
 #rext = Global extinction rate
-rates0 = (rc = 1., re = 1., reo = 1., revo = 0.05, rext = 0.035);
+const rates0 = (rc = 1., re = 1., reo = 1., revo = 0.05, rext = 0.035);
 #Turn diversification dynamic on or off
 # 0 = off
 # 1 = on
-diverse = 1;
+
+diverse::Int = 1;
 
 
-intm,eb,nb,nb0,mb,SSpwp,SOpwp = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
-
-# edgelist_origin,sID,oID = intmatrixv5(S,lambda,SSprobs,SOprobs,OOprobs);
-# length(findall(x->x==1,edgelist_origin[:,3]))/S^2
-# length(findall(x->x==2,edgelist_origin[:,3]))/S^2
-
+initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
 
 # EVOLUTIONARY VERSION
-@time sprich,rich,pool,mstrength,evolvedstrength,clock,CID,intm_evo,mutstep,freqe,freqn,events = assemblyevo(rates0,S,intm,eb,nb,nb0,mb,e_t,n_t,maxits,cm,cn,ce,cpred,diverse); eb_evo,nb_evo,nb0_evo,mb_evo = intbool(intm_evo);
+#loadfunc = include("src/loadfuncs.jl");    #for easy debugging
+@time poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,#=intm_evo,=#mutstep,freqe,freqn,events =
+    assemblyevo(initpoolnet, rates0,maxits,cm,cn,ce,cf,diverse); 
 
 
 
@@ -64,7 +66,9 @@ plot($clock,$sprich,type='l')
 points($(collapsetime),$(last(sprich)),cex=2,col='red')
 """
 
-
+#------------------------------------------------------------------------------------------------------------------------#
+#----------------------------------------------should work until here----------------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------#
 
 
 R"""

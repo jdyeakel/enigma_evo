@@ -19,83 +19,47 @@ using UnicodePlots
 # @everywhere using HDF5
 @everywhere using JLD2
 
-if homedir() == "/home/z840"
-
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/smartpath.jl")
-    # @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/preamble_defs.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intmatrixv4integer.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intbool.jl")
-
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intmatrixv5.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intadd.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intfind.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intfind_out.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/intfind_inout.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/potcol2.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/potextinct2.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/potsecextinct2.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/potobextinct2.jl")
-    # @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/strength.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/strength2.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/secexteval.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/mutation.jl")
+@everywhere include("ENIgMaGraph.jl")
+@everywhere using .ENIgMaGraphs
+@everywhere include("setuppool.jl")
+@everywhere include("assemblyevo3.jl")
 
 
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/assemblyeco.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/assemblyevo2.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/assemblyevo_diverse.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/assemblystate.jl")
+@everywhere include("smartpath.jl")
 
-    #Analysis Calculations
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/structure.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/dynstructure.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/sortassembly.jl")
+#=
+#Interaction matrix
+@everywhere include("intmatrixv4integer.jl")
+@everywhere include("intbool.jl")
 
-    #Analysis functions
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/trophicalc2.jl")
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/roverlap.jl")
-
-    @everywhere include("$(homedir())/enigma_evo/EnigmaEvo/src/nichemodelweb.jl")
-
-
-else
-
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/smartpath.jl")
-
-    #Interaction matrix
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intmatrixv4integer.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intbool.jl")
-
-    # @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/preamble_defs.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intmatrixv5.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intadd.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intfind.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intfind_out.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/intfind_inout.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/potcol2.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/potextinct2.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/potsecextinct2.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/potobextinct2.jl")
-    # @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/strength.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/strength2.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/secexteval.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/mutation.jl")
-
-    
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblyeco.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblyevo2.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblyevo_diverse.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/assemblystate.jl")
+@everywhere include("preamble_defs.jl")
+@everywhere include("intmatrixv5.jl")
+@everywhere include("intadd.jl")
+@everywhere include("intfind.jl")
+@everywhere include("intfind_out.jl")
+@everywhere include("intfind_inout.jl")
+@everywhere include("potcol2.jl")
+@everywhere include("potextinct2.jl")
+@everywhere include("potsecextinct2.jl")
+@everywhere include("potobextinct2.jl")
+@everywhere include("strength.jl")
+@everywhere include("strength2.jl")
+@everywhere include("secexteval.jl")
+@everywhere include("mutation.jl")
 
 
-    #Analysis Calculations
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/structure.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/dynstructure.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/sortassembly.jl")
+@everywhere include("assemblyeco.jl")
+@everywhere include("assemblyevo2.jl")
+@everywhere include("assemblyevo_diverse.jl") 
+@everywhere include("assemblystate.jl")
 
-    #Analysis functions
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/trophicalc2.jl")
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/roverlap.jl")
 
-    @everywhere include("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/nichemodelweb.jl")
-end
+#Analysis Calculations
+@everywhere include("structure.jl")
+@everywhere include("dynstructure.jl")
+@everywhere include("sortassembly.jl")
+
+#Analysis functions
+@everywhere include("trophicalc2.jl")
+@everywhere include("roverlap.jl")
+=#
