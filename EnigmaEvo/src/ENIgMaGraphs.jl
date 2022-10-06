@@ -13,6 +13,7 @@ export addspec!,replacespec!,addmod!, delv!
 export getprimext, getsecext!, getpotcolonizers!
 export colonize!,mutate!
 export getnextid!
+export converttoENIgMaGraph, converttointeractionmat
 
 const enlargementfactor = 1.1; #controls how much buffer is added if estsize has to be increased
 
@@ -88,6 +89,29 @@ Base.eltype(g::ENIgMaGraph) = eltype(g.vert);
 
 Base.getindex(g::ENIgMaGraph,key...) = getindex(g.vert,key...);
 
+function Base.:(==)(g1::ENIgMaGraph,g2::ENIgMaGraph)
+    equal = (g1.hasv == g2.hasv)
+    if equal
+        equal &= (g1.hasspec == g2.hasspec)
+        if equal
+            equal &= (g1.spec == g2.spec)
+            for (id,v) in g1
+                if equal
+                    cv = g2[id] 
+                    equal &= (v.eat == cv.eat) 
+                    equal &= (v.need == cv.need)
+                    equal &= (v.make == cv.make)
+                    equal &= (v.feed == cv.feed)
+                else
+                    break;
+                end
+            end
+        end
+    end
+    return equal;
+end
+
+
 function enlarge!(g::ENIgMaGraph,estsize::Int)
     estsize <= g.estsize && error("tried to shrink graph with enlarge!");    #failsave, shouldnt be neccessary
     g.hasv = vcat(g.hasv,falses(estsize - g.estsize));
@@ -135,15 +159,17 @@ end
 Base.in(id::Int,g::ENIgMaGraph) = g.hasv[id];
 #hasv(g::ENIgMaGraph,id) = g.hasv[id]; hasnt been used might have been smarter...
 
+include("convertENIgMaGraphs.jl")
+
 #calculates the competitive strength of all vertices
-function calcstrength(g::ENIgMaGraph,ce,cn,cm,cf)
-    for (_,vert::ENIgMaVert) in g                   #might be optimizable by looping over vals directly
-        vert.strength = -ce*length(vert.eat) - cf*length(vert.feed) + cn*sum(g.hasv[collect(vert.need)]) + cm*length(vert.make); #could be optimized by using view and or finding better way to index by set
+function calcstrength(poolnet::ENIgMaGraph, colnet::ENIgMaGraph,ce,cn,cm,cf)
+    for (id,vert::ENIgMaVert) in colnet                   #might be optimizable by looping over vals directly
+        vert.strength = -ce*length(poolnet[id].eat) - cf*length(vert.feed) + cn*sum(colnet.hasv[collect(vert.need)]) + cm*length(vert.make); #could be optimized by using view and or finding better way to index by set
     end
 end
 
 """
-    getprimext(g::ENIgMaGraph,ce,cn,cm,cf)
+    getprimext(poolnet::ENIgMaGraph, colnet::ENIgMaGraph,ce,cn,cm,cf)
 
     Return a vector of ids of species that can go extinct by primary extinction in 'g'.
 
@@ -153,24 +179,26 @@ end
     - 'cn::Float64': strength bonus per make interaction.
     - 'cf::Float64': strength bonus per feed interaction.
 """
-function getprimext(g::ENIgMaGraph,ce,cn,cm,cf)
-    calcstrength(g,ce,cn,cm,cf)
+function getprimext(poolnet::ENIgMaGraph, colnet::ENIgMaGraph,ce,cn,cm,cf,secextspec)
+    calcstrength(poolnet,colnet,ce,cn,cm,cf);
     
     #at first every vert could go extinct
-    ext = copy(g.hasspec)   #safes if species goes extinct
-
+    ext = copy(colnet.hasspec)  #safes if species goes extinct
+    ext[secextspec] .= false;    #secondary extinction has higher priority    
     #allocate for later
     maxids = Int64[];
     maxstrength = typemin(Int);
 
     #now let every vert check which species are their strongest consumer(s) and delete those from the list
-    for (fid, vert) in g
+    for (fid, vert) in colnet
         isempty(vert.feed) && continue
 
-        # there is no competition over basal resource by model definition
+        # there is no competition over basal resource between pure primary producers by model definition
         if fid == 1        
             for eid in vert.feed
-                ext[eid] = false;
+                if length(poolnet[eid].eat) == 1 #only pure prim producers   
+                    ext[eid] = false;
+                end
             end
             continue
         end
@@ -181,12 +209,12 @@ function getprimext(g::ENIgMaGraph,ce,cn,cm,cf)
             #if !haskey(g.vert,eid)#for debugging
             #    erorr()
             #end
-            strength = g[eid].strength;
+            strength = colnet[eid].strength;
             if strength > maxstrength           # could possibly be optimized by better algorithm (not self made multi argmax)
                 maxstrength = strength;
                 empty!(maxids);
                 push!( maxids, eid );
-            elseif maxstrength >= strength
+            elseif maxstrength <= strength
                 push!( maxids, eid);
             end
         end
@@ -223,14 +251,12 @@ end
     Return a list (via 'colonizers') of species ids from the pool network that could colonize the colony network.
 """
 function getpotcolonizers!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,colonizers = Int[])
-    potcolonizers = xor.(poolnet.hasspec, colnet.hasspec);   #xor is not exactly what we want. If we do everything right that shouldnt matter though
+    potcolonizers = setdiff(poolnet.spec,colnet.spec)
     empty!(colonizers);     #might be optimized by creating a vector from the Bitvec or giving a sizehint
-    for id in eachindex(potcolonizers) #would be faster to first find all true values? optimize
-        if potcolonizers[id]
-            vert = poolnet[id];
-            if all(colnet.hasv[collect(vert.need)]) && any(colnet.hasv[collect(vert.eat)])
-                push!(colonizers,id)
-            end
+    for id in potcolonizers #would be faster to first find all true values? optimize
+        vert = poolnet[id];
+        if all(colnet.hasv[collect(vert.need)]) && any(colnet.hasv[collect(vert.eat)])
+            push!(colonizers,id)
         end
     end
     return colonizers;

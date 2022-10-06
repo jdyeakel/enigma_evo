@@ -2,16 +2,17 @@ if homedir() == "/home/z840"    #for downward compatibility ;)
     localpath::String = "$(homedir())/2019_Lego_Evo/EnigmaEvo/src/";
 elseif isfile("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl")
     localpath::String = "$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/";
-else                            #othserwise use relite paths
+else                            #othserwise use relative paths
     localpath::String = "src/";
 end
 
+#using Revise    #helps with debugging in REPL (automatically tracks changes eg in files included with "includet" (included and tracked))
 include(localpath*"loadfuncs.jl");
 
 #Random.seed!(7); #for debugging
 
 S::Int64 = 200;
-maxits::Int64 = 2000;
+maxits::Int64 = 1000;
 const SOprobs = (   #as link types are mutually exclusive pn + pe + pm <= 1 must be fulfilled!!! (pm aprox = )
 p_n=0.002, #0.002,
 p_e=0.01 #0.01
@@ -27,7 +28,7 @@ const cn = exp(1);
 #Competitive loss of an eat
 const ce = sqrt(2);
 #Competitive loss from a predator
-const cf = 1.;
+const cpred = 1.;   #everywhere else cf but not here for compatibility with older version
 
 #expected objects per species
 const lambda = 0.1;
@@ -36,30 +37,35 @@ const e_t = 0.; #always set to 0
 const n_t = 1.; #always set to 1
 
 #rc = Colonization rates
-#re = Local species extinction rate
+#rprimext = Local primary species extinction rate
+#rsecext = Local secondary species extinction rate
 #reo = Local object extinction rate
 #revo = Evolutionary rate
 #rext = Global extinction rate
-const rates0 = (rc = 1., re = 1., reo = 1., revo = 0.05, rext = 0.035);
+const rates0 = (rc = 1., rprimext = 1., rsecext = 1., reo = 1., revo = 0.0, rext = 0.0);;#revo = 0.05, rext = 0.035);
+
 #Turn diversification dynamic on or off
 # 0 = off
 # 1 = on
-
-diverse::Int = 1;
-
+diverse::Int = 0;
 
 initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
 
 # EVOLUTIONARY VERSION
-#loadfunc = include("src/loadfuncs.jl");    #for easy debugging
 @time poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,#=intm_evo,=#mutstep,freqe,freqn,events =
-    assemblyevo(initpoolnet, rates0,maxits,cm,cn,ce,cf,diverse); 
-
-
+    assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse); 
 
 
 collapsetime = clock[maxits - findall(!iszero,reverse(diff(sprich)))[1]];
-lineplot(clock,sprich)
+
+lineplot(clock,sprich,xlabel="clock time",ylabel="species richness",title="Species richness of new model")
+lineplot(clock,freqe,xlabel="clock time",ylabel="freq eat",title="Frequency of eat interactions of new model")
+lineplot(clock,freqn,xlabel="clock time",ylabel="freq need",title="Frequency of need interactions of new model")
+
+#lineplot(clock,meansprichnew,xlabel="clock time",ylabel="species richness",title="Species richness of new model")
+#lineplot(clock,meanfreqenew,xlabel="clock time",ylabel="freq eat",title="Frequency of eat interactions of new model")
+#lineplot(clock,meanfreqnnew,xlabel="clock time",ylabel="freq need",title="Frequency of need interactions of new model")
+
 
 R"""
 plot($clock,$sprich,type='l')

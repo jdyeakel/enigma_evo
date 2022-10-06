@@ -28,7 +28,7 @@ function setuppool(S, lambda, SSprobs, SOprobs) #, OOprobs)
                 inttype = rand()                        #draw number that decides the type of interaction
                 if inttype < intprobthresh[1]           #eat interaction?
                     SOintmat[objid,specid] = 1;
-                elseif inttype < intprobthresh[2]               #need interaction?
+                elseif inttype < intprobthresh[2]       #need interaction?
                     SOintmat[objid,specid] = 2;         
                 else                                    #make interaction
                     SOintmat[objid,specid] = 3;

@@ -19,15 +19,15 @@ using UnicodePlots
 # @everywhere using HDF5
 @everywhere using JLD2
 
-@everywhere include("ENIgMaGraph.jl")
+@everywhere include("ENIgMaGraphs.jl")
 @everywhere using .ENIgMaGraphs
 @everywhere include("setuppool.jl")
 @everywhere include("assemblyevo3.jl")
 
-
+#=
 @everywhere include("smartpath.jl")
 
-#=
+
 #Interaction matrix
 @everywhere include("intmatrixv4integer.jl")
 @everywhere include("intbool.jl")
