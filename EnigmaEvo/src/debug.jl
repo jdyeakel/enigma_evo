@@ -1,4 +1,41 @@
-Random.seed!(83);
+#Random.seed!(83);
+
+function testtrophlvls()
+	intm = [0 0 0 0 0 0 0 0
+			1 2 2 0 0 0 0 0		#lvl 1
+			1 0 2 0 0 0 0 0		#lvl 1
+			0 1 0 2 0 0 0 0		#lvl 2
+			0 0 1 1 2 0 0 0		#lvl 2
+			0 0 0 0 1 2 0 0		#lvl 3
+			0 0 1 1 1 1 2 0		#lvl 2
+			0 0 0 0 1 0 0 2];	#lvl 3
+	net = converttoENIgMaGraph(intm);
+	troph_lvls = gettrophiclevels(net);
+	exact_lvls = [Set{Int}([2,3]),Set{Int}([4,5,7]),Set{Int}([6,8])];
+	if troph_lvls != exact_lvls
+		println("Test failed: gettrophiclevels is not working as expected.")
+		println("\tgettrophiclevels(testnet) == $troph_lvls\n\t!= $exact_lvls, the precomputed exact soulution.")
+		return false
+	end
+	return true;
+end
+
+function testtrophlvls(net)
+	isworking = testtrophlvls()
+	troph_lvls = gettrophiclevels(net)
+	for i in eachindex(troph_lvls)
+		for j in 1:(i-1)
+			intersection = intersect(troph_lvls[i],troph_lvls[j])
+			if !isempty(intersection)
+				isworking = false
+				println("Test failed: gettrophiclevels is not working as expected.")
+				println("\tThe elements of $intersection are categorized as having trophic level $i and $j.")
+			end 
+		end
+	end
+	return isworking
+end
+
 
 intm,eb,nb,nb0,mb,SSpwp,SOpwp = intmatrixv4(S,lambda,SSprobs,SOprobs,OOprobs);
 

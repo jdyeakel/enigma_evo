@@ -1,7 +1,7 @@
 using .ENIgMaGraphs
 
 function converttointeractionmat(g::ENIgMaGraph)
-    N = length(g);
+    N = g.idmanager.maxid;
     intm = zeros(Int,N,N);
 
     for (id,v) in g
@@ -28,34 +28,36 @@ function converttoENIgMaGraph(intm)
     N = size(intm)[1];
     g = ENIgMaGraph(N,IdManager(N));
 
-    for id in 1:N
+    basalres = ENIgMaVert();
+    addn!(basalres,1);
+    addmod!(g,1,basalres)
+    for id in 2:N
         if intm[id,id] == 2
             addspec!(g,id,ENIgMaVert())
-        else
+        elseif sum(intm[id,:]) != 0
             addmod!(g,id,ENIgMaVert())
         end
     end
 
 
     for row in 1:N
-        isspec = false;
-        newv = g[row];
-        for col in 1:N
-            if row != col
-                int = intm[row,col];
-                if int == 1
-                    adde!(newv, col);
-                    addf!(g[col],row);
-                elseif int == 2
-                    addn!(newv,col);
-                elseif int == 3
-                    addm!(newv,col);
-                    addn!(g[col],row);
+        if g.hasspec[row]
+            newv = g[row];
+            for col in 1:N
+                if row != col
+                    int = intm[row,col];
+                    if int == 1
+                        adde!(newv, col);
+                        addf!(g[col],row);
+                    elseif int == 2
+                        addn!(newv,col);
+                    elseif int == 3
+                        addm!(newv,col);
+                        addn!(g[col],row);
+                    end
                 end
             end
         end
     end
-
-    addn!(g[1],1);
     return g;
 end

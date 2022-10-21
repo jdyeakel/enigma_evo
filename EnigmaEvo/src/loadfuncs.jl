@@ -1,6 +1,6 @@
 using Distributed
-using DataFrames
-using Images
+#using DataFrames
+#using Images
 using UnicodePlots
 
 @everywhere using AxisArrays

@@ -4,15 +4,14 @@ elseif isfile("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfunc
     localpath::String = "$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/";
 else                            #othserwise use relative paths
     localpath::String = "src/";
-end
+end;
 
-#using Revise    #helps with debugging in REPL (automatically tracks changes eg in files included with "includet" (included and tracked))
 include(localpath*"loadfuncs.jl");
 
 #Random.seed!(7); #for debugging
 
 S::Int64 = 200;
-maxits::Int64 = 1000;
+maxits::Int64 = 2000;
 const SOprobs = (   #as link types are mutually exclusive pn + pe + pm <= 1 must be fulfilled!!! (pm aprox = )
 p_n=0.002, #0.002,
 p_e=0.01 #0.01
@@ -33,7 +32,6 @@ const cpred = 1.;   #everywhere else cf but not here for compatibility with olde
 #expected objects per species
 const lambda = 0.1;
 const e_t = 0.; #always set to 0
-
 const n_t = 1.; #always set to 1
 
 #rc = Colonization rates
@@ -42,18 +40,23 @@ const n_t = 1.; #always set to 1
 #reo = Local object extinction rate
 #revo = Evolutionary rate
 #rext = Global extinction rate
-const rates0 = (rc = 1., rprimext = 1., rsecext = 1., reo = 1., revo = 0.0, rext = 0.0);;#revo = 0.05, rext = 0.035);
+const rates0 = (rc = 1., rprimext = 1., rsecext = 10., reo = 1., revo = 0.0, rext = 0.0);;#revo = 0.05, rext = 0.035);
 
 #Turn diversification dynamic on or off
 # 0 = off
 # 1 = on
-diverse::Int = 0;
+diverse::Int = 1;
+
+
+#if true only species that wouldnt go to secondary (structural) extionction immediatelly can colonize
+#otherwise all species can colonize
+restrict_colonization::Bool = true;
 
 initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
 
 # EVOLUTIONARY VERSION
 @time poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,#=intm_evo,=#mutstep,freqe,freqn,events =
-    assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse); 
+    assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse,restrict_colonization);
 
 
 collapsetime = clock[maxits - findall(!iszero,reverse(diff(sprich)))[1]];

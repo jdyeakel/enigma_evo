@@ -14,6 +14,9 @@ export getprimext, getsecext!, getpotcolonizers!
 export colonize!,mutate!
 export getnextid!
 export converttoENIgMaGraph, converttointeractionmat
+export gettrophiclevels
+=======
+>>>>>>> parent of 80e2be0... Added conversion functions from matrix to graph:EnigmaEvo/src/ENIgMaGraph.jl
 
 const enlargementfactor = 1.1; #controls how much buffer is added if estsize has to be increased
 
@@ -507,16 +510,26 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, d
     return tally;#(intm_mut, ebmut, nbmut, nb0mut, mbmut, tally)
 end
 
-end #module
-#=
-function test()
-    g = ENIgMaGraph(10);
-    for i = 1:8
-        addspec!(g,i,ENIgMaVert());
+function gettrophiclevels(net::ENIgMaGraph)
+    spec = copy(net.spec)
+    trophic_lvls = []
+    prev_lvl = Set{Int}(1)
+    curr_lvl = Set{Int}()
+    while true
+        for id in prev_lvl
+            union!(curr_lvl,net[id].feed)
+        end
+        for lvl in trophic_lvls
+            setdiff!(curr_lvl,lvl)
+        end
+        setdiff!(spec,curr_lvl)
+        if isempty(curr_lvl)
+            break
+        end
+        push!(trophic_lvls,copy(curr_lvl))
+        curr_lvl, prev_lvl = empty!(prev_lvl),curr_lvl  #swap variables
     end
-    println(g[2].eat)
-    for (_,v) in g
-        println(v);
-    end
+    return trophic_lvls
 end
-=#
+
+end #module
