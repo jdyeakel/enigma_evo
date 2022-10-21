@@ -1,4 +1,4 @@
-function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, diverse, createlog = false)
+function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, diverse, restrict_colonization::Bool, createlog = false)
     # Total size of the species + objects
     N = length(poolnet);
     S = numspec(poolnet);
@@ -20,7 +20,11 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     mstrength = Array{Float64}(undef,maxits);
     clock = Array{Float64}(undef,maxits);
     events = Array{Float64}(undef,maxits);
-    CID = falses(poolnet.estsize,maxits);
+    if createlog
+        CID = falses(poolnet.estsize,maxits);
+        maxids = zeros(Int,maxits);
+        globextspec = Dict{Int,Pair{Int,ENIgMaVert}}()    #Stores globally extinct species together with their ids. The keys are the iterations the species went extinct
+    end
 
     freqe = Array{Float64}(undef,maxits);
     freqn = Array{Float64}(undef,maxits);
@@ -51,11 +55,11 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         maxstrength = cm*Float64(O) + cn*Float64(S) - ce*1 - cf*0;  #assuming cm > cn
 
         #COUNT POTENTIAL COLONIZERS
-        getpotcolonizers!(poolnet,colnet,colonizers);   #saves pot colonizers ids in colonizers
-
-        #if it == 0
-        #    println("debug new col\n", colonizers)
-        #end
+        if restrict_colonization
+            getpotcolonizers!(poolnet,colnet,colonizers);   #saves pot colonizers ids in colonizers
+        else
+            colonizers = setdiff(poolnet.spec,colnet.spec);
+        end
 
         #COUNT SPECIES THAT COULD POTENTIALLY GO EXTINCT
         
@@ -65,16 +69,11 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         #2) PRIMARY EXTINCTIONS by competition
         primextspec = getprimext(poolnet,colnet,ce,cn,cm,cf,secextspec);
 
-        #combine both extinction types
-        #specxt = union(primextspec,secextspec)
-        #lspext = length(specxt)
-
         #COUNT POTENTIAL evolutionary events (size of community)
-        levo = maximum([numspec(colnet) - 2,0]); #means evolution can only occur if community has more than >2 species
+        levo = max(numspec(colnet) - 2,0); #means evolution can only occur if community has more than >2 species
 
         #COUNT POTENTIAL global extinction events (size of pool)
-        lext = max(numspec(poolnet)-1,0); #-1 to account for species 1, which is restricted
-
+        lext = max(numspec(poolnet) - 1,0); #-1 to account for species 2, which is restricted
 
         # Calculate the full Rate
         Rate = rates.rc*length(colonizers) + rates.rprimext*length(primextspec) + rates.rsecext*length(secextspec) + rates.reo*length(extobj) + rates.revo*levo + rates.rext*lext;
@@ -97,7 +96,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         tally = -10;
 
         #DRAW COLONIZATION
-        if re < probc #(lcol/levents)
+        if re <= probc #(lcol/levents)
 
             #COLONIZATION FUNCTION
             idc = rand(colonizers);
@@ -107,7 +106,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             tally = 0;
 
         #DRAW primary EXTINCTION
-        elseif re < (probc + probprimext)
+        elseif re <= (probc + probprimext)
             #select species to go extinct
             sp_bye = rand(primextspec);
             delv!( colnet, sp_bye )
@@ -116,7 +115,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             tally = 1;
 
 
-        elseif re < (probc + probprimext + probsecext)
+        elseif re <= (probc + probprimext + probsecext)
 
             #select species to go extinct
             sp_bye = rand(secextspec);
@@ -126,7 +125,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             tally = 2;
 
         #DRAW OBJECT EXTINCTION
-        elseif re < (probc + probprimext + probsecext + probeo) #((lcol + lspext)/levents) && re < ((lcol + lspext + lobext)/levents)
+        elseif re <= (probc + probprimext + probsecext + probeo) #((lcol + lspext)/levents) && re < ((lcol + lspext + lobext)/levents)
 
             #OBJECT EXTINCTION FUNCTION
             delv!( colnet, rand(extobj) )
@@ -135,7 +134,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             tally = 3;
         
         #DRAW EVOLUTION
-        elseif re < (probc + probprimext + probsecext + probeo + probevo)
+        elseif re <= (probc + probprimext + probsecext + probeo + probevo)
 
             # EVOLUTION OF SPECIES IN THE COMMUNITY
             # SPECIES MUTATION
@@ -144,22 +143,35 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             #OR Mutate realized interactions
             intmutid = rand(collect(setdiff(keys(colnet.vert),spmutid)));    #could possibly be optimized by drawing in loop until valid value is drawn
 
-            spints = [0,1,2];
-            obints = [0,1,2,3];
-            tally = mutate!(poolnet, colnet, spmutid, intmutid, diverse, spints, obints, tallytable, evolutiontable,ce,cn,cm,cf);
+            spec_ints = [0,1,2];
+            object_ints = [0,1,2,3];
+
+            if colnet.hasspec[intmutid]
+                change_in_int = rand([true,false]); #change incoming interaction
+                if change_in_int
+                    old_int = getinteractiontype(colnet, spmutid, intmutid);
+                else
+                    old_int = getinteractiontype(colnet, intmutid, spmutid);
+                end
+                new_int = rand(setdiff(spec_ints,old_int));
+            else
+                change_in_int = true;
+                new_int = rand(setdiff(spec_ints,old_int));
+            end
+
+            tally = mutate!(poolnet, colnet, spmutid, intmutid, change_in_int, old_int, new_int, diverse, tallytable, evolutiontable, ce, cn, cm, cf);
             
             if createlog
                 if poolnet.estsize > size(CID)[1];
-                    CID = vcat(CID,falses(poolnet.estsize - size(CID)[1]));
+                    CID = vcat(CID,falses(poolnet.estsize - size(CID)[1],maxits));
                 end
             end
 
         # Global EXTINCTION
         else
-            
             #Choose species subject to extinction
             #Do not choose species 2, which is protected
-            globextid = sample(collect(setdiff(poolnet.spec,2)));    #could possibly be optimized by finding better way to sample from set
+            globextid = rand(collect(setdiff(poolnet.spec,union(colnet.spec,2))));    #could possibly be optimized by finding better way to sample from set
             
             if colnet.hasv[globextid]
                 delv!(colnet,globextid)
@@ -172,6 +184,10 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
                 O -= 1;
             end
 
+            if createlog
+                globextspec[it] = Pair(globextid,poolnet[globextid]);
+            end
+
             delv!(poolnet,globextid);
             N -= 1;
         end
@@ -180,8 +196,9 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         freqe[it] = (sum([length(colnet[id].eat) for id in colnet.spec]) - length(colnet[1].feed))/max(length(colnet)-1,1);     #bit afraid of overflows...
         freqn[it] = sum([length(setdiff(colnet[id].need,1)) for id in colnet.spec])/max(length(colnet)-1,1);
 
-        if createlog     #could be significantly optimized by just saving the changes and reconstructing if necessary (this would allow to save the whole structure of the network)
-            CID[:,it] = colnet.hasspec;
+        if createlog     #could be significantly optimized by just saving the changes and reconstructing if necessary
+            CID[:,it] = colnet.hasv;
+            maxids[it] = poolnet.idmanager.maxid;
         end
 
         sprich[it] = numspec(colnet);
@@ -192,22 +209,41 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         events[it] = tally;
     end #end time steps
 
-
-    return(
-        poolnet,
-        colnet,
-        sprich,
-        rich,
-        pool,
-        mstrength,
-        evolvedstrength,
-        clock,
-        CID,
-        #intm_evo,
-        mutstep,
-        freqe,
-        freqn,
-        events
-    )
-
+    if createlog
+        return(
+            poolnet,
+            colnet,
+            sprich,
+            rich,
+            pool,
+            mstrength,
+            evolvedstrength,
+            clock,
+            CID,
+            maxids,
+            globextspec,
+            mutstep,
+            freqe,
+            freqn,
+            events
+        )
+    else
+        return(
+            poolnet,
+            colnet,
+            sprich,
+            rich,
+            pool,
+            mstrength,
+            evolvedstrength,
+            Bitvector(),
+            Int[],
+            Dict{Int,Pair{Int,ENIgMaVert}}(),
+            clock,
+            mutstep,
+            freqe,
+            freqn,
+            events
+        )
+    end
 end
