@@ -36,12 +36,9 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     tallytable = [4.1 4.2 5.1 4.3 4.4 5.2 4.5 4.6 5.3 6.1 6.2 6.3];
 
     # If diversification is turned off, rates.rext -> 0 do that by hand
-    #=if diverse == 1
-        rates = (rc = rates0.rc,re = rates0.re,reo = rates0.reo,revo = rates0.revo,rext = rates0.rext);
-    else
-        rates = (rc = rates0.rc,re = rates0.re,reo = rates0.reo,revo = rates0.revo,rext = 0.);
+    if diverse == 0
+        rates = (rc = rates.rc,rsecext = rates.rsecext, rprimext = rates.rprimext, reo = rates.reo,revo = rates0.revo,rext = 0.);
     end
-    =#
 
     colonizers = Int[]; #later used to store ids of potential colonizers
     secextspec = Int[]; #later used to store ids of spec that could go extinct secondarily
@@ -70,13 +67,19 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         primextspec = getprimext(poolnet,colnet,ce,cn,cm,cf,secextspec);
 
         #COUNT POTENTIAL evolutionary events (size of community)
-        levo = max(numspec(colnet) - 2,0); #means evolution can only occur if community has more than >2 species
+        levo = max(numspec(colnet) - 2,0); #means evolution can only occur if community has more than 2 species
 
         #COUNT POTENTIAL global extinction events (size of pool)
-        lext = max(numspec(poolnet) - 1,0); #-1 to account for species 2, which is restricted
+        lext =  numspec(poolnet) - numspec(colnet) - (colnet.hasv[2] ? 0 : 1) #species 2 can't go exinct
 
         # Calculate the full Rate
         Rate = rates.rc*length(colonizers) + rates.rprimext*length(primextspec) + rates.rsecext*length(secextspec) + rates.reo*length(extobj) + rates.revo*levo + rates.rext*lext;
+        if Rate == 0
+            println("Warning: No action was taken at iteration $it as no action was possible.")
+            println("         Maybe the system evolved to a state where no species can colonize and almost all went extinct?")
+            println("         Aborting simulation prematurely.")
+            break
+        end
 
         # Calculate event probabilities
         probc = (rates.rc*length(colonizers))/Rate;
@@ -141,7 +144,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             # select FROM community
             spmutid = rand(collect(setdiff(colnet.spec,2)));    #might be optimized, by finding smarter way, to draw from Set (a#same below for intmutid)
             #OR Mutate realized interactions
-            intmutid = rand(collect(setdiff(keys(colnet.vert),spmutid)));    #could possibly be optimized by drawing in loop until valid value is drawn
+            intmutid = rand(collect(setdiff(keys(colnet.vert),[spmutid,2])));    #could possibly be optimized by drawing in loop until valid value is drawn
 
             spec_ints = [0,1,2];
             object_ints = [0,1,2,3];
@@ -149,14 +152,19 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             if colnet.hasspec[intmutid]
                 change_in_int = rand([true,false]); #change incoming interaction
                 if change_in_int
-                    old_int = getinteractiontype(colnet, spmutid, intmutid);
+                    old_int = ENIgMaGraphs.getinteractiontype(colnet, spmutid, intmutid);
                 else
-                    old_int = getinteractiontype(colnet, intmutid, spmutid);
+                    old_int = ENIgMaGraphs.getinteractiontype(colnet, intmutid, spmutid);
                 end
                 new_int = rand(setdiff(spec_ints,old_int));
             else
                 change_in_int = true;
-                new_int = rand(setdiff(spec_ints,old_int));
+                old_int = ENIgMaGraphs.getinteractiontype(colnet, spmutid, intmutid);
+                if intmutid == 1
+                    new_int = rand(setdiff(spec_ints,old_int)); #cant make primal resource (sun)
+                else
+                    new_int = rand(setdiff(object_ints,old_int));
+                end
             end
 
             tally = mutate!(poolnet, colnet, spmutid, intmutid, change_in_int, old_int, new_int, diverse, tallytable, evolutiontable, ce, cn, cm, cf);
@@ -168,7 +176,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             end
 
         # Global EXTINCTION
-        else
+        elseif re <= 1
             #Choose species subject to extinction
             #Do not choose species 2, which is protected
             globextid = rand(collect(setdiff(poolnet.spec,union(colnet.spec,2))));    #could possibly be optimized by finding better way to sample from set
@@ -236,7 +244,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             pool,
             mstrength,
             evolvedstrength,
-            Bitvector(),
+            BitVector(),
             Int[],
             Dict{Int,Pair{Int,ENIgMaVert}}(),
             clock,

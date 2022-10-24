@@ -99,6 +99,7 @@ function setuppool(S, lambda, SSprobs, SOprobs) #, OOprobs)
             end
         end
         if isempty(newspec.eat) #no eat interaction?
+            deln!(newspec,1)    #cant have double links
             adde!(newspec,1)    #make autotroph!
             addf!(poolnet[1], specid)
         end

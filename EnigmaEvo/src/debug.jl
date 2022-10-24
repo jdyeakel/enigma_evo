@@ -137,9 +137,6 @@ function checkinitpoolconsistency(poolnet)
 			end
 		end
 	end
-	if consistent
-		println("The pool network appears to be consistent!")
-	end
 	return consistent;
 end
 
@@ -244,7 +241,10 @@ function testmutation(ce,cn,cm,cf,thorough=false)
 		isworking = true;
 	end
 
-	for diverse in [true]#,false]	#go over all kinds of outer circumstances and types of mutations and check if the result is as expected
+	#go over all kinds of outer circumstances and types of mutations and check if the result is as expected
+	for diverse in [true,false]	
+
+		#spec-spec interaction
 		for old_out_int in spints
 			for old_in_int in spints
 				for change_in_int in [true,false]
@@ -297,8 +297,8 @@ function testmutation(ce,cn,cm,cf,thorough=false)
 										end
 									end
 								end
-								if diverse &&( 3 != i != 2 )
-									if getinteractiontype(poolnet,i,10) != getinteractiontype(secondpool,i,2) || getinteractiontype(colnet,i,10) != getinteractiontype(secondcol,i,2) || getinteractiontype(poolnet,10,1) != getinteractiontype(secondpool,2,1) || getinteractiontype(colnet,10,i) != getinteractiontype(secondcol,2,i)
+								if diverse && ( 3 != i != 2 )
+									if getinteractiontype(poolnet,i,10) != getinteractiontype(secondpool,i,2) != 2 || getinteractiontype(colnet,i,10) != getinteractiontype(secondcol,i,2) != 2 || getinteractiontype(poolnet,10,i) != getinteractiontype(secondpool,2,i) || getinteractiontype(colnet,10,i) != getinteractiontype(secondcol,2,i)
 										isworking = false;
 										println("Error: An interaction with mutated spec that shouldn't have been touched was altered during mutation with spec.")
 									end
@@ -307,7 +307,7 @@ function testmutation(ce,cn,cm,cf,thorough=false)
 						end
 
 						#check if result is as expected
-						new_in_int, new_out_int = change_in_int ? (new_int,old_out_int) : (old_in_int, new_int)
+						new_in_int, new_out_int = change_in_int ? (new_int,old_out_int == 2 && diverse ? 0 : old_out_int) : (old_in_int, new_int)	#what are the new interactions? (Remember that outgoing needs are dropped in diverse mode)
 						if diverse
 							if !(getinteractiontype(poolnet,2,3) == getinteractiontype(colnet,2,3) == old_in_int) || !(getinteractiontype(poolnet,3,2) ==  getinteractiontype(colnet,3,2)  == old_out_int)
 								isworking = false;
@@ -318,9 +318,16 @@ function testmutation(ce,cn,cm,cf,thorough=false)
 								println("Error in testmutation: The new interaction with spec wasn't added properly in diverse mode.")
 							end
 						else
-							if !(getinteractiontype(poolnet,2,3) == getinteractiontype(colnet,2,3) == new_in_int) || !(getinteractiontype(poolnet,3,2) ==  getinteractiontype(colnet,3,2)  == new_out_int)
-								isworking = false;
-								println("Error in testmutation: The new interaction with spec wasn't properly added in the non-diverse mode.")
+							if ENIgMaGraphs.getdeltastrength(old_int,new_int,change_in_int,ce,cn,cm,cf) >= 0
+								if !(getinteractiontype(poolnet,2,3) == getinteractiontype(colnet,2,3) == new_in_int) || !(getinteractiontype(poolnet,3,2) ==  getinteractiontype(colnet,3,2)  == new_out_int)
+									isworking = false;
+									println("Error in testmutation: The new interaction with spec wasn't properly added in the non-diverse mode.")
+								end
+							else
+								if !(getinteractiontype(poolnet,2,3) == getinteractiontype(colnet,2,3) == old_in_int) || !(getinteractiontype(poolnet,3,2) ==  getinteractiontype(colnet,3,2)  == old_out_int)
+									isworking = false;
+									println("Error in testmutation: The interaction with a spec was changed in the non-diverse mode although the competition strength decreased.")
+								end
 							end
 						end
 					end
@@ -328,6 +335,7 @@ function testmutation(ce,cn,cm,cf,thorough=false)
 			end
 		end
 
+		#spec-object interaction
 		for old_int in obints
 			for new_int in setdiff(obints,old_int)
 				poolnet,colnet = setup_toy_net(); #too lazy to write a deepcopy function for ENIgMaGraphs
@@ -374,7 +382,7 @@ function testmutation(ce,cn,cm,cf,thorough=false)
 						end
 
 						if diverse && (4 != i != 2)
-							if getinteractiontype(poolnet,i,10) != getinteractiontype(secondpool,i,2) || getinteractiontype(colnet,i,10) != getinteractiontype(secondcol,i,2) || getinteractiontype(poolnet,10,1) != getinteractiontype(secondpool,2,1) || getinteractiontype(colnet,10,i) != getinteractiontype(secondcol,2,i)
+							if getinteractiontype(poolnet,i,10) != getinteractiontype(secondpool,i,2) != 2 || getinteractiontype(colnet,i,10) != getinteractiontype(secondcol,i,2) != 2 || getinteractiontype(poolnet,10,i) != getinteractiontype(secondpool,2,i) || getinteractiontype(colnet,10,i) != getinteractiontype(secondcol,2,i)
 								isworking = false;
 								println("Error: An interaction with mutated spec that shouldn't have been touched was altered during mutation with obj.")
 							end
@@ -392,34 +400,52 @@ function testmutation(ce,cn,cm,cf,thorough=false)
 						println("Error in testmutation: The new interaction with object wasn't added properly in diverse mode.")
 					end
 				else
-					if !(getinteractiontype(poolnet,2,4) == getinteractiontype(colnet,2,4) == new_int)
-						isworking = false;
-						println("Error in testmutation: The new interaction with object wasn't properly added in the non-diverse mode.")
-					end
+					if ENIgMaGraphs.getdeltastrength(old_int,new_int,true,ce,cn,cm,cf) >= 0
+						if !(getinteractiontype(poolnet,2,4) == getinteractiontype(colnet,2,4) == new_int)
+							isworking = false;
+							println("Error in testmutation: The new interaction with object wasn't properly added in the non-diverse mode.")
+						end
+					else
+						if !(getinteractiontype(poolnet,2,4) == getinteractiontype(colnet,2,4) == old_int)
+							isworking = false;
+							println("Error in testmutation: The interaction with an object was changed in the non-diverse mode although the competition strength decreased.")
+						end
+					end	
 				end
 			end
 		end
 	end
+	return isworking;
 end
 
 
 
-function test(random_seed = 0)
+function test(thorough,random_seed = 0)
 	Random.seed!(random_seed);
-	include("set_up_params.jl")
+	include("EnigmaEvo/src/set_up_params.jl")
 
-	iserrorfree = true;
+	iserrorfree = testmutation(ce,cn,cm,cpred,thorough);
 
-	initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
+	for logging in [true,false]
+		for restrict_colonization in [true,false]
+			for diverse in [0,1]
+				initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
 
-	iserrorfree &= checkinitpoolconsistency(initpoolnet);
+				thorough && (iserrorfree &= checkinitpoolconsistency(initpoolnet));
 
-	@time poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,globextspec,mutstep,freqe,freqn,events =
-    assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse,logging);
+				poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,globextspec,mutstep,freqe,freqn,events =
+				assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse,restrict_colonization,logging);
 
-	iserrorfree &= checkconsistency(poolnet,colnet);
+				if !checkconsistency(poolnet,colnet)
+					iserrorfree = false;
+					println("The above inconsistencies where found in the system after assembly with the following parameters:")
+					println("\tdiverse == $diverse, restrict_colonization == $restrict_colonization, logging == $logging")
+				end
+			end
+		end
+	end
 
-
+	return iserrorfree;
 end
 
 

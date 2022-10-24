@@ -9,7 +9,7 @@ end;
 #using Revise    #helps with debugging in REPL (automatically tracks changes eg in files included with "includet" (include and track))
 include(localpath*"loadfuncs.jl");
 
-include(localpath*"set_up_params.jl")
+include(localpath*"set_up_params.jl");
 
 initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
 

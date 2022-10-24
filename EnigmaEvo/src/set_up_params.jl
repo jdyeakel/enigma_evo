@@ -1,5 +1,5 @@
 S::Int64 = 200;
-maxits::Int64 = 1000;
+maxits::Int64 = 2000;
 const SOprobs = (   #as link types are mutually exclusive pn + pe + pm(function of lambda) <= 1 must be fulfilled!!!
 p_n=0.002, #0.002,
 p_e=0.01 #0.01
@@ -9,13 +9,13 @@ const SSprobs = (p_n = SSmult .* SOprobs.p_n , p_e = SSmult .* SOprobs.p_e);
 const OOprobs = (p_n = OOmult * SOprobs.p_n, p0 = 0.0);
 
 #Competitive gain of a make
-const cm = Float64(pi);
+const cm::Float64 = Float64(pi);
 #Competitive gain of a need
-const cn = exp(1);
+const cn::Float64 = exp(1);
 #Competitive loss of an eat
-const ce = sqrt(2);
+const ce::Float64 = sqrt(2);
 #Competitive loss from a predator
-const cpred = 1.;   #everywhere else cf but not here for compatibility with older version
+const cpred::Float64 = 1.;   #everywhere else cf but not here for compatibility with older version
 
 #expected objects per species
 const lambda = 0.1;
@@ -38,6 +38,6 @@ diverse::Int = 0;
 
 #if true only species that wouldnt go to secondary (structural) extionction immediatelly can colonize
 #otherwise all species can colonize
-restrict_colonization::Bool = true;
+restrict_colonization::Bool = false;
 
 logging::Bool = true;

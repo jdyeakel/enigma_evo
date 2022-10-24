@@ -14,7 +14,7 @@ export getprimext, getsecext!, getpotcolonizers!
 export colonize!,mutate!
 export getnextid!
 export converttoENIgMaGraph, converttointeractionmat
-export gettrophiclevels
+export gettrophiclevels, recreatecolnetdiverse
 
 const enlargementfactor = 1.1; #controls how much buffer is added if estsize has to be increased
 
@@ -44,7 +44,12 @@ end;
 
 #if changed: these have not been used all the time
 adde!(v::ENIgMaVert,ide) = push!(v.eat,ide);
-addn!(v::ENIgMaVert,idn) = push!(v.need,idn);
+function addn!(v::ENIgMaVert,idn)
+    #if idn == 1
+    #    println("debugging addn")
+    #end
+push!(v.need,idn);
+end
 addm!(v::ENIgMaVert,idm) = push!(v.make,idm);
 addf!(v::ENIgMaVert,idf) = push!(v.feed,idf); 
 function adde!(ve,idf,vf,ide)
@@ -226,7 +231,7 @@ function getprimext(poolnet::ENIgMaGraph, colnet::ENIgMaGraph,ce,cn,cm,cf,secext
         maxstrength = typemin(Int);
         for eid in vert.feed
             #if !haskey(g.vert,eid)#for debugging
-            #    erorr()
+            #    error()
             #end
             strength = colnet[eid].strength;
             if strength > maxstrength           # could possibly be optimized by better algorithm (not self made multi argmax)
@@ -343,6 +348,12 @@ function getinteractiontype(g::ENIgMaGraph, id1, id2)
     end
 end
 
+function getdeltastrength(old_int,new_int,change_in_interaction,ce,cn,cm,cpred)
+    interaction_bonus = change_in_interaction ? Dict(0=>0,1=>-ce,2=>cn,3=>cm) : Dict(0=>0,1=>-cpred,2=>0,3=>0)
+    return interaction_bonus[new_int] - interaction_bonus[old_int];
+end
+
+
 """
     mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, diverse, spints, obints, tallytable, evolutiontable, ce,cn,cm,cf)
 
@@ -354,19 +365,22 @@ end
 
 """
 function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, change_in_int, old_int, new_int, diverse, tallytable, evolutiontable, ce, cn, cm, cpred)
-    mutspecpool = copy(poolnet[spmutid]);
-    interactorpool = poolnet[intmutid];
-    mutspeccol = copy(colnet[spmutid]);
-    interactorcol = colnet[intmutid];
-
     if diverse == 1
         newid = getnextid!(poolnet);
         #if newid == 341
         #    println(c);
         #end
     else
+        if getdeltastrength(old_int,new_int,change_in_int,ce,cn,cm,cpred) < 0
+            return -1;  #what would be the right tally for a discarded mutation?
+        end
         newid = spmutid
     end
+    
+    mutspecpool = copy(poolnet[spmutid]);
+    interactorpool = poolnet[intmutid];
+    mutspeccol = copy(colnet[spmutid]);
+    interactorcol = colnet[intmutid];
 
     deltastrength = 0;
     if change_in_int       
@@ -450,7 +464,7 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
     #Record evolution type (in degree vs. out degree) on backend of tally
     tally += evol_type*0.01;
 
-    if diverse == 0 && deltastrength > 0    #if diversification is disabled keep the mutated spec if its stronger then the original
+    if diverse == 0 && deltastrength >= 0    #if diversification is disabled keep the mutated spec if its stronger then the original
         replacespec!(poolnet,spmutid,mutspecpool);
         replacespec!(colnet,spmutid,mutspeccol);
     elseif diverse == 1
@@ -472,6 +486,8 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
         end
         addspec!(poolnet,newid,mutspecpool);
         addspec!(colnet,newid,mutspeccol);
+    else
+        println("Error: Something went wrong with the caculation of the new strength after a mutation."); #debug can be eliminated together with the whole deltastrength calculation
     end
 
     return tally;#(intm_mut, ebmut, nbmut, nb0mut, mbmut, tally)
