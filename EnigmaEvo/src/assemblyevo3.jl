@@ -5,7 +5,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     #Number of objects
     O = N - S - 1;
 
-    #create the colony network with an estimated max size (sizehint) dependent on wheter or not diversification is activated
+    #create the colony network, use idmanager of pool network (no copy, a reference to the original)
     colnet::ENIgMaGraph = ENIgMaGraph(poolnet.estsize,poolnet.idmanager);
     #add basal resource as its always there
     basalres = ENIgMaVert();
@@ -117,7 +117,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             #These are extinctions from competitive exclusion
             tally = 1;
 
-
+        #DRAW SECONDARY EXTINCTION
         elseif re <= (probc + probprimext + probsecext)
 
             #select species to go extinct
@@ -149,15 +149,15 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             spec_ints = [0,1,2];
             object_ints = [0,1,2,3];
 
-            if colnet.hasspec[intmutid]
-                change_in_int = rand([true,false]); #change incoming interaction
+            if colnet.hasspec[intmutid] #is interactee a spec?
+                change_in_int = rand([true,false]); #change incoming interaction?
                 if change_in_int
                     old_int = ENIgMaGraphs.getinteractiontype(colnet, spmutid, intmutid);
                 else
                     old_int = ENIgMaGraphs.getinteractiontype(colnet, intmutid, spmutid);
                 end
                 new_int = rand(setdiff(spec_ints,old_int));
-            else
+            else    #interactee is a modifier
                 change_in_int = true;
                 old_int = ENIgMaGraphs.getinteractiontype(colnet, spmutid, intmutid);
                 if intmutid == 1
@@ -170,8 +170,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             tally = mutate!(poolnet, colnet, spmutid, intmutid, change_in_int, old_int, new_int, diverse, tallytable, evolutiontable, ce, cn, cm, cf);
             
             if createlog
-                if poolnet.estsize > size(CID)[1];
-                    CID = vcat(CID,falses(poolnet.estsize - size(CID)[1],maxits));
+                if poolnet.estsize > size(CID)[1];      #has the network grown bigger than our buffer?
+                    CID = vcat(CID,falses(poolnet.estsize - size(CID)[1],maxits));  #then extend the buffer
                 end
             end
 

@@ -6,6 +6,7 @@
 
 module ENIgMaGraphs
 
+# exported functions variables are visible outside of the module if we include the module with using
 export ENIgMaGraph, ENIgMaVert, IdManager       #might be put in begin block? kinda didnt work
 export adde!, addn!, addf!, addm!, dele!, deln!, delm!, delf!
 export numspec
@@ -16,8 +17,9 @@ export getnextid!
 export converttoENIgMaGraph, converttointeractionmat
 export gettrophiclevels, recreatecolnetdiverse
 
-const enlargementfactor = 1.1; #controls how much buffer is added if estsize has to be increased
+const enlargementfactor = 1.3; #controls how much buffer is added if estsize has to be increased
 
+#is used to manage vertex ids, so far only tracks the highest id and assigns new ids
 mutable struct IdManager
     maxid::Int
 
@@ -26,10 +28,19 @@ end;
 
 setmaxid!(idmanager,maxid) = idmanager.maxid = maxid;
 
+"""
+    getnextid!(idmanager::IdManager)
+
+    Returns the next available vertex id.
+"""
 function getnextid!(idmanager::IdManager) #optimization idea: have IdManager save ids of globally extinct species to reassign them?
     idmanager.maxid += 1;
     return idmanager.maxid;
 end
+
+"""
+Defines a vertex in the ENIgMa-model.
+"""
 mutable struct ENIgMaVert
     eat::Set{Int}
     need::Set{Int}
@@ -38,29 +49,50 @@ mutable struct ENIgMaVert
 
     strength::Float64
 
-    ENIgMaVert() = new(Set{Int}(),Set{Int}(),Set{Int}(),Set{Int}(),NaN)
-    ENIgMaVert(eat,need,make,feed) = new(eat,need,make,feed,NaN)
+    #constructors 
+    ENIgMaVert() = new(Set{Int}(),Set{Int}(),Set{Int}(),Set{Int}(),NaN) #creates an empty vertex
+    ENIgMaVert(eat,need,make,feed) = new(eat,need,make,feed,NaN)    #creates a vertex with the given interactions
 end;
 
-#if changed: these have not been used all the time
+#if changed: these have not been used all the time----------------------------
+
+"""
+    adde!(v::ENIgMaVert,ide)
+
+    Adds 'ide' to the set of eat interactions of 'v'.
+"""
 adde!(v::ENIgMaVert,ide) = push!(v.eat,ide);
-function addn!(v::ENIgMaVert,idn)
-    #if idn == 1
-    #    println("debugging addn")
-    #end
-push!(v.need,idn);
-end
+
+"""
+    addn!(v::ENIgMaVert,idn)
+
+    Adds 'idn' to the set of need interactions of 'v'.
+"""
+addn!(v::ENIgMaVert,idn) = push!(v.need,idn);
+"""
+    addm!(v::ENIgMaVert,idm)
+
+    Adds 'idm' to the set of make interactions of 'v'.
+"""
 addm!(v::ENIgMaVert,idm) = push!(v.make,idm);
-addf!(v::ENIgMaVert,idf) = push!(v.feed,idf); 
-function adde!(ve,idf,vf,ide)
+"""
+    addf!(v::ENIgMaVert,idf)
+
+    Adds 'idf' to the set of feed/predator interactions of 'v'.
+"""
+addf!(v::ENIgMaVert,idf) = push!(v.feed,idf);
+
+function adde!(ve,idf,vf,ide)   #creates an eat interaction together with the reciprocal feed interaction
     adde!(ve,ide);
     addf!(vf,idf);
 end
-function addm!(spec,specid,mod,modid)
+
+function addm!(spec,specid,mod,modid) #creates a make interaction together with the reciprocal need interaction.
     addm!(spec,modid);
     addn!(mod,specid);
 end
 
+#same as ad functions just for deletion
 dele!(v::ENIgMaVert,ide) = setdiff!(v.eat,ide);
 deln!(v::ENIgMaVert,idn) = setdiff!(v.need,idn);
 delm!(v::ENIgMaVert,idm) = setdiff!(v.make,idm);
@@ -78,6 +110,18 @@ end
 
 Base.copy(vert::ENIgMaVert) = ENIgMaVert(copy(vert.eat),copy(vert.need),copy(vert.make),copy(vert.feed));
 
+
+"""
+    Defines a network in the ENIgMa-model.
+
+# Extended help
+    'vert::Dict{Int,ENIgMaVert}': Stores id=>vertex pairs of vertices in network.
+    'spec::Set{Int}': Stores ids of species in the network.
+
+    Provides 'hasv[id]' to efficiently check if vetex with 'id' is in the network.
+    Provides 'hasspec[id]' to efficiently check if spec with 'id' is in the network.
+    This can also be used to check if vertex with id is a species (no modifier).
+"""
 mutable struct ENIgMaGraph
     estsize::Int
     idmanager::IdManager
@@ -88,6 +132,11 @@ mutable struct ENIgMaGraph
     ENIgMaGraph(hasv::BitVector,hasspec::BitVector,spec::Set{Int},vert::Dict{Int,ENIgMaVert}, idmanager::IdManager) = new(length(hasv),idmanager,hasv,hasspec,spec,vert);
 end;
 
+"""
+    ENIgMaGraph(estsize::Int,idmanager::IdManager)
+
+    Creates an empty Network wit estimated size 'estsize'.
+"""
 function ENIgMaGraph(estsize::Int,idmanager::IdManager)
     hasv = falses(estsize);
     hasspec = falses(estsize);
@@ -106,8 +155,10 @@ Base.iterate(g::ENIgMaGraph,i...) = iterate(g.vert,i...);
 Base.length(g::ENIgMaGraph) = length(g.vert);
 Base.eltype(g::ENIgMaGraph) = eltype(g.vert);
 
+#this allows to acces the vert dictionary with [] directly used on the network (poolnet[4] instead of poolnet.vert[4] etc)
 Base.getindex(g::ENIgMaGraph,key...) = getindex(g.vert,key...);
 
+#allows to compare two networks
 function Base.:(==)(g1::ENIgMaGraph,g2::ENIgMaGraph)
     equal = (g1.hasv == g2.hasv)
     if equal
@@ -130,7 +181,7 @@ function Base.:(==)(g1::ENIgMaGraph,g2::ENIgMaGraph)
     return equal;
 end
 
-
+#called if the network needs to be enlarged as the network grew bigger than expected
 function enlarge!(g::ENIgMaGraph,estsize::Int)
     estsize <= g.estsize && error("tried to shrink graph with enlarge!");    #failsave, shouldnt be neccessary
     g.hasv = vcat(g.hasv,falses(estsize - g.estsize));
@@ -141,7 +192,13 @@ end
 #returns number of species in network
 numspec(g::ENIgMaGraph) = length(g.spec);#sum(g.hasspec);
 
-#add species to graph
+"""
+    addspec!(g::ENIgMaGraph,id,v::ENIgMaVert)
+
+    Adds species 'v' with id 'id' to 'g' as it is.
+
+    Does not take care of further implications like feed interactions or creating objects. See colonize! for that.
+"""
 function addspec!(g::ENIgMaGraph,id,v::ENIgMaVert)
     id > g.estsize && enlarge!(g,Int(round(id*enlargementfactor)))     #failsave, shouldnt be neccessary
     g.vert[id] = v;
@@ -152,20 +209,30 @@ end
 
 replacespec!(g::ENIgMaGraph,id,v::ENIgMaVert) = addspec!(g::ENIgMaGraph,id,v::ENIgMaVert);     #here in case at some point erasing of old vert needs work might be optimized by having just g.vert[id] = v; would not make sure that vert has been there though
 
-#add abiotic modifier to graph
+"""
+    addmod!(g::ENIgMaGraph,id,v::ENIgMaVert)
+
+    Adds modifier/object 'v' with id 'id' to 'g'.
+"""
 function addmod!(g::ENIgMaGraph,id,v::ENIgMaVert)
     id > g.estsize && enlarge!(g,Int(round(id*enlargementfactor)))     #failsave, shouldnt be neccessary
     g.vert[id] = v;
     g.hasv[id] = true;
 end
 
+"""
+    delv!(g::ENIgMaGraph,id::Int)
+
+    Removes vertex v (species or modifier) from g.
+    Deleting all references to it in the network (except needs).
+"""
 function delv!(g::ENIgMaGraph,id::Int)
     del_v = g[id]
-    for fid in del_v.feed
+    for fid in del_v.feed   #notify predators of absence
         dele!(g[fid],id)
     end
-    if g.hasspec[id]
-        for eid in del_v.eat
+    if g.hasspec[id]    #is spec
+        for eid in del_v.eat    
             delf!(g[eid],id)
         end
         for mid in del_v.make
@@ -286,6 +353,7 @@ function getpotcolonizers!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,colonizers =
     return colonizers;
 end
 
+#Introduces modifier/object from pool network to colony
 function introducemod!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,id_mod)
     feed = Set{Int}()
     for idf in poolnet[id_mod].feed    #...and add feeds manualy
@@ -297,6 +365,13 @@ function introducemod!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,id_mod)
     addmod!(colnet, id_mod, ENIgMaVert(Set{Int}(),Set{Int}(),Set{Int}(),feed)) #add modifier to colony
 end
 
+"""
+    function colonize!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,colonizerid,colonizer = copy(poolnet.vert[colonizerid]))
+    
+    Introduces species 'colonizer' with id 'colonizerid' from 'poolnet' to 'colnet'.
+    
+    Notifies other vertices of presence and introduces modifiers if necessary.
+"""
 function colonize!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,colonizerid,colonizer = copy(poolnet.vert[colonizerid]))
     #adjust eat and feed list
     for ide in colonizer.eat            #might be optimized by putting that into extra function
@@ -348,6 +423,7 @@ function getinteractiontype(g::ENIgMaGraph, id1, id2)
     end
 end
 
+#computes the difference in strength after a specific mutation
 function getdeltastrength(old_int,new_int,change_in_interaction,ce,cn,cm,cpred)
     interaction_bonus = change_in_interaction ? Dict(0=>0,1=>-ce,2=>cn,3=>cm) : Dict(0=>0,1=>-cpred,2=>0,3=>0)
     return interaction_bonus[new_int] - interaction_bonus[old_int];
@@ -382,13 +458,11 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
     mutspeccol = copy(colnet[spmutid]);
     interactorcol = colnet[intmutid];
 
-    deltastrength = 0;
     if change_in_int       
         #delete old interaction
         if old_int == 1
             dele!(mutspecpool, intmutid);
             dele!(mutspeccol, intmutid);
-            deltastrength += ce;
             if diverse == 0
                 delf!(interactorpool, spmutid);
                 delf!(interactorcol, spmutid);
@@ -396,11 +470,9 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
         elseif old_int == 2
             deln!(mutspecpool, intmutid);
             deln!(mutspeccol, intmutid);
-            deltastrength -= cn;
         elseif old_int == 3
             delm!(mutspecpool, intmutid);
             delm!(mutspeccol, intmutid);
-            deltastrength -= cm;
             if diverse == 0
                 deln!(interactorpool, spmutid);
                 deln!(interactorcol, spmutid);
@@ -411,17 +483,14 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
         if new_int == 1
             adde!(mutspecpool, intmutid);
             adde!(mutspeccol, intmutid);
-            deltastrength -= ce;
             addf!(interactorpool, newid);
             addf!(interactorcol, newid);
         elseif new_int == 2
             addn!(mutspecpool,intmutid);
             addn!(mutspeccol,intmutid);
-            deltastrength += cn;
         elseif new_int == 3
             addm!(mutspecpool, intmutid);
             addm!(mutspeccol, intmutid);
-            deltastrength += cm;
             addn!(interactorpool, newid);
             addn!(interactorcol, newid);
         end
@@ -436,7 +505,6 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
             end
             delf!(mutspecpool, intmutid);
             delf!(mutspeccol, intmutid);
-            deltastrength += cpred;
         elseif old_int == 2 && diverse == 0
             deln!(interactorpool, spmutid);
             deln!(interactorcol, spmutid);
@@ -448,7 +516,6 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
             adde!(interactorcol, newid);
             addf!(mutspecpool, intmutid);
             addf!(mutspeccol, intmutid);
-            deltastrength -= cpred;
         elseif new_int == 2
             addn!(interactorpool, newid);
             addn!(interactorcol, newid);
@@ -464,7 +531,7 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
     #Record evolution type (in degree vs. out degree) on backend of tally
     tally += evol_type*0.01;
 
-    if diverse == 0 && deltastrength >= 0    #if diversification is disabled keep the mutated spec if its stronger then the original
+    if diverse == 0    #if diversification is disabled keep the mutated spec if its stronger then the original
         replacespec!(poolnet,spmutid,mutspecpool);
         replacespec!(colnet,spmutid,mutspeccol);
     elseif diverse == 1
@@ -486,10 +553,7 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
         end
         addspec!(poolnet,newid,mutspecpool);
         addspec!(colnet,newid,mutspeccol);
-    else
-        println("Error: Something went wrong with the caculation of the new strength after a mutation."); #debug can be eliminated together with the whole deltastrength calculation
     end
-
     return tally;#(intm_mut, ebmut, nbmut, nb0mut, mbmut, tally)
 end
 

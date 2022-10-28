@@ -1,5 +1,10 @@
 using .ENIgMaGraphs
 
+"""
+    converttointeractionmat(g::ENIgMaGraph)
+
+    Returns 'g' in matrix form.
+"""
 function converttointeractionmat(g::ENIgMaGraph)
     N = g.idmanager.maxid;
     intm = zeros(Int,N,N);
@@ -24,6 +29,11 @@ function converttointeractionmat(g::ENIgMaGraph)
     return intm;
 end
 
+"""
+    converttoENIgMaGraph(intm)
+
+    Converts the interaction matrix 'intm' to an ENIgMaGraph and returns it.
+"""
 function converttoENIgMaGraph(intm)
     N = size(intm)[1];
     g = ENIgMaGraph(N,IdManager(N));
