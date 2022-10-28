@@ -1,6 +1,6 @@
 using Distributed
-using DataFrames
-using Images
+#using DataFrames
+#using Images
 using UnicodePlots
 
 @everywhere using AxisArrays
@@ -18,6 +18,7 @@ using UnicodePlots
 @everywhere using Random
 # @everywhere using HDF5
 @everywhere using JLD2
+@everywhere using CodecZlib #used for compression by JLD2
 
 @everywhere include("ENIgMaGraphs.jl")
 @everywhere using .ENIgMaGraphs

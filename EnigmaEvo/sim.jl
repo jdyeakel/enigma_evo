@@ -4,56 +4,36 @@ elseif isfile("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfunc
     localpath::String = "$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/";
 else                            #othserwise use relative paths
     localpath::String = "src/";
+end;
+
+#using Revise    #helps with debugging in REPL (automatically tracks changes eg in files included with "includet" (include and track))
+include(localpath*"loadfuncs.jl"); 
+
+include(localpath*"set_up_params.jl");
+
+#prepare everything for a simulation consisting of the variation of a parmeter
+simulation_name = "vary_cm";        #specify the name of the simulation
+mkpath("Data/"*simulation_name);    #make a folder with that name in the Data folder
+
+param_vals = 0:0.2:10         #specify the parameter values that shall be simulated
+repetitions_per_param = 100     #specify the number of repetitions per parameter value
+
+compress::Bool = true               #should the data be compressed before storing?
+loop_vars = collect((cm,repetition) for cm in param_vals for repetition in 1:repetitions_per_param);
+
+@distributed for (cm,repetition) in loop_vars
+    initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
+
+    # EVOLUTIONARY VERSION
+    poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,#=intm_evo,=#mutstep,freqe,freqn,events =
+        assemblyevo(initpoolnet, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization, logging);
+    
+    jldsave("Data/"*simulation_name*"/cm=$(cm)_repet=$repetition.jld2",compress;poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,mutstep,freqe,freqn,events, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization, logging,S,lambda,SSprobs,SOprobs)
 end
 
-#using Revise    #helps with debugging in REPL (automatically tracks changes eg in files included with "includet" (included and tracked))
-include(localpath*"loadfuncs.jl");
-
-#Random.seed!(7); #for debugging
-
-S::Int64 = 200;
-maxits::Int64 = 1000;
-const SOprobs = (   #as link types are mutually exclusive pn + pe + pm <= 1 must be fulfilled!!! (pm aprox = )
-p_n=0.002, #0.002,
-p_e=0.01 #0.01
-);
-const SSmult = 1.0; OOmult = 0.0;
-const SSprobs = (p_n = SSmult .* SOprobs.p_n , p_e = SSmult .* SOprobs.p_e);
-const OOprobs = (p_n = OOmult * SOprobs.p_n, p0 = 0.0);
-
-#Competitive gain of a make
-const cm = Float64(pi);
-#Competitive gain of a need
-const cn = exp(1);
-#Competitive loss of an eat
-const ce = sqrt(2);
-#Competitive loss from a predator
-const cpred = 1.;   #everywhere else cf but not here for compatibility with older version
-
-#expected objects per species
-const lambda = 0.1;
-const e_t = 0.; #always set to 0
-
-const n_t = 1.; #always set to 1
-
-#rc = Colonization rates
-#rprimext = Local primary species extinction rate
-#rsecext = Local secondary species extinction rate
-#reo = Local object extinction rate
-#revo = Evolutionary rate
-#rext = Global extinction rate
-const rates0 = (rc = 1., rprimext = 1., rsecext = 1., reo = 1., revo = 0.0, rext = 0.0);;#revo = 0.05, rext = 0.035);
-
-#Turn diversification dynamic on or off
-# 0 = off
-# 1 = on
-diverse::Int = 0;
-
-initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
-
-# EVOLUTIONARY VERSION
-@time poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,#=intm_evo,=#mutstep,freqe,freqn,events =
-    assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse); 
+#example load of a run (without parameters)
+poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,mutstep,freqe,freqn,events = 
+    load("Data/vary_cm/cm=0.0_repet=1.jld2", "poolnet","colnet","sprich","rich","pool","mstrength","evolvedstrength","clock","CID","mutstep","freqe","freqn","events" );
 
 
 collapsetime = clock[maxits - findall(!iszero,reverse(diff(sprich)))[1]];
