@@ -3,17 +3,17 @@ using Distributed
 #using Images
 using UnicodePlots
 
-@everywhere using AxisArrays
-@everywhere using Combinatorics
-@everywhere using LinearAlgebra
+#@everywhere using AxisArrays
+#@everywhere using Combinatorics
+#@everywhere using LinearAlgebra
 # @everywhere using Distributed
-@everywhere using SharedArrays
-@everywhere using SparseArrays
-@everywhere using DataFrames
+#@everywhere using SharedArrays
+#@everywhere using SparseArrays
+#@everywhere using DataFrames
 @everywhere using Distributions
 @everywhere using Images
-@everywhere using SpecialFunctions
-@everywhere using LightGraphs
+#@everywhere using SpecialFunctions
+#@everywhere using LightGraphs
 @everywhere using RCall
 @everywhere using Random
 # @everywhere using HDF5

@@ -1,5 +1,5 @@
 S::Int64 = 200;
-maxits::Int64 = 2000;
+maxits::Int64 = 20000;
 const SOprobs = (   #as link types are mutually exclusive pn + pe + pm(function of lambda) <= 1 must be fulfilled!!!
 p_n=0.002, #0.002,
 p_e=0.01 #0.01
@@ -18,7 +18,7 @@ ce::Float64 = sqrt(2);
 cpred::Float64 = 1.;   #everywhere else cf but not here for compatibility with older version
 
 #expected objects per species
-lambda::Float64 = 0.1;
+lambda::Float64 = 0.0;
 e_t::Float64 = 0.; #always set to 0
 
 n_t::Float64 = 1.; #always set to 1
@@ -30,7 +30,7 @@ n_t::Float64 = 1.; #always set to 1
 #revo = Evolutionary rate
 #rext = Global extinction rate
 rates0::NamedTuple{(:rc, :rprimext, :rsecext, :reo, :revo, :rext), NTuple{6, Float64}} =
-    (rc = 1., rprimext = 1., rsecext = 4., reo = 1., revo = 0.05, rext = 0.0);
+    (rc = 1., rprimext = 1., rsecext = 10., reo = 1., revo = 0.035, rext = 0.005);
 
 #Turn diversification dynamic on or off
 # 0 = off
@@ -42,25 +42,3 @@ diverse::Int = 1;
 restrict_colonization::Bool = false;
 
 logging::Bool = true;
-
-#=
-function save_params(file)
-    file["S"] = S
-    file["maxits"] = maxits
-    file["SOprobs"] = SOprobs
-    file["SSmult"] = SSmult
-    file["SSprobs"] = SSprobs
-    file["OOprobs"] = OOprobs
-    file["cm"] = cm
-    file["cn"] = cn
-    file["ce"] = ce
-    file["cpred"] = cpred 
-    file["lamda"] = lamda
-    file["e_t"] = e_t
-    file["n_t"] = n_t
-    file["rates0"] = rates0
-    file["diverse"] = diverse
-    file["restrict_colonization"] = restrict_colonization
-    file["logging"] = logging
-end
-=#

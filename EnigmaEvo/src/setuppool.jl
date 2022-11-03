@@ -1,22 +1,29 @@
 function setuppool(S, lambda, SSprobs, SOprobs) #, OOprobs)
     # first draw all SO connections, especially all make connections, all objects not created by any species will be discarded
     numOpos = Int(round(lambda*S));    #num obj possible
+    if lambda > 0
+        p_m = lambda/numOpos;   
+        probSOint = SOprobs.p_e + SOprobs.p_n + p_m     #probability of any SO interaction (can be added because they are mutually exclusive)
+
+        lambdaSO = numOpos*probSOint;      # Expectet number of (interesting) SO interactions (only in) per species
+        intprobs = [SOprobs.p_e,SOprobs.p_n,p_m]/probSOint;     #conditional (link exists) probabilities of interaction types
+        intprobthresh = cumsum(intprobs);   #used as thresholds
+    
+        pdistSO = Poisson(lambdaSO);    
+        SOintpS = rand(pdistSO,S);            # draw number of SS interactions for each species
+    
+    
+    elseif lambda == 0
+        SOintpS = zeros(Int,S);
+    else
+        throw(DomainError(lambda, "lambda must be non-negative"))
+    end
+
 
     lambdaSS = S*(SSprobs.p_e + SSprobs.p_n);               # Expectet number of (interesting) SO interactions (only in) per species
-    p_m = lambda/numOpos;  
-    
-    probSOint = SOprobs.p_e + SOprobs.p_n + p_m     #probability of any SO interaction (can be added because they are mutually exclusive)
 
-    lambdaSO = numOpos*probSOint;      # Expectet number of (interesting) SO interactions (only in) per species
-    intprobs = [SOprobs.p_e,SOprobs.p_n,p_m]/probSOint;     #conditional (link exists) probabilities of interaction types
-    intprobthresh = cumsum(intprobs);   #used as thresholds
-
-    #A species is an engineer if number of objects > 0
     pdistSS = Poisson(lambdaSS);
-    pdistSO = Poisson(lambdaSO);
-    
-    SSintpS = rand(pdistSS,S);            # draw number of SO interactions for each species
-    SOintpS = rand(pdistSO,S);            # draw number of SS interactions for each species
+    SSintpS = rand(pdistSS,S);            # draw number of SS interactions for each species
 
     objectrealized = falses(numOpos);           # checks wheather any species creates an object
     SOintmat = zeros(Int,numOpos,S);            # faster if fast index (innermost) goes along coloumns (changes rows) in julia...

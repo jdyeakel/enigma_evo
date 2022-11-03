@@ -422,7 +422,7 @@ end
 
 function test(thorough,random_seed = 0)
 	Random.seed!(random_seed);
-	include("EnigmaEvo/src/set_up_params.jl")
+	include("set_up_params.jl")
 
 	iserrorfree = testmutation(ce,cn,cm,cpred,thorough);
 
@@ -448,11 +448,15 @@ function test(thorough,random_seed = 0)
 	return iserrorfree;
 end
 
+thorough = true;
+seed = 23;
+test(thorough,seed)
 
 
-
-
-
+for seed in rand(1:10_000,10)
+	println("Seed = $seed")
+	test(thorough,seed)
+end
 
 
 
