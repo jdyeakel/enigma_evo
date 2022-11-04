@@ -24,6 +24,7 @@ using UnicodePlots
 @everywhere using .ENIgMaGraphs
 @everywhere include("setuppool.jl")
 @everywhere include("assemblyevo3.jl")
+@everywhere include("../simulations/average_time_series.jl")
 
 #=
 @everywhere include("smartpath.jl")

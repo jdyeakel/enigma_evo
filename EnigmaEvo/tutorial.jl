@@ -37,10 +37,13 @@ needs = spec.need;
 exists = colnet.hasv[3]
 #check if a species with id is in the network/if the vertex with that id is a species
 isspec = colnet.hasspec[3]
+#get number of species in a network
+numspec(colnet_it_100)
 #reconstruct the state of the colony at a certain itteration
 colnet_it_100 = recreatecolnetdiverse(poolnet::ENIgMaGraph,100,CID[:,100],maxids[100],glob_ext_spec)
 #for some fuctions there is : more information available press ? in REPL(console), then enter function name (or hover over in vs code)
 # try: ? recreatecolnetdiverse
 
-#get number of species in a network
-numspec(colnet_it_100)
+# average one or multiple time series from a simulation
+avg_sprich =  average_time_series("sprich","vary_cn_no_engineers","cn",0:.1:5,2)
+avg_freqn,avg_freqm =  average_time_series(["freqn","freqe"],"vary_cn_no_engineers","cn",0:.1:5,2)

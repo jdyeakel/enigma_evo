@@ -52,7 +52,7 @@ function setuppool(S, lambda, SSprobs, SOprobs) #, OOprobs)
     O = size(SOintmat,1);   #num objects
     
     N = 1 + S + O;  # basal resource neither Species nor object here
-    estsize = N + Int(round(N*.1*diverse)); #give a guess of the max system size might be optimized by tuning this value with observations
+    estsize = N + Int(round(N*2*diverse)); #give a guess of the max system size might be optimized by tuning this value with observations
     poolnet::ENIgMaGraph = ENIgMaGraph(estsize);    # create empty pool network
 
     #create basal resource
