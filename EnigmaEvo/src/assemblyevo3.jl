@@ -1,10 +1,4 @@
 function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, diverse, restrict_colonization::Bool, createlog = false)
-    # Total size of the species + objects
-    N = length(poolnet);
-    S = numspec(poolnet);
-    #Number of objects
-    O = N - S - 1;
-
     #create the colony network, use idmanager of pool network (no copy, a reference to the original)
     colnet::ENIgMaGraph = ENIgMaGraph(poolnet.estsize,poolnet.idmanager);
     #add basal resource as its always there
@@ -28,6 +22,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
 
     freqe = Array{Float64}(undef,maxits);
     freqn = Array{Float64}(undef,maxits);
+    freqe_pool = Array{Float64}(undef,maxits);
+    freqn_pool = Array{Float64}(undef,maxits);
 
     mutstep = zeros(Float64,maxits);
     evolvedstrength = Array{Float64}(undef,0);
@@ -48,8 +44,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     it = 0;
     while it < maxits
 
-        minstrength = 0 + 0 - ce*Float64(N - 1) - cf*Float64(O);    #assuming ce > cf
-        maxstrength = cm*Float64(O) + cn*Float64(S) - ce*1 - cf*0;  #assuming cm > cn
+        minstrength = ce*Float64(length(poolnet) - 1);    #assuming ce > cf, eat everything but yourself
+        maxstrength = cm*Float64(length(poolnet) - numspec(poolnet) - 1) + cn*Float64(S) - ce*1 - cf*0;  #assuming cm > cn
 
         #COUNT POTENTIAL COLONIZERS
         if restrict_colonization
@@ -184,25 +180,19 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             if colnet.hasv[globextid]
                 delv!(colnet,globextid)
             end
-            
-            #update counters
-            if poolnet.hasspec[globextid]   #is species?
-                S -= 1;
-            else
-                O -= 1;
-            end
 
             if createlog
                 globextspec[it] = Pair(globextid,poolnet[globextid]);
             end
 
             delv!(poolnet,globextid);
-            N -= 1;
         end
         
         #SAVE RESULTS IN BUFFERS
         freqe[it] = (sum([length(colnet[id].eat) for id in colnet.spec]) - length(colnet[1].feed))/max(length(colnet)-1,1);     #bit afraid of overflows...
         freqn[it] = sum([length(setdiff(colnet[id].need,1)) for id in colnet.spec])/max(length(colnet)-1,1);
+        freqe_pool[it] = (sum([length(poolnet[id].eat) for id in poolnet.spec]) - length(poolnet[1].feed))/max(length(poolnet)-1,1);     #bit afraid of overflows...
+        freqn_pool[it] = sum([length(setdiff(poolnet[id].need,1)) for id in poolnet.spec])/max(length(poolnet)-1,1);
 
         if createlog     #could be significantly optimized by just saving the changes and reconstructing if necessary
             CID[:,it] = colnet.hasv;
@@ -211,7 +201,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
 
         sprich[it] = numspec(colnet);
         rich[it] = length(colnet);
-        pool[it] = N;
+        pool[it] = length(poolnet);
         #NOTE: standardize mean strength between 0 and 1
         mstrength[it] = (mean( v.strength for (id,v) in poolnet if poolnet.hasspec[id] ) - minstrength)/(maxstrength - minstrength); #make strengths positive with a minimum of 1
         events[it] = tally;
@@ -233,6 +223,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             mutstep,
             freqe,
             freqn,
+            freqe_pool,
+            freqn_pool,
             events
         )
     else
@@ -251,6 +243,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             mutstep,
             freqe,
             freqn,
+            freqe_pool,
+            freqn_pool,
             events
         )
     end

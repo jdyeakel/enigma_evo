@@ -433,7 +433,7 @@ function test(thorough,random_seed = 0)
 
 				thorough && (iserrorfree &= checkinitpoolconsistency(initpoolnet));
 
-				poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,globextspec,mutstep,freqe,freqn,events =
+				poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,globextspec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events =
 				assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse,restrict_colonization,logging);
 
 				if !checkconsistency(poolnet,colnet)

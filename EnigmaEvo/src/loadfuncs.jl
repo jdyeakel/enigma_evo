@@ -6,7 +6,7 @@ using UnicodePlots
 #@everywhere using AxisArrays
 #@everywhere using Combinatorics
 #@everywhere using LinearAlgebra
-# @everywhere using Distributed
+#@everywhere using Distributed
 #@everywhere using SharedArrays
 #@everywhere using SparseArrays
 #@everywhere using DataFrames

@@ -17,13 +17,13 @@ include(localpath*"set_up_params.jl");
 poolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
 
 # run a simulation with parameters given (always use a freshly initialized poolnet as the poolnet is changed during assembly)
-poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,events =
+@time poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events =
     assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, logging);
 
 # save everything you want to use later in file 
 compress = true;    #should data be compressed?
 #put all variable to be saved after semicolon, order doesnt matter
-jldsave("tutorial.jld2",compress;poolnet,colnet,sprich,clock,CID,glob_ext_spec,maxids)
+jldsave("tutorial.jld2",compress;poolnet,colnet,sprich,clock,CID,gl - cf*Float64(length(poolnet)-numspec(poolnet)) - cf*Float64(length(poolnet)-numspec(poolnet)) - cf*Float64(length(poolnet)-numspec(poolnet))ob_ext_spec,maxids)
 
 #for loading use eg the following
 poolnet_loaded, colnet_loaded = load("tutorial.jld2", "poolnet","colnet");
@@ -46,4 +46,4 @@ colnet_it_100 = recreatecolnetdiverse(poolnet::ENIgMaGraph,100,CID[:,100],maxids
 
 # average one or multiple time series from a simulation
 avg_sprich =  average_time_series("sprich","vary_cn_no_engineers","cn",0:.1:5,2)
-avg_freqn,avg_freqm =  average_time_series(["freqn","freqe"],"vary_cn_no_engineers","cn",0:.1:5,2)
+avg_sprich, avg_freqn =  average_time_series(["freqn","freqe"],"vary_cn_no_engineers","cn",0:.1:5,2)
