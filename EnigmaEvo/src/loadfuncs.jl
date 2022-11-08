@@ -2,6 +2,7 @@ using Distributed
 #using DataFrames
 #using Images
 using UnicodePlots
+using Plots
 
 #@everywhere using AxisArrays
 #@everywhere using Combinatorics
@@ -10,6 +11,7 @@ using UnicodePlots
 #@everywhere using SharedArrays
 #@everywhere using SparseArrays
 #@everywhere using DataFrames
+@everywhere using OffsetArrays
 @everywhere using Distributions
 @everywhere using Images
 #@everywhere using SpecialFunctions
