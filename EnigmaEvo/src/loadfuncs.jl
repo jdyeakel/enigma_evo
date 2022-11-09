@@ -26,7 +26,9 @@ using Plots
 @everywhere using .ENIgMaGraphs
 @everywhere include("setuppool.jl")
 @everywhere include("assemblyevo3.jl")
-@everywhere include("../simulations/average_time_series.jl")
+@everywhere include("average_time_series.jl")
+@everywhere include("extinction_size.jl")
+@everywhere include("plots.jl")
 
 #=
 @everywhere include("smartpath.jl")
