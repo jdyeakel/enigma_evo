@@ -554,7 +554,7 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
         addspec!(poolnet,newid,mutspecpool);
         addspec!(colnet,newid,mutspeccol);
     end
-    return tally;#(intm_mut, ebmut, nbmut, nb0mut, mbmut, tally)
+    return newid, tally;#(intm_mut, ebmut, nbmut, nb0mut, mbmut, tally)
 end
 
 """

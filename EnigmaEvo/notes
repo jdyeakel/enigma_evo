@@ -1,1 +1,13 @@
 bipartite nodf for nestedness
+
+Make 2nd species(actually first) just another species after creation of network (allow it to go globally extinct)? 
+
+
+
+
+has parent: sgp-----x  -->  sgp----NP----x      (create the node of the branching event, the new parent of the leafNode x that gets moved to present and stays leaf)
+                                    `----y
+
+
+
+

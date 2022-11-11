@@ -21,6 +21,7 @@ using Plots
 # @everywhere using HDF5
 @everywhere using JLD2
 @everywhere using CodecZlib #used for compression by JLD2
+@everywhere using Phylo
 
 @everywhere include("ENIgMaGraphs.jl")
 @everywhere using .ENIgMaGraphs

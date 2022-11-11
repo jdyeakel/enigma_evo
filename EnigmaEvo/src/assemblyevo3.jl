@@ -1,4 +1,4 @@
-function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, diverse, restrict_colonization::Bool, createlog = false)
+function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, diverse, restrict_colonization::Bool, createlog = true)
     #create the colony network, use idmanager of pool network (no copy, a reference to the original)
     colnet::ENIgMaGraph = ENIgMaGraph(poolnet.estsize,poolnet.idmanager);
     #add basal resource as its always there
@@ -20,6 +20,16 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         globextspec = Dict{Int,Pair{Int,ENIgMaVert}}()    #Stores globally extinct species together with their ids. The keys are the iterations the species went extinct
     end
 
+    #initialize phylogenetic tree
+    phyloTree = ManyRootTree()  #create phylo genetic tree
+    if diverse == 1  #in non diverse case phylogeny kinda weird
+        ##create root nodes
+        #createnodes!(phyloTree,Dict{String,Dict{String,Any}}("$(id)_root" => Dict{String,Any}("timestamp" => 0) for id in poolnet.spec))
+        superRoot = createnode!(phyloTree,"superRoot", data=Dict{String,Any}("timestamp"=>0.0))
+        #create leaf nodes those will be kept and move along with time, see note in evlution passage
+        createnodes!(phyloTree,Dict{String,Dict{String,Any}}("$id" => Dict{String,Any}("parentName"=>"superRoot", "version"=>1, "heritage"=>"") for id in poolnet.spec))
+    end
+
     freqe = Array{Float64}(undef,maxits);
     freqn = Array{Float64}(undef,maxits);
     freqe_pool = Array{Float64}(undef,maxits);
@@ -30,6 +40,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
 
     evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
     tallytable = [4.1 4.2 5.1 4.3 4.4 5.2 4.5 4.6 5.3 6.1 6.2 6.3];
+    interactionTable = Dict{Int, String}(0=>"i",1=>"e",2=>"n",3=>"m")
 
     # If diversification is turned off, rates.rext -> 0 do that by hand
     if diverse == 0
@@ -163,12 +174,32 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
                 end
             end
 
-            tally = mutate!(poolnet, colnet, spmutid, intmutid, change_in_int, old_int, new_int, diverse, tallytable, evolutiontable, ce, cn, cm, cf);
+            newId, tally = mutate!(poolnet, colnet, spmutid, intmutid, change_in_int, old_int, new_int, diverse, tallytable, evolutiontable, ce, cn, cm, cf);
             
             if createlog
                 if poolnet.estsize > size(CID)[1];      #has the network grown bigger than our buffer?
                     CID = vcat(CID,falses(poolnet.estsize - size(CID)[1],maxits));  #then extend the buffer
                 end
+            end
+
+            #update phylogenic Tree (approach a bit unintuitive.
+            # I keep the leaf nodes unattached, just move them forward and let them save their current version
+            # and where they are currently attached without actually attaching them)
+            if diverse == 1
+                leafNode = getnode(phyloTree,"$(spmutid)")      #get the leaf node of the mutating species to move it to the present        
+                soonGrandParent = getnode(phyloTree,leafNode.data["parentName"])   #get its parent's and soon to be grandparent's name 
+
+                #The plan: sgp----x  -->   sgp----np----x      (x = leafNode gets moved to present and stays leaf)
+                #                                  `----y
+                #create the node of the branching event, the new parent of the leafNode x
+                newParentName = "$(spmutid)v$(leafNode.data["version"])"
+                newParent = createnode!(phyloTree,newParentName,data=Dict{String,Any}("timestamp"=>t,"evolution"=>"$(change_in_int ? "i" : "o"):$(interactionTable[old_int])$(interactionTable[new_int])"))
+                createbranch!(phyloTree,soonGrandParent,newParent,t - soonGrandParent.data["timestamp"])    #connect grandparent to parent (last argument length of branch) 
+
+                #update leaf node and create new leaf for the evolved species
+                createnode!(phyloTree,"$newId",data=Dict{String,Any}("parentName" => newParentName, "version" => 1, "heritage" => "$(leafNode.data["heritage"])_$(newParentName)"))
+                leafNode.data["parentName"] = newParentName;
+                leafNode.data["version"] += 1;
             end
 
         # Global EXTINCTION
@@ -186,6 +217,15 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             end
 
             delv!(poolnet,globextid);
+
+            #update Phylogenetic tree
+            if diverse == 1
+                nowExtNode = getnode(phyloTree,"$(globextid)")
+                parent = getnode(phyloTree,nowExtNode.data["parentName"])
+                createbranch!(phyloTree,parent,nowExtNode,t - parent.data["timestamp"])
+                nowExtNode.data["extinct"] = true
+                nowExtNode.data["timestamp"] = t
+            end
         end
         
         #SAVE RESULTS IN BUFFERS
@@ -207,10 +247,22 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         events[it] = tally;
     end #end time steps
 
+    if diverse == 1
+        #finalize phylogenetic tree
+        for survivorId in poolnet.spec
+            survivingNode = getnode(phyloTree,"$(survivorId)")
+            parent = getnode(phyloTree,survivingNode.data["parentName"])
+            createbranch!(phyloTree,parent,survivingNode,t - parent.data["timestamp"])
+            survivingNode.data["extinct"] = false
+            survivingNode.data["timestamp"] = t
+        end
+    end
+
     if createlog
         return(
             poolnet,
             colnet,
+            phyloTree,
             sprich,
             rich,
             pool,
@@ -231,6 +283,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         return(
             poolnet,
             colnet,
+            phyloTree,
             sprich,
             rich,
             pool,

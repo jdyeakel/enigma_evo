@@ -25,7 +25,7 @@ loop_vars = collect((cn,repetition) for cn in param_vals for repetition in 1:rep
     initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
 
     # EVOLUTIONARY VERSION
-    poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events =
+    poolnet,colnet,phyloTree,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events =
         assemblyevo(initpoolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, logging);
     
     jldsave("data/"*simulation_name*"/cn=$(cn)_repet=$repetition.jld2",compress;poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,mutstep,freqe,freqn,freqe_pool,freqn_pool,events, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization, logging,S,lambda,SSprobs,SOprobs)

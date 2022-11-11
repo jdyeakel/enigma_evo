@@ -1,5 +1,5 @@
 function plot_simulation(simulation_data;offset=0,show=true)
-    poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events = simulation_data
+    poolnet, colnet, phyloTree, sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events = simulation_data
 
     sprich_plt = plot(clock, sprich, xlabel="clock time", ylabel="species richness", legend=false);
     freqe_plt = plot(clock, freqe, xlabel="clock time", ylabel="average amount of eat interactions", legend=false);
