@@ -25,7 +25,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     if diverse == 1  #in non diverse case phylogeny kinda weird
         ##create root nodes
         #createnodes!(phyloTree,Dict{String,Dict{String,Any}}("$(id)_root" => Dict{String,Any}("timestamp" => 0) for id in poolnet.spec))
-        superRoot = createnode!(phyloTree,"superRoot", data=Dict{String,Any}("timestamp"=>0.0))
+        superRoot = createnode!(phyloTree,"superRoot", data=Dict{String,Any}("timestamp"=>0.0,"evolution" => ""))
         #create leaf nodes those will be kept and move along with time, see note in evlution passage
         createnodes!(phyloTree,Dict{String,Dict{String,Any}}("$id" => Dict{String,Any}("parentName"=>"superRoot", "version"=>1, "heritage"=>"") for id in poolnet.spec))
     end

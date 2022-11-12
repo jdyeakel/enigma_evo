@@ -21,7 +21,7 @@ poolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
     simulation_data = assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, logging);
 
 # save everything you want to use later in file 
-plotcompress = true;    #should data be compressed?
+compress = true;    #should data be compressed?
 #put all variable to be saved after semicolon, order doesnt matter
 jldsave("tutorial.jld2",compress;poolnet,colnet,sprich,clock,CID,glob_ext_spec,maxids)
 
@@ -42,7 +42,7 @@ numspec(colnet_it_100)
 #reconstruct the state of the colony at a certain itteration
 colnet_it_100 = recreatecolnetdiverse(poolnet::ENIgMaGraph,100,CID[:,100],maxids[100],glob_ext_spec)
 #for some fuctions there is : more information available press ? in REPL(console), then enter function name (or hover over in vs code)
-# try: ? recreatecolnetdiverse
+# try: ?recreatecolnetdiverse
 
 # average one or multiple time series from a simulation
 avg_sprich =  average_time_series("sprich","vary_cn_no_engineers","cn",0:.1:5,2)
