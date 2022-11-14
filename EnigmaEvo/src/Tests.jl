@@ -9,26 +9,26 @@ function get_extinction_size_distrib_test()
         return true
     end
 
-    dist = extinction_size_distrib(zeros(10),true)
+    dist = get_extinction_size_distrib(zeros(10),true)
     working &= isDist(dist,1)
     if dist[0] != 1
         working = false;
         println("Error: extinction_size_distrib failed test case 1.")
     end
-    dist = extinction_size_distrib(1:10,true)
+    dist = get_extinction_size_distrib(1:10,true)
     working &= isDist(dist,2)
     if dist[9] != 1
         working = false;
         println("Error: extinction_size_distrib failed test case 2.")
     end
-    dist = extinction_size_distrib([7,7,6,5,4,3,3,4,5,4],true)
+    dist = get_extinction_size_distrib([7,7,6,5,4,3,3,4,5,4],true)
     working &= isDist(dist,3)
     if dist[[-4,-1,0,2]] != [1,1,2,1.]/5
         working = false;
         println("Error: extinction_size_distrib failed test case 3.")
     end
     return working
-    dist = extinction_size_distrib([1,2,3,2,3,4,3,2,3,4,5,6,5,4,5,4,3],true)
+    dist = get_extinction_size_distrib([1,2,3,2,3,4,3,2,3,4,5,6,5,4,5,4,3],true)
     working &= isDist(dist,4)
     if dist[[-2,-1,1,2,4]] != [3,1,1,2,1]/8
         working = false;
@@ -479,4 +479,9 @@ function test(thorough,random_seed = 0)
 	end
 
 	return iserrorfree;
+end
+
+works = true
+for seed in 234:250
+	works &= test(true,seed)
 end

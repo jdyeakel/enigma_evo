@@ -19,6 +19,7 @@ using Plots
 @everywhere using RCall
 @everywhere using Random
 # @everywhere using HDF5
+@everywhere using Graphs
 @everywhere using JLD2
 @everywhere using CodecZlib #used for compression by JLD2
 @everywhere using Phylo

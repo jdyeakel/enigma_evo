@@ -32,7 +32,7 @@ function getAttributeVector(tree, attributeName, eltype)
     ret
 end
 
-function plotPhylogeny(phyloTree,sorted=true)
+function plotPhylogeny(phyloTree;sorted=true)
     sorted && sort!(phyloTree)
     
     evoTypes = ["i:ie","i:in","i:im","i:ei","i:en","i:em","i:ni","i:ne","i:nm","i:mi","i:me","i:mn",
@@ -57,6 +57,3 @@ function plotPhylogeny(phyloTree,sorted=true)
     #plot(phyloTree, marker_group = "evolution", series_annotations = text.("test" for i in 1:nnodes(phyloTree)), markersize = 15, markershape = :square, size=(1920,20_000))
     #plt = plot(phyloTree, marker_group = "evolution", c= :Accent_8, markerstrokewidth = .2, legend=:topleft, markersize = 5, markershape = :square, size=(1920,20_000))
 end
-
-node = getnode(phyloTree,getparent(phyloTree,"51v2"))
-node.data["evolution"]

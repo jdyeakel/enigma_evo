@@ -20,6 +20,17 @@ poolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
 @time poolnet,colnet,phyloTree,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events =
     simulation_data = assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, logging);
 
+
+#plot some results:
+pyplot()    #use the pyplot backend for interactivity
+#gr() use the gr backend for faster plots
+
+#Plot some time series and the distribution of extinction sizes ignoring the first 2000 itterations
+plot_simulation(simulation_data,offset=2000,show=true)
+
+#plot the phylogeny
+plotPhylogeny(phyloTree,sorted=true)
+
 # save everything you want to use later in file 
 compress = true;    #should data be compressed?
 #put all variable to be saved after semicolon, order doesnt matter

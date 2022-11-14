@@ -27,13 +27,13 @@ lineplot(itterations,hcat(freqn,freqn_pool),xlabel="itteration",ylabel="freq nee
 param_name = "cn"
 simulation_name = "vary_$(param_name)_no_engineers_rprimext=10";        #specify the name of the simulation
 
-sprich_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "species richness",legend = :topleft);
+sprich_plt = plot(size = (4000,4000),xlabel = "clock time", ylabel = "species richness",legend = :topleft);
 freqe_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "average amount of eat interactions",legend = :topleft);
 freqn_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "average amount of need interactions",legend = :topleft);
 
 param_vals = 0:2:20
 for param in param_vals
-    for rep in 1:5
+    for rep in 1:2
         filename = "$(param_name)=$(param)_repet=$(rep).jld2"
         clock, freqe, freqn, sprich =
             load("data/$(simulation_name)/$(filename)", "clock","freqe", "freqn", "sprich");
@@ -50,3 +50,8 @@ Plots.savefig(freqn_plt,"data/$simulation_name/freqn_plt.png");
 display(sprich_plt)
 display(freqn_plt)
 display(freqe_plt)
+
+
+
+node = getnode(phyloTree,getparent(phyloTree,"51v2"))
+node.data["evolution"]

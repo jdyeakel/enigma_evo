@@ -17,6 +17,8 @@ export getnextid!
 export converttoENIgMaGraph, converttointeractionmat
 export gettrophiclevels, recreatecolnetdiverse
 
+using Graphs
+
 const enlargementfactor = 1.3; #controls how much buffer is added if estsize has to be increased
 
 #is used to manage vertex ids, so far only tracks the highest id and assigns new ids
@@ -53,6 +55,7 @@ mutable struct ENIgMaVert
     ENIgMaVert() = new(Set{Int}(),Set{Int}(),Set{Int}(),Set{Int}(),NaN) #creates an empty vertex
     ENIgMaVert(eat,need,make,feed) = new(eat,need,make,feed,NaN)    #creates a vertex with the given interactions
 end;
+
 
 #if changed: these have not been used all the time----------------------------
 
@@ -110,6 +113,7 @@ end
 
 Base.copy(vert::ENIgMaVert) = ENIgMaVert(copy(vert.eat),copy(vert.need),copy(vert.make),copy(vert.feed));
 
+abstract type AbstractENIgMaGraph <: Graphs.AbstractGraph{Int} end
 
 """
     Defines a network in the ENIgMa-model.
@@ -122,7 +126,7 @@ Base.copy(vert::ENIgMaVert) = ENIgMaVert(copy(vert.eat),copy(vert.need),copy(ver
     Provides 'hasspec[id]' to efficiently check if spec with 'id' is in the network.
     This can also be used to check if vertex with id is a species (no modifier).
 """
-mutable struct ENIgMaGraph
+mutable struct ENIgMaGraph <: AbstractENIgMaGraph
     estsize::Int
     idmanager::IdManager
     hasv::BitVector             #is vert with id in Graph
@@ -153,10 +157,11 @@ getnextid!(g::ENIgMaGraph) = getnextid!(g.idmanager);
 
 Base.iterate(g::ENIgMaGraph,i...) = iterate(g.vert,i...);
 Base.length(g::ENIgMaGraph) = length(g.vert);
-Base.eltype(g::ENIgMaGraph) = eltype(g.vert);
+#Base.eltype(g::ENIgMaGraph) = eltype(g.vert);
 
 #this allows to acces the vert dictionary with [] directly used on the network (poolnet[4] instead of poolnet.vert[4] etc)
 Base.getindex(g::ENIgMaGraph,key...) = getindex(g.vert,key...);
+
 
 #allows to compare two networks
 function Base.:(==)(g1::ENIgMaGraph,g2::ENIgMaGraph)
@@ -247,7 +252,7 @@ end
 
 Base.in(id::Int,g::ENIgMaGraph) = g.hasv[id];
 #hasv(g::ENIgMaGraph,id) = g.hasv[id]; hasnt been used might have been smarter...
-
+include("GraphInterface.jl")
 include("convertENIgMaGraphs.jl")
 
 #calculates the competitive strength of all vertices
@@ -447,10 +452,10 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
         #    println(c);
         #end
     else
-        if getdeltastrength(old_int,new_int,change_in_int,ce,cn,cm,cpred) < 0
-            return -1;  #what would be the right tally for a discarded mutation?
-        end
         newid = spmutid
+        if getdeltastrength(old_int,new_int,change_in_int,ce,cn,cm,cpred) < 0
+            return newid,-1;  #what would be the right tally for a discarded mutation?
+        end
     end
     
     mutspecpool = copy(poolnet[spmutid]);
