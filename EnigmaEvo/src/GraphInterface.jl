@@ -1,4 +1,4 @@
-Base.eltype(::Type{<:AbstractENIgMaGraph}) = Int
+Base.eltype(::Type{<:AbstractENIgMaGraph}) = ENIgMaVert
 
 Graphs.is_directed(::Type{<:AbstractENIgMaGraph}) = true
 Graphs.is_directed(::AbstractENIgMaGraph) = true
@@ -9,7 +9,7 @@ Graphs.is_directed(::AbstractENIgMaGraph) = true
     makeInteraction=3
 end
 
-struct ENIgMaEdge{intType}
+struct ENIgMaEdge{intType} <: Graphs.AbstractSimpleEdge{Int}
     src::Int
     dst::Int
 end
@@ -126,6 +126,3 @@ Graphs.nv(g::ENIgMaGraph) = length(g)
 
 Graphs.vertices(g::InteractionGraph{intT}) where intT = keys(g.g.vert)
 Graphs.vertices(g::ENIgMaGraph) = keys(g.vert)
-
-
-

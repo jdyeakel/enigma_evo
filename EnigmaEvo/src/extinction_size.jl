@@ -1,3 +1,22 @@
+function dictToDistribution(dict)
+    minVal,maxVal = extrema(keys(dict))
+    offset = -minVal + 1;
+    shiftedDistVec = zeros(maxVal + offset)
+    numEvents = sum(values(dict))
+    for (key,val) in dict
+        shiftedDistVec[key + offset] = val/numEvents;
+    end
+    return OffsetArray(shiftedDistVec,minVal:maxVal)
+end
+
+"""
+    get_extinction_size_distrib(sprich;break_at_0 = false)
+
+    Computes the distribution of sizes of growth and extinction cascades within the species richness 'sprich'.
+
+    A growth/extinction cascade is considered to be a continuous chain of only extinction/growth events. 
+    If 'break_at_zero' = true an event that doesn't affect the species richness ends a cascade. Otherwise they are ignored.
+"""
 function get_extinction_size_distrib(sprich,break_at_0 = false)    #pretty shure there is a faster solution...and a shorter but more confusing one and probably slower(using diff and diff again) but
     del_sprich = diff(sprich);
     ext_length_dist = Dict{Int,Int}()
@@ -64,12 +83,41 @@ function get_extinction_size_distrib(sprich,break_at_0 = false)    #pretty shure
         end
         increase = 0
     end
-    max_decr,max_incr = extrema(keys(ext_length_dist))
-    offset = -max_decr + 1;
-    ext_len_dist_vec = zeros(max_incr - max_decr + 1)
-    num_events = sum(values(ext_length_dist))
-    for (key,val) in ext_length_dist
-        ext_len_dist_vec[key + offset] = val/num_events;
-    end
-    return OffsetArray(ext_len_dist_vec,max_decr:max_incr)
+
+    return dictToDistribution(ext_length_dist)
 end
+
+"""
+    speciesRichnessDeltaPrePostEvents(sprich, itterations, clock, Δt, offset=0)
+"""
+function speciesRichnessDeltaPrePostEvents(sprich, itterations, clock, Δt; offset=0)
+    ΔSPreDist = Dict{Int,Int}()
+    ΔSPostDist = Dict{Int,Int}()
+    tMin = Δt + clock[1]
+    tMax = clock[end] - Δt
+    for (it,t) in ((it,clock[it]) for it in itterations if it > offset )
+        if t >= tMin
+            start = findfirst(s -> s > t - Δt,clock) - 1
+            ΔS = sprich[start] - sprich[it]
+            if haskey(ΔSPreDist, ΔS)
+                ΔSPreDist[ΔS] += 1
+            else
+                ΔSPreDist[ΔS] = 1
+            end
+        end
+
+        if t <= tMax
+            windowEnd = findfirst(s -> s > t + Δt, clock) - 1
+            ΔS = sprich[it] - sprich[windowEnd]
+            if haskey(ΔSPostDist, ΔS)
+                ΔSPostDist[ΔS] += 1
+            else
+                ΔSPostDist[ΔS] = 1
+            end
+        end
+    end
+
+    return dictToDistribution(ΔSPreDist), dictToDistribution(ΔSPostDist)
+end
+
+ΔSPrePostEvents = speciesRichnessDeltaPrePostEvents

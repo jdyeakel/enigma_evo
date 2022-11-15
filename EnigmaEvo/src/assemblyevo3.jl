@@ -35,7 +35,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     freqe_pool = Array{Float64}(undef,maxits);
     freqn_pool = Array{Float64}(undef,maxits);
 
-    mutstep = zeros(Float64,maxits);
+    mutstep = Float64[]#zeros(Float64,maxits);
     evolvedstrength = Array{Float64}(undef,0);
 
     evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
