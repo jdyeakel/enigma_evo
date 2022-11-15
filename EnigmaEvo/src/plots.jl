@@ -1,15 +1,21 @@
 function plot_simulation(simulation_data;offset=0,show=true)
     poolnet, colnet, phyloTree, sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events = simulation_data
 
-    sprich_plt = plot(clock, sprich, xlabel="clock time", ylabel="species richness", legend=false);
-    freqe_plt = plot(clock, freqe, xlabel="clock time", ylabel="average amount of eat interactions", legend=false);
-    freqn_plt = plot(clock, freqn, lxlabel="clock time", ylabel="average amount of need interactions", legend=false);
+    offset > length(sprich) && error("Offset (= $offset) is greater or eaqual to the length of the data set (=$(length(sprich))).")
+
+    offsetTime = clock[offset]
+    sprich_plt = vline([offsetTime], c=:grey, label="offset")
+    freqe_plt = vline([offsetTime], c=:grey, label="offset")
+    freqn_plt = vline([offsetTime], c=:grey, label="offset")
+    plot!(sprich_plt, clock, sprich, xlabel="clock time", ylabel="species richness", legend=false, vline=clock[offset]);
+    plot!(freqe_plt,clock, freqe, xlabel="clock time", ylabel="average amount of eat interactions", legend=false);
+    plot!(freqn_plt,clock, freqn, lxlabel="clock time", ylabel="average amount of need interactions", legend=false);
 
     ext_len_dist = get_extinction_size_distrib(sprich[(1+offset):end])
     ext_size_plt = bar(pairs(ext_len_dist), xlabel="length of extinction cascade", yaxis=:log, ylabel="log(probability)", legend=false);
 
     l = @layout [
-        [grid(3,1)] d{0.5w}
+        [Plots.grid(3,1)] d{0.5w}
         ]
     summary_plt = plot(sprich_plt,freqe_plt,freqn_plt,ext_size_plt, layout=l,legend=false);
     if show
@@ -43,11 +49,12 @@ function plotPhylogeny(phyloTree;sorted=true)
     display(bar(pairs(evosDistribution),
         yaxis="probability",
         title = "Distribution of evolution types",
-        size = (1000,400)
+        size = (1000,400)#=,
+        layout = Layout(xaxis_type = "category")=#
     ))
 
     plot(phyloTree, 
-        series_annotations=text.(evos, 6, :center, :center, :black,),
+        series_annotations=text.(evos, 8, :center, :center, :black,),
         size=(1920,20_000),
         markersize=10,
         markerstrokewidth = .2,

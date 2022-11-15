@@ -22,7 +22,7 @@ poolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
 
 
 #plot some results:
-pyplot()    #use the pyplot backend for interactivity
+plotlyjs()    #use the plotlyjs backend for interactivity
 #gr() use the gr backend for faster plots
 
 #Plot some time series and the distribution of extinction sizes ignoring the first 2000 itterations
@@ -30,6 +30,16 @@ plot_simulation(simulation_data,offset=2000,show=true)
 
 #plot the phylogeny
 plotPhylogeny(phyloTree,sorted=true)
+
+
+#use functions of the Graphs package on ENIgMaGraphs
+#@enter strongly_connected_components(colnet)
+
+#what happens after a certain sort of events to species richness?
+evos = findall(ev -> 4 <= ev, events)
+preDist,postDist = speciesRichnessDeltaPrePostEvents(sprich, evos, clock, 10, offset=1000 )
+bar(pairs(preDist))
+bar!( pairs(postDist))
 
 # save everything you want to use later in file 
 compress = true;    #should data be compressed?
@@ -53,7 +63,7 @@ numspec(colnet_it_100)
 #reconstruct the state of the colony at a certain itteration
 colnet_it_100 = recreatecolnetdiverse(poolnet::ENIgMaGraph,100,CID[:,100],maxids[100],glob_ext_spec)
 #for some fuctions there is : more information available press ? in REPL(console), then enter function name (or hover over in vs code)
-# try: ?recreatecolnetdiverse
+# try: ? recreatecolnetdiverse
 
 # average one or multiple time series from a simulation
 avg_sprich =  average_time_series("sprich","vary_cn_no_engineers","cn",0:.1:5,2)
