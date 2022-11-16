@@ -36,10 +36,11 @@ plotPhylogeny(phyloTree,sorted=true)
 #@enter strongly_connected_components(colnet)
 
 #what happens after a certain sort of events to species richness?
-evos = findall(ev -> 4 <= ev, events)
-preDist,postDist = speciesRichnessDeltaPrePostEvents(sprich, evos, clock, 10, offset=1000 )
-bar(pairs(preDist))
-bar!( pairs(postDist))
+evos = findall(ev -> typeof(ev) = ::MutationEvent)#isMutationType(ev,ENIgMaGraphs.ignoreInteraction,ENIgMaGraphs.needInteraction)  , events)
+ΔSPre,ΔSPost = deltaSPrePostEvents(sprich, evos, clock, 10, offset=1000 )
+plot(ΔSPost,kind="histogram")
+#bar(pairs(preDist), label = "pre event")
+#bar!( pairs(postDist), label = "post event", alpha = .5)
 
 # save everything you want to use later in file 
 compress = true;    #should data be compressed?

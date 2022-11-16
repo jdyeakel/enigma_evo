@@ -90,7 +90,7 @@ end
 """
     speciesRichnessDeltaPrePostEvents(sprich, itterations, clock, Δt, offset=0)
 """
-function speciesRichnessDeltaPrePostEvents(sprich, itterations, clock, Δt; offset=0)
+function deltaSPrePostEventsDist(sprich, itterations, clock, Δt; offset=0)
     ΔSPreDist = Dict{Int,Int}()
     ΔSPostDist = Dict{Int,Int}()
     tMin = Δt + clock[1]
@@ -98,7 +98,7 @@ function speciesRichnessDeltaPrePostEvents(sprich, itterations, clock, Δt; offs
     for (it,t) in ((it,clock[it]) for it in itterations if it > offset )
         if t >= tMin
             start = findfirst(s -> s > t - Δt,clock) - 1
-            ΔS = sprich[start] - sprich[it]
+            ΔS = sprich[it] - sprich[start]
             if haskey(ΔSPreDist, ΔS)
                 ΔSPreDist[ΔS] += 1
             else
@@ -108,7 +108,7 @@ function speciesRichnessDeltaPrePostEvents(sprich, itterations, clock, Δt; offs
 
         if t <= tMax
             windowEnd = findfirst(s -> s > t + Δt, clock) - 1
-            ΔS = sprich[it] - sprich[windowEnd]
+            ΔS = sprich[windowEnd] - sprich[it]
             if haskey(ΔSPostDist, ΔS)
                 ΔSPostDist[ΔS] += 1
             else
@@ -120,4 +120,31 @@ function speciesRichnessDeltaPrePostEvents(sprich, itterations, clock, Δt; offs
     return dictToDistribution(ΔSPreDist), dictToDistribution(ΔSPostDist)
 end
 
-ΔSPrePostEvents = speciesRichnessDeltaPrePostEvents
+
+ΔSPrePostEventsDist = deltaSPrePostEventsDist
+
+
+"""
+    speciesRichnessDeltaPrePostEvents(sprich, itterations, clock, Δt, offset=0)
+"""
+function deltaSPrePostEvents(sprich, itterations, clock, Δt; offset=0)
+    ΔSPre = Int[]
+    sizehint!(ΔSPre,length(itterations))
+    ΔSPost = Int[]
+    sizehint!(ΔSPost,length(itterations))
+    tMin = Δt + clock[1]
+    tMax = clock[end] - Δt
+    for (it,t) in ((it,clock[it]) for it in itterations if it > offset )
+        if t >= tMin
+            start = findfirst(s -> s > t - Δt,clock) - 1
+            push!(ΔSPre, sprich[it] - sprich[start])
+        end
+
+        if t <= tMax
+            windowEnd = findfirst(s -> s > t + Δt, clock) - 1
+            push!(ΔSPost, sprich[windowEnd] - sprich[it])
+        end
+    end
+
+    return ΔSPre, ΔSPost
+end

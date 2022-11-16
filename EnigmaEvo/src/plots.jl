@@ -1,5 +1,5 @@
 function plot_simulation(simulation_data;offset=0,show=true)
-    poolnet, colnet, phyloTree, sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events = simulation_data
+    _, _, _, sprich, _,pool,_,_,clock,_,_,_,_,freqe,freqn,freqe_pool,freqn_pool,_ = simulation_data
 
     offset > length(sprich) && error("Offset (= $offset) is greater or eaqual to the length of the data set (=$(length(sprich))).")
 
@@ -7,13 +7,11 @@ function plot_simulation(simulation_data;offset=0,show=true)
     sprich_plt = vline([offsetTime], c=:grey, label="offset")
     freqe_plt = vline([offsetTime], c=:grey, label="offset")
     freqn_plt = vline([offsetTime], c=:grey, label="offset")
-    plot!(sprich_plt, clock, sprich, xlabel="clock time", ylabel="species richness", legend=false, vline=clock[offset]);
-    plot!(freqe_plt,clock, freqe, xlabel="clock time", ylabel="average amount of eat interactions", legend=false);
-    plot!(freqn_plt,clock, freqn, lxlabel="clock time", ylabel="average amount of need interactions", legend=false);
+    plot!(sprich_plt, clock, [sprich,pool], xlabel="clock time", ylabel="species richness", labels=["colony","pool"]);
+    plot!(freqe_plt,clock, [freqe,freqe_pool], xlabel="clock time", ylabel="average amount of eat interactions", labels=["colony","pool"]);
+    plot!(freqn_plt,clock, [freqn,freqn_pool], lxlabel="clock time", ylabel="average amount of need interactions", labels=["colony","pool"]);
 
-    ext_len_dist = get_extinction_size_distrib(sprich[(1+offset):end])
-    ext_size_plt = bar(pairs(ext_len_dist), xlabel="length of extinction cascade", yaxis=:log, ylabel="log(probability)", legend=false);
-
+    ext_size_plt = plotExtinctionLengthDist(sprich,offset; show = false)
     l = @layout [
         [Plots.grid(3,1)] d{0.5w}
         ]
@@ -22,6 +20,15 @@ function plot_simulation(simulation_data;offset=0,show=true)
         display(summary_plt)
     end
     return summary_plt
+end
+
+function plotExtinctionLengthDist(sprich,offset; show = true)
+    ext_len_dist = get_extinction_size_distrib(sprich[(1+offset):end])
+    ext_size_plt = bar(pairs(ext_len_dist), xlabel="length of extinction cascade", yaxis=:log, ylabel="log(probability)", legend=false);
+    if show
+        display(ext_size_plt)
+    end
+    return ext_size_plt
 end
 
 function getAttributeVector(tree, attributeName, eltype)

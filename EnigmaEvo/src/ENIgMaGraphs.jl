@@ -17,6 +17,10 @@ export getnextid!
 export converttoENIgMaGraph, converttointeractionmat
 export gettrophiclevels, recreatecolnetdiverse
 
+export InteractionType
+export AbstractENIgMaEvent, ColonizationEvent, PrimaryExtinctionEvent, SecondaryExtinctionEvent
+export ObjectExtinctionEvent, GlobalExtinctionEvent, MutationEvent, isMutationType
+
 using Graphs
 
 const enlargementfactor = 1.3; #controls how much buffer is added if estsize has to be increased
@@ -254,6 +258,7 @@ Base.in(id::Int,g::ENIgMaGraph) = g.hasv[id];
 #hasv(g::ENIgMaGraph,id) = g.hasv[id]; hasnt been used might have been smarter...
 include("GraphInterface.jl")
 include("convertENIgMaGraphs.jl")
+include("ENIgMaEvents.jl")
 
 #calculates the competitive strength of all vertices
 function calcstrength(poolnet::ENIgMaGraph, colnet::ENIgMaGraph,ce,cn,cm,cf)
@@ -445,7 +450,7 @@ end
     - 'ce','cn','cm',cf': Factors that determine the competitive strength added by eat, need, make and feed interactions.
 
 """
-function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, change_in_int, old_int, new_int, diverse, tallytable, evolutiontable, ce, cn, cm, cpred)
+function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, change_in_int, old_int, new_int, diverse, ce, cn, cm, cpred)
     if diverse == 1
         newid = getnextid!(poolnet);
         #if newid == 341
@@ -454,7 +459,7 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
     else
         newid = spmutid
         if getdeltastrength(old_int,new_int,change_in_int,ce,cn,cm,cpred) < 0
-            return newid,-1;  #what would be the right tally for a discarded mutation?
+            return newid;  #what would be the right tally for a discarded mutation?
         end
     end
     
@@ -500,7 +505,6 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
             addn!(interactorcol, newid);
         end
 
-        evol_type = 1.;
     else #change out interaction
         #delete old interaction
         if old_int == 1
@@ -525,16 +529,7 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
             addn!(interactorpool, newid);
             addn!(interactorcol, newid);
         end
-
-        evol_type = 2.;
     end
-
-    # ACCEPT REGARDLESS
-    #ebmut,nbmut,nb0mut,mbmut = intbool(intm_mut);
-    tally = tallytable[(evolutiontable[1,:] .== old_int) .& (evolutiontable[2,:] .== new_int)][1];
-
-    #Record evolution type (in degree vs. out degree) on backend of tally
-    tally += evol_type*0.01;
 
     if diverse == 0    #if diversification is disabled keep the mutated spec if its stronger then the original
         replacespec!(poolnet,spmutid,mutspecpool);
@@ -559,7 +554,7 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
         addspec!(poolnet,newid,mutspecpool);
         addspec!(colnet,newid,mutspeccol);
     end
-    return newid, tally;#(intm_mut, ebmut, nbmut, nb0mut, mbmut, tally)
+    return newid;
 end
 
 """

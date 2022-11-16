@@ -4,6 +4,7 @@ Graphs.is_directed(::Type{<:AbstractENIgMaGraph}) = true
 Graphs.is_directed(::AbstractENIgMaGraph) = true
 
 @enum InteractionType begin
+    ignoreInteraction=0
     eatInteraction=1
     needInteraction=2
     makeInteraction=3

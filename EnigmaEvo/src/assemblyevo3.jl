@@ -13,7 +13,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     pool = Array{Int64}(undef,maxits);
     mstrength = Array{Float64}(undef,maxits);
     clock = Array{Float64}(undef,maxits);
-    events = Array{Float64}(undef,maxits);
+    events = Array{AbstractENIgMaEvent}(undef,maxits);
     if createlog
         CID = falses(poolnet.estsize,maxits);
         maxids = zeros(Int,maxits);
@@ -38,8 +38,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     mutstep = Float64[]#zeros(Float64,maxits);
     evolvedstrength = Array{Float64}(undef,0);
 
-    evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
-    tallytable = [4.1 4.2 5.1 4.3 4.4 5.2 4.5 4.6 5.3 6.1 6.2 6.3];
+    #evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
+    #tallytable = [4.1 4.2 5.1 4.3 4.4 5.2 4.5 4.6 5.3 6.1 6.2 6.3];
     interactionTable = Dict{Int, String}(0=>"i",1=>"e",2=>"n",3=>"m")
 
     # If diversification is turned off, rates.rext -> 0 do that by hand
@@ -103,7 +103,6 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
 
         #Choose a random event
         re = rand();
-        tally = -10;
 
         #DRAW COLONIZATION
         if re <= probc #(lcol/levents)
@@ -112,8 +111,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             idc = rand(colonizers);
             colonize!(poolnet,colnet,idc)
 
-            #tally
-            tally = 0;
+            events[it] = ColonizationEvent(idc)
 
         #DRAW primary EXTINCTION
         elseif re <= (probc + probprimext)
@@ -122,7 +120,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             delv!( colnet, sp_bye )
 
             #These are extinctions from competitive exclusion
-            tally = 1;
+            
+            events[it] = PrimaryExtinctionEvent(sp_bye)
 
         #DRAW SECONDARY EXTINCTION
         elseif re <= (probc + probprimext + probsecext)
@@ -131,17 +130,16 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             sp_bye = rand(secextspec);
             delv!( colnet, sp_bye )
 
-            #These are extinctions from competitive exclusion
-            tally = 2;
+            #These are extinctions from structural failings
+            events[it] = SecondaryExtinctionEvent(sp_bye)
 
         #DRAW OBJECT EXTINCTION
         elseif re <= (probc + probprimext + probsecext + probeo) #((lcol + lspext)/levents) && re < ((lcol + lspext + lobext)/levents)
 
-            #OBJECT EXTINCTION FUNCTION
-            delv!( colnet, rand(extobj) )
+            extObjId = rand(extobj)
+            delv!( colnet, extObjId )
 
-            #tally
-            tally = 3;
+            events[it] = ObjectExtinctionEvent(extObjId)
         
         #DRAW EVOLUTION
         elseif re <= (probc + probprimext + probsecext + probeo + probevo)
@@ -174,13 +172,17 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
                 end
             end
 
-            newId, tally = mutate!(poolnet, colnet, spmutid, intmutid, change_in_int, old_int, new_int, diverse, tallytable, evolutiontable, ce, cn, cm, cf);
+            newId = mutate!(poolnet, colnet, spmutid, intmutid, change_in_int, old_int, new_int, diverse, ce, cn, cm, cf);
             
+
+
             if createlog
                 if poolnet.estsize > size(CID)[1];      #has the network grown bigger than our buffer?
                     CID = vcat(CID,falses(poolnet.estsize - size(CID)[1],maxits));  #then extend the buffer
                 end
             end
+
+            events[it] = MutationEvent(spmutid,intmutid,newId,InteractionType(old_int),InteractionType(new_int), change_in_int);
 
             #update phylogenic Tree (approach a bit unintuitive.
             # I keep the leaf nodes unattached, just move them forward and let them save their current version
@@ -218,6 +220,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
 
             delv!(poolnet,globextid);
 
+            events[it] = GlobalExtinctionEvent(globextid) 
+
             #update Phylogenetic tree
             if diverse == 1
                 nowExtNode = getnode(phyloTree,"$(globextid)")
@@ -244,7 +248,6 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         pool[it] = length(poolnet);
         #NOTE: standardize mean strength between 0 and 1
         mstrength[it] = (mean( v.strength for (id,v) in poolnet if poolnet.hasspec[id] ) - minstrength)/(maxstrength - minstrength); #make strengths positive with a minimum of 1
-        events[it] = tally;
     end #end time steps
 
     if diverse == 1
