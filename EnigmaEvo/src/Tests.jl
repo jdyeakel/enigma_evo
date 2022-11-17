@@ -41,7 +41,7 @@ function testDeltaSPrePostEvent()
 	noErrorFound = true
 	clock = 0:100
 	sprich = 0:100
-	events = 0:100
+	events = eachindex(clock)
 	deltaT = 5
 	deltaSPre,deltaSPost = deltaSPrePostEvents(sprich,events,clock,deltaT)
 	if !(deltaSPre == deltaSPost == fill(5,96))
@@ -57,9 +57,9 @@ function testDeltaSPrePostEvent()
 	sprich = zeros(101) 
 	sprich[51] = 1
 	deltaSPre,deltaSPost = deltaSPrePostEvents(sprich,events,clock,deltaT)
-	temp &= (94 == count(iszero, deltaSPre) == count(iszero,deltaSPost))
 	if !(1 == count(==(-1), deltaSPre) == count(==(-1),deltaSPost)) ||
 		!(1 == count( ==(1) , deltaSPre) == count(==(1),deltaSPost)) ||
+		!(94 == count(iszero, deltaSPre) == count(iszero,deltaSPost)) ||
 		!(length(deltaSPre) == length(deltaSPost) == 96)
 
 		noErrorFound = false
@@ -71,7 +71,7 @@ function testDeltaSPrePostEvent()
 		!(2 == length(deltaSPost) == length(deltaSPost))
 
 		noErrorFound = false
-		println("Test case 3 for deltaSPrePostEvents failed.")
+		println("Test case 4 for deltaSPrePostEvents failed.")
 	end
 	return noErrorFound
 end
@@ -274,10 +274,6 @@ function testmutation(ce,cn,cm,cf,thorough=false)
 	spints = [0,1,2];
     obints = [0,1,2,3];
 	
-    evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
-    tallytable = [4.1 4.2 5.1 4.3 4.4 5.2 4.5 4.6 5.3 6.1 6.2 6.3];
-
-	
 	#Setup toy network that has basal resource 1 species 2,3 for mutations and object 4 for mutation.
 	#Further species 5,6, and object 7 to have all sorts of interactions and 8,9 not colonized species
 	function setup_toy_net()
@@ -352,7 +348,7 @@ function testmutation(ce,cn,cm,cf,thorough=false)
 							end
 						end
 
-						mutate!(poolnet,colnet,2,3, change_in_int, old_int, new_int, diverse, tallytable, evolutiontable, ce, cn, cm, cf);
+						mutate!(poolnet,colnet,2,3, change_in_int, old_int, new_int, diverse, ce, cn, cm, cf);
 
 						if !checkconsistency(poolnet,colnet)
 							isworking = false;
@@ -435,7 +431,7 @@ function testmutation(ce,cn,cm,cf,thorough=false)
 					end
 				end
 
-				mutate!(poolnet, colnet, 2, 4, true, old_int, new_int, diverse, tallytable, evolutiontable, ce, cn, cm, cf);
+				mutate!(poolnet, colnet, 2, 4, true, old_int, new_int, diverse, ce, cn, cm, cf);
 				
 				if !checkconsistency(poolnet,colnet)
 					isworking = false;
@@ -493,7 +489,7 @@ end
 
 function test(thorough,random_seed = 0)
 	Random.seed!(random_seed);
-	include("set_up_params.jl")
+	include("EnigmaEvo/src/set_up_params.jl")
 
 	isErrorFree = testmutation(ce,cn,cm,cpred,thorough);
     isErrorFree &= get_extinction_size_distrib_test();
@@ -522,7 +518,7 @@ function test(thorough,random_seed = 0)
 end
 
 works = true;
-seeds = 334:350
+seeds = 334:335
 @distributed (&) for seed in seeds
 	test(true,seed)
 end

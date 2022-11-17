@@ -136,12 +136,21 @@ function deltaSPrePostEvents(sprich, itterations, clock, Δt; offset=0)
     tMax = clock[end] - Δt
     for (it,t) in ((it,clock[it]) for it in itterations if it > offset )
         if t >= tMin
-            start = findfirst(s -> s > t - Δt,clock) - 1
+            start = findfirst(>(t - Δt),clock) - 1
             push!(ΔSPre, sprich[it] - sprich[start])
         end
 
         if t <= tMax
-            windowEnd = findfirst(s -> s > t + Δt, clock) - 1
+            windowEndShifted = findfirst(>(t + Δt), clock)
+            if windowEndShifted === nothing
+                if clock[end] == t + Δt
+                    windowEnd = length(clock)
+                else
+                    continue
+                end
+            else
+                windowEnd = windowEndShifted - 1
+            end
             push!(ΔSPost, sprich[windowEnd] - sprich[it])
         end
     end
