@@ -17,7 +17,7 @@ export getnextid!
 export converttoENIgMaGraph, converttointeractionmat
 export gettrophiclevels, recreatecolnetdiverse
 
-export InteractionType
+export InteractionType, ignoreInteraction, eatInteraction, needInteraction, makeInteraction
 export AbstractENIgMaEvent, ColonizationEvent, PrimaryExtinctionEvent, SecondaryExtinctionEvent
 export ObjectExtinctionEvent, GlobalExtinctionEvent, MutationEvent, isMutationType
 

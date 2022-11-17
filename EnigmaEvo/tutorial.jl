@@ -36,9 +36,10 @@ plotPhylogeny(phyloTree,sorted=true)
 #@enter strongly_connected_components(colnet)
 
 #what happens after a certain sort of events to species richness?
-evos = findall(ev -> typeof(ev) = ::MutationEvent)#isMutationType(ev,ENIgMaGraphs.ignoreInteraction,ENIgMaGraphs.needInteraction)  , events)
-ΔSPre,ΔSPost = deltaSPrePostEvents(sprich, evos, clock, 10, offset=1000 )
-plot(ΔSPost,kind="histogram")
+evos = findall(ev -> isMutationType(ev,ignoreInteraction,needInteraction), events)
+ΔSPre,ΔSPost = deltaSPrePostEvents(sprich, evos, clock, .8, offset=1000 )
+Plots.histogram(ΔSPre, alpha=.5, normalize=true,yaxis=:log,xaxis="ΔS pre and post event", label="pre event", title = "Ignore to need mutations")
+Plots.histogram!(ΔSPost, alpha=.5, normalize=true,yaxis=:log, label="post event")
 #bar(pairs(preDist), label = "pre event")
 #bar!( pairs(postDist), label = "post event", alpha = .5)
 

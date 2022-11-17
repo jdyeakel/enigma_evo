@@ -37,6 +37,45 @@ function get_extinction_size_distrib_test()
     return working
 end
 
+function testDeltaSPrePostEvent()
+	noErrorFound = true
+	clock = 0:100
+	sprich = 0:100
+	events = 0:100
+	deltaT = 5
+	deltaSPre,deltaSPost = deltaSPrePostEvents(sprich,events,clock,deltaT)
+	if !(deltaSPre == deltaSPost == fill(5,96))
+		noErrorFound = false
+		println("Test case 1 for deltaSPrePostEvents failed.")
+	end
+	deltaT = 4.999
+	deltaSPre,deltaSPost = deltaSPrePostEvents(sprich,events,clock,deltaT)
+	if !(deltaSPre == deltaSPost .+ 1 == fill(5,96))
+		noErrorFound = false
+		println("Test case 2 for deltaSPrePostEvents failed.")
+	end
+	sprich = zeros(101) 
+	sprich[51] = 1
+	deltaSPre,deltaSPost = deltaSPrePostEvents(sprich,events,clock,deltaT)
+	temp &= (94 == count(iszero, deltaSPre) == count(iszero,deltaSPost))
+	if !(1 == count(==(-1), deltaSPre) == count(==(-1),deltaSPost)) ||
+		!(1 == count( ==(1) , deltaSPre) == count(==(1),deltaSPost)) ||
+		!(length(deltaSPre) == length(deltaSPost) == 96)
+
+		noErrorFound = false
+		println("Test case 3 for deltaSPrePostEvents failed.")
+	end
+	events = [50,51]
+	deltaSPre,deltaSPost = deltaSPrePostEvents(sprich,events,clock,deltaT)
+	if !issetequal(deltaSPre,[0,1]) || !issetequal(deltaSPost,[0,-1]) || 
+		!(2 == length(deltaSPost) == length(deltaSPost))
+
+		noErrorFound = false
+		println("Test case 3 for deltaSPrePostEvents failed.")
+	end
+	return noErrorFound
+end
+
 function testtrophlvls()
 	intm = [0 0 0 0 0 0 0 0
 			1 2 2 0 0 0 0 0		#lvl 1
@@ -456,15 +495,16 @@ function test(thorough,random_seed = 0)
 	Random.seed!(random_seed);
 	include("set_up_params.jl")
 
-	iserrorfree = testmutation(ce,cn,cm,cpred,thorough);
-    iserrorfree &= get_extinction_size_distrib_test();
+	isErrorFree = testmutation(ce,cn,cm,cpred,thorough);
+    isErrorFree &= get_extinction_size_distrib_test();
+	isErrorFree &= testDeltaSPrePostEvent();
 
 	for logging in [true,false]
 		for restrict_colonization in [true,false]
 			for diverse in [0,1]
 				initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
 
-				thorough && (iserrorfree &= checkinitpoolconsistency(initpoolnet));
+				thorough && (isErrorFree &= checkinitpoolconsistency(initpoolnet));
 
 				poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,globextspec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events =
 				assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse,restrict_colonization,logging);
@@ -478,10 +518,11 @@ function test(thorough,random_seed = 0)
 		end
 	end
 
-	return iserrorfree;
+	return isErrorFree;
 end
 
-works = true
-for seed in 234:250
-	works &= test(true,seed)
+works = true;
+seeds = 334:350
+@distributed (&) for seed in seeds
+	test(true,seed)
 end

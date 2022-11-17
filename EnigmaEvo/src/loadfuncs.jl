@@ -30,7 +30,7 @@ using Plots
 @everywhere include("assemblyevo3.jl")
 @everywhere include("average_time_series.jl")
 @everywhere include("extinction_size.jl")
-@everywhere include("plots.jl")
+include("plots.jl")
 
 #=
 @everywhere include("smartpath.jl")
