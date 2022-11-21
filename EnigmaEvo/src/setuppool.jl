@@ -1,4 +1,4 @@
-function setuppool(S, lambda, SSprobs, SOprobs) #, OOprobs)
+function setuppool(S, lambda, SSprobs, SOprobs,diverse) #, OOprobs)
     # first draw all SO connections, especially all make connections, all objects not created by any species will be discarded
     numOpos = Int(round(lambda*S));    #num obj possible
     if lambda > 0

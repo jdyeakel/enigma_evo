@@ -1,5 +1,11 @@
-function plot_simulation(simulation_data;offset=0,show=true)
-    _, _, _, sprich, _,pool,_,_,clock,_,_,_,_,freqe,freqn,freqe_pool,freqn_pool,_ = simulation_data
+function plot_simulation(simulationData;offset=0,show=true)
+    sprich = simulationData.sprich
+    pool = simulationData.pool
+    freqe = simulationData.freqe
+    freqn = simulationData.freqn
+    freqe_pool = simulationData.freqe_pool
+    freqn_pool = simulationData.freqn_pool
+    clock = simulationData.clock
 
     offset > length(sprich) && error("Offset (= $offset) is greater or eaqual to the length of the data set (=$(length(sprich))).")
 
@@ -15,7 +21,7 @@ function plot_simulation(simulation_data;offset=0,show=true)
     l = @layout [
         [Plots.grid(3,1)] d{0.5w}
         ]
-    summary_plt = plot(sprich_plt,freqe_plt,freqn_plt,ext_size_plt, layout=l,legend=false);
+    summary_plt = plot(sprich_plt,freqe_plt,freqn_plt,ext_size_plt, layout=l,legend=false,size=(1920,1080));
     if show
         display(summary_plt)
     end

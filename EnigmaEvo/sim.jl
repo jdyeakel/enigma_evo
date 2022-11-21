@@ -22,13 +22,14 @@ compress::Bool = true               #should the data be compressed before storin
 loop_vars = collect((cn,repetition) for cn in param_vals for repetition in 1:repetitions_per_param);
 
 @distributed for (cn,repetition) in loop_vars
-    initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
+    initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs,diverse);
 
     # EVOLUTIONARY VERSION
-    poolnet,colnet,phyloTree,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events =
-        assemblyevo(initpoolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, logging);
+    sd =  assemblyevo(initpoolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, logging);
     
-    jldsave("data/"*simulation_name*"/cn=$(cn)_repet=$repetition.jld2",compress;poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,mutstep,freqe,freqn,freqe_pool,freqn_pool,events, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization, logging,S,lambda,SSprobs,SOprobs)
+
+
+    jldsave("data/"*simulation_name*"/cn=$(cn)_repet=$repetition.jld2",compress;simulationData = sd)
 end
 
 #example load of a run (without parameters)

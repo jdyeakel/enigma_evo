@@ -502,10 +502,9 @@ function test(thorough,random_seed = 0)
 
 				thorough && (isErrorFree &= checkinitpoolconsistency(initpoolnet));
 
-				poolnet,colnet,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,globextspec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events =
-				assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse,restrict_colonization,logging);
+				sd = assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse,restrict_colonization,logging);
 
-				if !checkconsistency(poolnet,colnet)
+				if !checkconsistency(sd.poolnet,sd.colnet)
 					iserrorfree = false;
 					println("The above inconsistencies where found in the system after assembly with the following parameters:")
 					println("\tdiverse == $diverse, restrict_colonization == $restrict_colonization, logging == $logging")

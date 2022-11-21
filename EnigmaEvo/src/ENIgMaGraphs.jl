@@ -8,6 +8,7 @@ module ENIgMaGraphs
 
 # exported functions variables are visible outside of the module if we include the module with using
 export ENIgMaGraph, ENIgMaVert, IdManager       #might be put in begin block? kinda didnt work
+export setuppool, assemblyevo, ENIgMaSimulationData
 export adde!, addn!, addf!, addm!, dele!, deln!, delm!, delf!
 export numspec
 export addspec!,replacespec!,addmod!, delv!
@@ -21,7 +22,10 @@ export InteractionType, ignoreInteraction, eatInteraction, needInteraction, make
 export AbstractENIgMaEvent, ColonizationEvent, PrimaryExtinctionEvent, SecondaryExtinctionEvent
 export ObjectExtinctionEvent, GlobalExtinctionEvent, MutationEvent, isMutationType
 
-using Graphs
+using Distributed
+@everywhere using Graphs
+@everywhere using Phylo
+@everywhere using Distributions
 
 const enlargementfactor = 1.3; #controls how much buffer is added if estsize has to be increased
 
@@ -557,6 +561,9 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
     return newid;
 end
 
+include("setuppool.jl")
+include("assemblyevo3.jl")
+
 """
     recreatecolnetdiverse(poolnet::ENIgMaGraph,it,ids,maxid,globextspec)
 
@@ -570,7 +577,7 @@ end
     - 'globextspec::Dict{Int,Pair{Int,ENIgMaVert}}': Dictionary that stores all (id,vertex) pairs
          of globally extinct species using the itteration they went extinct as keys.
     """
-function recreatecolnetdiverse(poolnet::ENIgMaGraph,it,ids,maxid,globextspec)
+function recreatecolnetdiverse(poolnet::ENIgMaGraph,it,ids,maxid::Int,globextspec)
     #make sure the right species are in the poolnet.
     for (extit,(id,v)) in globextspec   # Loop over all species extinct after simulation
         if extit <= it                  # already extinct at itteration that is recreated?
@@ -604,6 +611,12 @@ function recreatecolnetdiverse(poolnet::ENIgMaGraph,it,ids,maxid,globextspec)
     return colnet;
 end
 
+recreatecolnetdiverse(poolnet,it,CID,maxids,glob_ext_spec) =
+    recreatecolnetdiverse(poolnet,it,CID[:,it],maxids[it],glob_ext_spec)
+
+recreatecolnetdiverse(simulationData::ENIgMaSimulationData,it) = 
+    recreatecolnetdiverse(simulationData.poolnet,it,simulationData.CID,
+        simulationData.maxids,simulationData.glob_ext_spec)
 
 function gettrophiclevels(net::ENIgMaGraph)
     spec = copy(net.spec)

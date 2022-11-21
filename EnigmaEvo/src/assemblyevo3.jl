@@ -1,3 +1,24 @@
+abstract type ENIgMaSimulationData end
+
+struct ENIgMaSimulationData_v1 <: ENIgMaSimulationData
+    poolnet::ENIgMaGraph
+    colnet::ENIgMaGraph
+    phyloTree::ManyRootTree
+    sprich::Vector{Int}
+    rich::Vector{Int}
+    pool::Vector{Int}
+    mstrength::Vector{Float64}
+    clock::Vector{Float64}
+    CID::BitArray
+    maxids::Vector{Int}
+    globextspec::Dict{Int,Pair{Int,ENIgMaVert}}
+    freqe::Vector{Float64}
+    freqn::Vector{Float64}
+    freqe_pool::Vector{Float64}
+    freqn_pool::Vector{Float64}
+    events::Vector{AbstractENIgMaEvent}
+end
+
 function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, diverse, restrict_colonization::Bool, createlog = true)
     #create the colony network, use idmanager of pool network (no copy, a reference to the original)
     colnet::ENIgMaGraph = ENIgMaGraph(poolnet.estsize,poolnet.idmanager);
@@ -35,8 +56,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     freqe_pool = Array{Float64}(undef,maxits);
     freqn_pool = Array{Float64}(undef,maxits);
 
-    mutstep = Float64[]#zeros(Float64,maxits);
-    evolvedstrength = Array{Float64}(undef,0);
+    #mutstep = Float64[]#zeros(Float64,maxits);
+    #evolvedstrength = Array{Float64}(undef,0);
 
     #evolutiontable = [[0 0 0 1 1 1 2 2 2 3 3 3];[1 2 3 0 2 3 0 1 3 0 1 2]];
     #tallytable = [4.1 4.2 5.1 4.3 4.4 5.2 4.5 4.6 5.3 6.1 6.2 6.3];
@@ -56,7 +77,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     while it < maxits
 
         minstrength = ce*Float64(length(poolnet) - 1);    #assuming ce > cf, eat everything but yourself
-        maxstrength = cm*Float64(length(poolnet) - numspec(poolnet) - 1) + cn*Float64(S) - ce*1 - cf*0;  #assuming cm > cn
+        maxstrength = cm*Float64(length(poolnet) - numspec(poolnet) - 1) + cn*Float64(numspec(colnet)) - ce*1 - cf*0;  #assuming cm > cn
 
         #COUNT POTENTIAL COLONIZERS
         if restrict_colonization
@@ -262,7 +283,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     end
 
     if createlog
-        return(
+        return ENIgMaSimulationData_v1(
             poolnet,
             colnet,
             phyloTree,
@@ -270,12 +291,10 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             rich,
             pool,
             mstrength,
-            evolvedstrength,
             clock,
             CID,
             maxids,
             globextspec,
-            mutstep,
             freqe,
             freqn,
             freqe_pool,
@@ -283,7 +302,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             events
         )
     else
-        return(
+        return ENIgMaSimulationData_v1(
             poolnet,
             colnet,
             phyloTree,
@@ -291,12 +310,10 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             rich,
             pool,
             mstrength,
-            evolvedstrength,
             clock,
             BitVector(),
             Int[],
             Dict{Int,Pair{Int,ENIgMaVert}}(),
-            mutstep,
             freqe,
             freqn,
             freqe_pool,

@@ -24,21 +24,20 @@ function simulation(srcPath)   #supposedly its better to wrap stuff in functions
     timeWindows = [.1,.25,.5,.8,1.,2.,5.,10.]
     offset = 2000
 
-    compress::Bool = true;  
+    compress::Bool = true;  j
     deltaSPrePostDicts = @distributed (vcat) for repetition in 1:repetitions
         
-        initpoolnet = setuppool(S,lambda,SSprobs,SOprobs);
+        initpoolnet = setuppool(S,lambda,SSprobs,SOprobs,diverse);
 
         # EVOLUTIONARY VERSION
-        poolnet,colnet,phyloTree,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events =
-            assemblyevo(initpoolnet, rates0, maxits, cn,cm,ce,cpred, diverse, restrict_colonization, logging);
+        sd = assemblyevo(initpoolnet, rates0, maxits, cn,cm,ce,cpred, diverse, restrict_colonization, logging);
         
-        jldsave("data/$(simulation_name)/repet=$repetition.jld2",compress;poolnet,colnet,phyloTree,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events, rates0, maxits,cm,ce,cpred, diverse, restrict_colonization, logging,S,lambda,SSprobs,SOprobs)
+        jldsave("data/$(simulation_name)/repet=$repetition.jld2",compress; simulationData = sd, rates0, maxits,cm,ce,cpred, diverse, restrict_colonization, logging,S,lambda,SSprobs,SOprobs)
         
-        evos = findall(ev -> isMutationType(ev,ignoreInteraction,needInteraction), events)
+        evos = findall(ev -> isMutationType(ev,ignoreInteraction,needInteraction), sd.events)
         deltaSPrePostDict = Dict{Float64,Tuple{Array{Int},Array{Int}}}()
         for deltaT in timeWindows
-             deltaSPrePostDict[deltaT] = deltaSPrePostEvents(sprich, evos, clock, deltaT, offset=offset )
+             deltaSPrePostDict[deltaT] = deltaSPrePostEvents(sd.sprich, evos, sd.clock, deltaT, offset=offset )
         end
 
         deltaSPrePostDict
@@ -55,3 +54,5 @@ function simulation(srcPath)   #supposedly its better to wrap stuff in functions
 end
 
 simulation(srcPath)
+
+deltaSPrePostDict = load("data/deltaSPrePostIgToN/results.jld2","deltaSPrePostDict")

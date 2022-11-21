@@ -14,10 +14,10 @@ include(localpath*"loadfuncs.jl");
 include(localpath*"set_up_params.jl");
 
 #create random pool network
-poolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
+poolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs,diverse);
 
 # run a simulation with parameters given (always use a freshly initialized poolnet as the poolnet is changed during assembly)
-@time poolnet,colnet,phyloTree,sprich,rich,pool,mstrength,evolvedstrength,clock,CID,maxids,glob_ext_spec,mutstep,freqe,freqn,freqe_pool,freqn_pool,events =
+@time simulationData = sd = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
     simulation_data = assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, logging);
 
 
@@ -26,18 +26,19 @@ plotlyjs()    #use the plotlyjs backend for interactivity
 #gr() use the gr backend for faster plots
 
 #Plot some time series and the distribution of extinction sizes ignoring the first 2000 itterations
-plot_simulation(simulation_data,offset=2000,show=true)
+plot_simulation(simulationData,offset=2000,show=true)
 
 #plot the phylogeny
-plotPhylogeny(phyloTree,sorted=true)
+plotPhylogeny(sd.phyloTree,sorted=true)
 
 
 #use functions of the Graphs package on ENIgMaGraphs
 #@enter strongly_connected_components(colnet)
 
 #what happens after a certain sort of events to species richness?
-evos = findall(ev -> isMutationType(ev,ignoreInteraction,needInteraction), events)
-ΔSPre,ΔSPost = deltaSPrePostEvents(sprich, evos, clock, .8, offset=1000 )
+#here: what happens after ignore to need mutations
+evos = findall(ev -> isMutationType(ev,ignoreInteraction,needInteraction), sd.events)
+ΔSPre,ΔSPost = deltaSPrePostEvents(ds.sprich, evos, ds.clock, .8, offset=1000 )
 Plots.histogram(ΔSPre, alpha=.5, normalize=true,yaxis=:log,xaxis="ΔS pre and post event", label="pre event", title = "Ignore to need mutations")
 Plots.histogram!(ΔSPost, alpha=.5, normalize=true,yaxis=:log, label="post event")
 #bar(pairs(preDist), label = "pre event")
@@ -45,28 +46,31 @@ Plots.histogram!(ΔSPost, alpha=.5, normalize=true,yaxis=:log, label="post event
 
 # save everything you want to use later in file 
 compress = true;    #should data be compressed?
-#put all variable to be saved after semicolon, order doesnt matter
-jldsave("tutorial.jld2",compress;poolnet,colnet,sprich,clock,CID,glob_ext_spec,maxids)
+#put all variable to be saved after semicolon, order doesnt matter, name of variable will be identifier in file
+jldsave("tutorial.jld2",compress;simulationData)
 
 #for loading use eg the following
-poolnet_loaded, colnet_loaded = load("tutorial.jld2", "poolnet","colnet");
+simulationData_loaded = load("tutorial.jld2", "simulationData");
 
 #How to:-------------------------------------------------------------------------------
 #get species with id from network
-spec = poolnet[2]
+spec = sd.poolnet[2]
 #get a species interactions (eat, feed, make or need)
 needs = spec.need;
 #check if a vertex(modifier or species) with id is in the network
-exists = colnet.hasv[3]
+exists = sd.colnet.hasv[3]
 #check if a species with id is in the network/if the vertex with that id is a species
-isspec = colnet.hasspec[3]
+isspec = sd.colnet.hasspec[3]
+
+#reconstruct the state of the colony at a certain itteration
+colnet_it_100 = recreatecolnetdiverse(sd,100)
+
 #get number of species in a network
 numspec(colnet_it_100)
-#reconstruct the state of the colony at a certain itteration
-colnet_it_100 = recreatecolnetdiverse(poolnet::ENIgMaGraph,100,CID[:,100],maxids[100],glob_ext_spec)
+
 #for some fuctions there is : more information available press ? in REPL(console), then enter function name (or hover over in vs code)
 # try: ? recreatecolnetdiverse
 
-# average one or multiple time series from a simulation
-avg_sprich =  average_time_series("sprich","vary_cn_no_engineers","cn",0:.1:5,2)
-avg_sprich, avg_freqn =  average_time_series(["freqn","freqe"],"vary_cn_no_engineers","cn",0:.1:5,2)
+#outdated # average one or multiple time series from a simulation
+#avg_sprich =  average_time_series("sprich","vary_cn_no_engineers","cn",0:.1:5,2)
+#avg_sprich, avg_freqn =  average_time_series(["freqn","freqe"],"vary_cn_no_engineers","cn",0:.1:5,2)
