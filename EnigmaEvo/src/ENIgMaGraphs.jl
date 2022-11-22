@@ -93,9 +93,9 @@ addm!(v::ENIgMaVert,idm) = push!(v.make,idm);
 """
 addf!(v::ENIgMaVert,idf) = push!(v.feed,idf);
 
-function adde!(ve,idf,vf,ide)   #creates an eat interaction together with the reciprocal feed interaction
-    adde!(ve,ide);
-    addf!(vf,idf);
+function adde!(predator,predatorId,prey,preyId)   #creates an eat interaction together with the reciprocal feed interaction
+    adde!(predator,preyId);
+    addf!(prey,predatorId);
 end
 
 function addm!(spec,specid,mod,modid) #creates a make interaction together with the reciprocal need interaction.
@@ -139,9 +139,14 @@ mutable struct ENIgMaGraph <: AbstractENIgMaGraph
     idmanager::IdManager
     hasv::BitVector             #is vert with id in Graph
     hasspec::BitVector          #is species with id in graph (is vert with id a species (in the graph))
+    hasBasalRes::BitVector
+    hasMod::BitVector
     spec::Set{Int}
-    vert::Dict{Int,ENIgMaVert}  #stores verts
-    ENIgMaGraph(hasv::BitVector,hasspec::BitVector,spec::Set{Int},vert::Dict{Int,ENIgMaVert}, idmanager::IdManager) = new(length(hasv),idmanager,hasv,hasspec,spec,vert);
+    basalRes::Set{Int}
+    mods::Set{Int}
+    vert::Dict{Int,ENIgMaVert}  #stores vertices
+    ENIgMaGraph(hasv::BitVector,hasspec::BitVector,hasBasalRes,hasMod,spec::Set{Int},basalRes,mods,vert::Dict{Int,ENIgMaVert}, idmanager::IdManager) = 
+        new(length(hasv),idmanager,hasv,hasspec,hasBasalRes,hasMod,spec,basalRes,mods,vert);
 end;
 
 """
@@ -152,11 +157,17 @@ end;
 function ENIgMaGraph(estsize::Int,idmanager::IdManager)
     hasv = falses(estsize);
     hasspec = falses(estsize);
+    hasBasalRes = falses(estsize)
+    hasMod = falses(estsize)
     spec = Set{Int}();
     sizehint!(spec,estsize)
+    basalRes = Set{Int}();
+    sizehint!(basalRes,estsize)
+    mods = Set{Int}();
+    sizehint!(mods,estsize)
     vert = Dict{Int,ENIgMaVert}();
     sizehint!(vert,estsize);
-    return ENIgMaGraph(hasv,hasspec,spec,vert,idmanager);
+    return ENIgMaGraph(hasv, hasspec, hasBasalRes, hasMod, spec, basalRes, mods, vert, idmanager);
 end
 
 ENIgMaGraph(estsize::Int) = ENIgMaGraph(estsize, IdManager(0));
@@ -173,25 +184,25 @@ Base.getindex(g::ENIgMaGraph,key...) = getindex(g.vert,key...);
 
 #allows to compare two networks
 function Base.:(==)(g1::ENIgMaGraph,g2::ENIgMaGraph)
-    equal = (g1.hasv == g2.hasv)
-    if equal
-        equal &= (g1.hasspec == g2.hasspec)
-        if equal
-            equal &= (g1.spec == g2.spec)
-            for (id,v) in g1
-                if equal
-                    cv = g2[id] 
-                    equal &= (v.eat == cv.eat) 
-                    equal &= (v.need == cv.need)
-                    equal &= (v.make == cv.make)
-                    equal &= (v.feed == cv.feed)
-                else
-                    break;
-                end
-            end
+    if g1.hasv != g2.hasv ||
+       g1.hasspec != g2.hasspec ||
+       g1.hasBasalRes != g2.hasBasalRes ||
+       g1.hasMod != g2.hasMod ||
+       g1.spec != g2.spec ||
+       g1.mods != g2.mods ||
+       g1.basalRes != g2.basalRes
+        return false
+    end
+    for (id,v) in g1
+        cv = g2[id]
+        if v.eat != cv.eat || 
+           v.need != cv.need ||
+           v.make != cv.make ||
+           v.feed != cv.feed
+            return false
         end
     end
-    return equal;
+    return true;
 end
 
 #called if the network needs to be enlarged as the network grew bigger than expected
@@ -199,11 +210,15 @@ function enlarge!(g::ENIgMaGraph,estsize::Int)
     estsize <= g.estsize && error("tried to shrink graph with enlarge!");    #failsave, shouldnt be neccessary
     g.hasv = vcat(g.hasv,falses(estsize - g.estsize));
     g.hasspec = vcat(g.hasspec,falses(estsize - g.estsize));
+    g.hasBasalRes = vcat(g.hasBasalRes,falses(estsize - g.estsize));
+    g.hasMods = vcat(g.hasMods,falses(estsize - g.estsize));
     g.estsize = estsize;
 end
 
 #returns number of species in network
-numspec(g::ENIgMaGraph) = length(g.spec);#sum(g.hasspec);
+getNumSpec(g::ENIgMaGraph) = length(g.spec);
+getNumBasalRes(g::ENIgMaGraph) = length(g.basalRes)
+getNumMods(g::ENIgMaGraph) = length(g.mods)
 
 """
     addspec!(g::ENIgMaGraph,id,v::ENIgMaVert)
@@ -213,7 +228,7 @@ numspec(g::ENIgMaGraph) = length(g.spec);#sum(g.hasspec);
     Does not take care of further implications like feed interactions or creating objects. See colonize! for that.
 """
 function addspec!(g::ENIgMaGraph,id,v::ENIgMaVert)
-    id > g.estsize && enlarge!(g,Int(round(id*enlargementfactor)))     #failsave, shouldnt be neccessary
+    id > g.estsize && enlarge!(g,Int(round(id*enlargementfactor)))
     g.vert[id] = v;
     g.hasv[id] = true;
     push!(g.spec,id);
@@ -227,10 +242,25 @@ replacespec!(g::ENIgMaGraph,id,v::ENIgMaVert) = addspec!(g::ENIgMaGraph,id,v::EN
 
     Adds modifier/object 'v' with id 'id' to 'g'.
 """
-function addmod!(g::ENIgMaGraph,id,v::ENIgMaVert)
-    id > g.estsize && enlarge!(g,Int(round(id*enlargementfactor)))     #failsave, shouldnt be neccessary
+function addBasalres!(g::ENIgMaGraph,id,v::ENIgMaVert)
+    id > g.estsize && enlarge!(g,Int(round(id*enlargementfactor)))
     g.vert[id] = v;
     g.hasv[id] = true;
+    push!(g.basalres,id)
+    g.hasBasalres[id] = true;
+end
+
+"""
+    addmod!(g::ENIgMaGraph,id,v::ENIgMaVert)
+
+    Adds modifier/object 'v' with id 'id' to 'g'.
+"""
+function addMod!(g::ENIgMaGraph,id,v::ENIgMaVert)
+    id > g.estsize && enlarge!(g,Int(round(id*enlargementfactor)))
+    g.vert[id] = v;
+    g.hasv[id] = true;
+    push!(g.mods,id)
+    g.hasMod[id] = true;
 end
 
 """
@@ -241,18 +271,25 @@ end
 """
 function delv!(g::ENIgMaGraph,id::Int)
     del_v = g[id]
-    for fid in del_v.feed   #notify predators of absence
-        dele!(g[fid],id)
-    end
-    if g.hasspec[id]    #is spec
-        for eid in del_v.eat    
+    if g.hasspec[id]    #is spec?
+        for eid in del_v.eat    #notify prey of absence
             delf!(g[eid],id)
         end
-        for mid in del_v.make
+        for mid in del_v.make   # notify engineered mods of absence
             deln!(g[mid],id)
         end
         setdiff!(g.spec,id)
         g.hasspec[id] = false;  #could possibly be optimized by differentiating between spec and mod
+    elseif g.hasMod[id]
+        setdiff!(g.mods,id)
+        g.hasMod[id] = false
+    elseif g.hasMod
+        setdiff!(g.basalRes,id)
+        g.hasBasalRes[id] = false
+        @warn "Deleted basal resource with id $(id)."
+    end
+    for fid in del_v.feed   #notify predators of absence
+        dele!(g[fid],id)
     end
     delete!(g.vert,id);
     g.hasv[id] = false;
@@ -266,10 +303,9 @@ include("ENIgMaEvents.jl")
 
 #calculates the competitive strength of all vertices
 function calcstrength(poolnet::ENIgMaGraph, colnet::ENIgMaGraph,ce,cn,cm,cf)
-    for (id,vert) in colnet                   #might be optimizable by looping over vals directly
-        if colnet.hasspec[id]
-            vert.strength = -ce*length(poolnet[id].eat) - cf*length(vert.feed) + cn*sum(colnet.hasv[collect(vert.need)]) + cm*length(vert.make); #could be optimized by using view and or finding better way to index by set
-        end
+    for specId in colnet.spec
+        spec = colnet[specId]                  #might be optimizable by looping over vals directly
+        spec.strength = -ce*length(poolnet[specId].eat) - cf*length(spec.feed) + cn*sum(colnet.hasv[collect(spec.need)]) + cm*length(spec.make); #could be optimized by using view and or finding better way to index by set
     end
 end
 

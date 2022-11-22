@@ -1,23 +1,76 @@
-function setuppool(S, lambda, SSprobs, SOprobs,diverse) #, OOprobs)
-    # first draw all SO connections, especially all make connections, all objects not created by any species will be discarded
-    numOpos = Int(round(lambda*S));    #num obj possible
-    if lambda > 0
-        p_m = lambda/numOpos;   
-        probSOint = SOprobs.p_e + SOprobs.p_n + p_m     #probability of any SO interaction (can be added because they are mutually exclusive)
+function setuppool(S, lambda, numBasalResources, SMProbs, SOprobs,diverse) #, OOprobs)
+    numBasalResources < 1 && throw(DomainError(numBasalResources, "There has to be at least one basal resource."))
+    lambda < 0 && throw(DomainError(lambda, "lambda must be non-negative."))
 
-        lambdaSO = numOpos*probSOint;      # Expectet number of (interesting) SO interactions (only in) per species
-        intprobs = [SOprobs.p_e,SOprobs.p_n,p_m]/probSOint;     #conditional (link exists) probabilities of interaction types
-        intprobthresh = cumsum(intprobs);   #used as thresholds
+    numMakes = Int(round(lambda*S));    #num of original makes, also used as the number of possible objects
+    maxN = S + numBasalResources + numMakes      # max num of initial vertices
+    estsize = maxN + Int(round(maxN*1*diverse)); # give a guess of the max system size might be optimized by tuning this value with observations
+    poolnet::ENIgMaGraph = ENIgMaGraph(estsize); # create empty pool network
     
-        pdistSO = Poisson(lambdaSO);    
-        SOintpS = rand(pdistSO,S);            # draw number of SS interactions for each species
-    
-    
-    elseif lambda == 0
-        SOintpS = zeros(Int,S);
-    else
-        throw(DomainError(lambda, "lambda must be non-negative"))
+    #create basal resources
+    for i in 1:numBasalResources
+        basResId = getnextid!(poolnet)
+        addBasalRes!( poolnet, basResId, ENIgMaVert());
     end
+
+    #create species, fill later
+    #firstSpecId = numBasalResources + 1
+    for i in 1:S
+        specId = getnextid!(poolnet)
+        addspec!( poolnet, specId, ENIgMaVert() );
+    end
+
+    potMods = [ENIgMaVert() for i in 1:numMakes];   #create vector of potential modifiers. Add them to poolnet later if they are made by a species
+
+    for i in 1:numMakes                     #now create all the makes
+        engineerId = rand(poolnet.spec)
+        createdMod = rand(potMods)
+        addn!(createdMod,engineerId)        #for now only save the reciprocal need of the modifier as the id of the modifier isnt yet specified
+    end
+
+    for potMod in potMods                   # go through all modifiers and....
+        if !isEmpty(potMod.need)            # ...check if they are created by any species
+            modId = getnextid!(poolnet)     # give the modifier an id
+            for engineerId in potMod.need   # add all makes of that modifiers engineers
+                addm!(poolnet[engineerId],modId)
+            end
+            addMod!(poolnet, modId, potMod) # add modifier to pool net
+        end
+    end
+
+    numMods = getNumMods(poolnet) #number of modifiers
+
+    # compute number of link types between species and (mods + basal res) and spec and spec
+    numModBasalResEats = Int(round(SMProbs.p_e*S*(numBasalResources+numMods)))
+    numModBasalResNeeds = Int(round(SMProbs.p_n*S*(numBasalResources+numMods)))
+    numSpecEats = Int(round(SSProbs.p_e*S*(S-1)))
+    numSpecNeeds = Int(round(SSProbs.p_n*S*(S-1)))
+
+    modsAndBasalRes = union(poolnet.mods,poolnet.basalRes)  #set of all modifier and basal resource ids
+    for i in 1:numModBasalResEats
+        predatorId = rand(poolnet.spec)
+        preyId = rand(modsAndBasalRes)
+        adde!(poolnet[predatorId],predatorId,poolnet[preyId],preyId)
+    end
+
+    for i in 1:numModBasalResNeeds
+        specId = rand(poolnet.spec)
+        needId = rand(modsAndBasalRes)
+        addn!(poolnet[specId],needId)
+    end
+
+    for i in 1:numSpecEats
+        predatorId,preyId = sample(poolnet.spec,2, replace=false)
+        
+        adde!(poolnet[predatorId],predatorId,poolnet[preyId],preyId)
+    end
+
+
+
+
+    
+
+    funcs = [adde!,addn!,adde!]
 
 
     lambdaSS = S*(SSprobs.p_e + SSprobs.p_n);               # Expectet number of (interesting) SO interactions (only in) per species
@@ -52,21 +105,7 @@ function setuppool(S, lambda, SSprobs, SOprobs,diverse) #, OOprobs)
     O = size(SOintmat,1);   #num objects
     
     N = 1 + S + O;  # basal resource neither Species nor object here
-    estsize = N + Int(round(N*2*diverse)); #give a guess of the max system size might be optimized by tuning this value with observations
-    poolnet::ENIgMaGraph = ENIgMaGraph(estsize);    # create empty pool network
 
-    #create basal resource
-    basalres = ENIgMaVert()
-    #add itself as need in order to  make sure it doesnt go extinct (needs one need as object...easier to program that way)
-    addn!(basalres,1);
-    addmod!( poolnet, 1, basalres);
-    
-
-
-    #create species, fill later
-    for specid in 2:(S+1)
-        addspec!( poolnet, specid, ENIgMaVert() );
-    end
 
     #Create modifieres/objects, fill later
     for objid in (S + 2):N
@@ -118,7 +157,6 @@ function setuppool(S, lambda, SSprobs, SOprobs,diverse) #, OOprobs)
     addf!(poolnet[1], 2);
     empty!(autotroph.need);
 
-    ENIgMaGraphs.setmaxid!(poolnet.idmanager,N);    # dont like the design so far
 
     return poolnet;
 end
