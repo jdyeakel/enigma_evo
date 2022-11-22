@@ -10,9 +10,14 @@ function converttointeractionmat(g::ENIgMaGraph)
     intm = zeros(Int,N,N);
 
     for (id,v) in g
-        if g.hasspec[id]
+        if g.hasBasalRes[id]
+            intm[id,id] = 1;
+        elseif g.hasspec[id]
             intm[id,id] = 2;
+        elseif g.hasMod[id]
+            intm[id,id] = 3
         end
+
         for eid in v.eat
             intm[id,eid] = 1;
         end
@@ -24,8 +29,6 @@ function converttointeractionmat(g::ENIgMaGraph)
         end
     end
 
-    intm[1,1] = 0;
-
     return intm;
 end
 
@@ -34,18 +37,19 @@ end
 
     Converts the interaction matrix 'intm' to an ENIgMaGraph and returns it.
 """
-function converttoENIgMaGraph(intm)
+function converttoENIgMaGraph(intm,estSize=nothing)
     N = size(intm)[1];
-    g = ENIgMaGraph(N,IdManager(N));
+    g = ENIgMaGraph(estSize === nothing ? N : estSize);
 
-    basalres = ENIgMaVert();
-    addn!(basalres,1);
-    addmod!(g,1,basalres)
-    for id in 2:N
-        if intm[id,id] == 2
-            addspec!(g,id,ENIgMaVert())
-        elseif sum(intm[id,:]) != 0
-            addmod!(g,id,ENIgMaVert())
+    for i in 1:N
+        vertType = intm[i,i]
+        id = getnextid!(g)  #get next id even if species already extinct to hopefully get inverse of converttointeractionmat
+        if vertType == 2
+            addSpec!(g,id,ENIgMaVert())
+        elseif vertType == 1 
+            addBasalRes!(g,id,ENIgMaVert())
+        elseif vertType == 3
+            addMod!(g,id,ENIgMaVert())
         end
     end
 

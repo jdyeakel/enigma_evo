@@ -22,11 +22,10 @@ end
 function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, diverse, restrict_colonization::Bool, createlog = true)
     #create the colony network, use idmanager of pool network (no copy, a reference to the original)
     colnet::ENIgMaGraph = ENIgMaGraph(poolnet.estsize,poolnet.idmanager);
-    #add basal resource as its always there
-    basalres = ENIgMaVert();
-    #add itself as need in order to  make sure it doesnt go extinct (needs one need as object...easier to program that way)
-    addn!(basalres,1);
-    addmod!( colnet, 1, basalres);
+    #add basal resources as they are always there
+    for basalResId in poolnet.basalRes
+        addBasalRes!( colnet, basalResId, ENIgMaVert());
+    end
     
     # set up some monitoring buffers
     sprich = Array{Int64}(undef,maxits);
@@ -77,7 +76,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     while it < maxits
 
         minstrength = ce*Float64(length(poolnet) - 1);    #assuming ce > cf, eat everything but yourself
-        maxstrength = cm*Float64(length(poolnet) - numspec(poolnet) - 1) + cn*Float64(numspec(colnet)) - ce*1 - cf*0;  #assuming cm > cn
+        maxstrength = cm*Float64(getNumMods(colnet)) + cn*Float64(getNumSpec(colnet) + getNumBasalRes(colnet) - 1) - ce*1 - cf*0;  #assuming cm > cn
 
         #COUNT POTENTIAL COLONIZERS
         if restrict_colonization
@@ -95,10 +94,10 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         primextspec = getprimext(poolnet,colnet,ce,cn,cm,cf,secextspec);
 
         #COUNT POTENTIAL evolutionary events (size of community)
-        levo = max(numspec(colnet) - 2,0); #means evolution can only occur if community has more than 2 species
+        levo = max(getNumSpec(colnet) - 2,0); #means evolution can only occur if community has more than 2 species
 
         #COUNT POTENTIAL global extinction events (size of pool)
-        lext =  numspec(poolnet) - numspec(colnet) - (colnet.hasv[2] ? 0 : 1) #species 2 can't go exinct
+        lext =  numspec(poolnet) - numspec(colnet) #- (colnet.hasv[2] ? 0 : 1) #species 2 can't go exinct
 
         # Calculate the full Rate
         Rate = rates.rc*length(colonizers) + rates.rprimext*length(primextspec) + rates.rsecext*length(secextspec) + rates.reo*length(extobj) + rates.revo*levo + rates.rext*lext;
@@ -168,10 +167,11 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             # EVOLUTION OF SPECIES IN THE COMMUNITY
             # SPECIES MUTATION
             # select FROM community
-            spmutid = rand(collect(setdiff(colnet.spec,2)));    #might be optimized, by finding smarter way, to draw from Set (a#same below for intmutid)
+            spmutid = rand(colnet.spec);    #might be optimized, by finding smarter way, to draw from Set (a#same below for intmutid)
             #OR Mutate realized interactions
-            intmutid = rand(collect(setdiff(keys(colnet.vert),[spmutid,2])));    #could possibly be optimized by drawing in loop until valid value is drawn
+            intmutid = rand(collect(setdiff(keys(colnet.vert),spmutid)));    #could possibly be optimized by drawing in loop until valid value is drawn
 
+            basalResInts = [0,1]
             spec_ints = [0,1,2];
             object_ints = [0,1,2,3];
 
@@ -186,8 +186,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             else    #interactee is a modifier
                 change_in_int = true;
                 old_int = ENIgMaGraphs.getinteractiontype(colnet, spmutid, intmutid);
-                if intmutid == 1
-                    new_int = rand(setdiff(spec_ints,old_int)); #cant make primal resource (sun)
+                if colnet.hasBasalRes[intmutid]
+                    new_int = rand(setdiff(basalResInts,old_int)); #cant make primal resource (sun)
                 else
                     new_int = rand(setdiff(object_ints,old_int));
                 end
@@ -229,7 +229,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         elseif re <= 1
             #Choose species subject to extinction
             #Do not choose species 2, which is protected
-            globextid = rand(collect(setdiff(poolnet.spec,union(colnet.spec,2))));    #could possibly be optimized by finding better way to sample from set
+            globextid = rand(setdiff(poolnet.spec,colnet.spec));    #could possibly be optimized by finding better way to sample from set
             
             if colnet.hasv[globextid]
                 delv!(colnet,globextid)
@@ -254,10 +254,10 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         end
         
         #SAVE RESULTS IN BUFFERS
-        freqe[it] = (sum([length(colnet[id].eat) for id in colnet.spec]) - length(colnet[1].feed))/max(length(colnet)-1,1);     #bit afraid of overflows...
-        freqn[it] = sum([length(setdiff(colnet[id].need,1)) for id in colnet.spec])/max(length(colnet)-1,1);
-        freqe_pool[it] = (sum([length(poolnet[id].eat) for id in poolnet.spec]) - length(poolnet[1].feed))/max(length(poolnet)-1,1);     #bit afraid of overflows...
-        freqn_pool[it] = sum([length(setdiff(poolnet[id].need,1)) for id in poolnet.spec])/max(length(poolnet)-1,1);
+        freqe[it] = sum(length(colnet[id].eat) for id in colnet.spec)/max(length(colnet),1);     #bit afraid of overflows...
+        freqn[it] = sum(length(colnet[id].need) for id in colnet.spec)/max(length(colnet),1);
+        freqe_pool[it] = sum(length(poolnet[id].eat) for id in poolnet.spec)/max(length(poolnet),1);     #bit afraid of overflows...
+        freqn_pool[it] = sum(length(poolnet[id].need) for id in poolnet.spec)/max(length(poolnet),1);
 
         if createlog     #could be significantly optimized by just saving the changes and reconstructing if necessary
             CID[:,it] = colnet.hasv;

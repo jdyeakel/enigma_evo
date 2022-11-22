@@ -10,8 +10,8 @@ module ENIgMaGraphs
 export ENIgMaGraph, ENIgMaVert, IdManager       #might be put in begin block? kinda didnt work
 export setuppool, assemblyevo, ENIgMaSimulationData
 export adde!, addn!, addf!, addm!, dele!, deln!, delm!, delf!
-export numspec
-export addspec!,replacespec!,addmod!, delv!
+export getNumSpec,getNumBasalRes, getNumMods 
+export addSpec!,replacespec!,addMod!, addBasalRes!, delv!
 export getprimext, getsecext!, getpotcolonizers!
 export colonize!,mutate!
 export getnextid!
@@ -103,15 +103,35 @@ function addm!(spec,specid,mod,modid) #creates a make interaction together with 
     addn!(mod,specid);
 end
 
-#same as ad functions just for deletion
+#same as add functions just for deletion
+"""
+    dele!(v::ENIgMaVert,ide)
+
+    Deletes 'ide' from the set of eat interactions of 'v'.
+"""
 dele!(v::ENIgMaVert,ide) = setdiff!(v.eat,ide);
+"""
+    deln!(v::ENIgMaVert,idn)
+
+    Deletes 'idn' from the set of need interactions of 'v'.
+"""
 deln!(v::ENIgMaVert,idn) = setdiff!(v.need,idn);
+"""
+    delm!(v::ENIgMaVert,idm)
+
+    Deletes 'idm' from the set of make interactions of 'v'.
+"""
 delm!(v::ENIgMaVert,idm) = setdiff!(v.make,idm);
+"""
+    delf!(v::ENIgMaVert,idf)
+
+    Deletes 'idf' from the set of feed interactions of 'v'.
+"""
 delf!(v::ENIgMaVert,idf) = setdiff!(v.feed,idf);
 
-function dele!(ve,idf,vf,ide)
-    dele!(ve,ide);
-    delf!(vf,idf);
+function dele!(predator,predatorId,prey,preyId)   #deletes an eat interaction together with the reciprocal feed interaction
+    dele!(predator,preyId);
+    dele!(prey,predatorId);
 end
 
 function delm!(spec,specid,mod,modid)
@@ -129,10 +149,12 @@ abstract type AbstractENIgMaGraph <: Graphs.AbstractGraph{Int} end
 # Extended help
     'vert::Dict{Int,ENIgMaVert}': Stores id=>vertex pairs of vertices in network.
     'spec::Set{Int}': Stores ids of species in the network.
+    'basalRes::Set{Int}': Stores ids of basal resources in the network.
+    'mods::Set{Int}': Stores ids of modifiers in the network.
 
     Provides 'hasv[id]' to efficiently check if vetex with 'id' is in the network.
-    Provides 'hasspec[id]' to efficiently check if spec with 'id' is in the network.
-    This can also be used to check if vertex with id is a species (no modifier).
+    Provides 'hasspec[id]', 'hasBasalRes[id]' and 'hasMod[id]' to efficiently check if spec, basal resource and modifier with 'id' are in the network respectively.
+    This can also be used to check if vertex with id is a species, a basal resource or a modifier.
 """
 mutable struct ENIgMaGraph <: AbstractENIgMaGraph
     estsize::Int
@@ -227,7 +249,7 @@ getNumMods(g::ENIgMaGraph) = length(g.mods)
 
     Does not take care of further implications like feed interactions or creating objects. See colonize! for that.
 """
-function addspec!(g::ENIgMaGraph,id,v::ENIgMaVert)
+function addSpec!(g::ENIgMaGraph,id,v::ENIgMaVert)
     id > g.estsize && enlarge!(g,Int(round(id*enlargementfactor)))
     g.vert[id] = v;
     g.hasv[id] = true;
@@ -323,7 +345,7 @@ end
 function getprimext(poolnet::ENIgMaGraph, colnet::ENIgMaGraph,ce,cn,cm,cf,secextspec)
     calcstrength(poolnet,colnet,ce,cn,cm,cf);
     
-    #at first every vert could go extinct
+    #at first every spec could go extinct
     ext = copy(colnet.hasspec)  #safes if species goes extinct
     ext[secextspec] .= false;    #secondary extinction has higher priority    
     #allocate for later
@@ -333,23 +355,10 @@ function getprimext(poolnet::ENIgMaGraph, colnet::ENIgMaGraph,ce,cn,cm,cf,secext
     #now let every vert check which species are their strongest consumer(s) and delete those from the list
     for (fid, vert) in colnet
         isempty(vert.feed) && continue
-
-        # there is no competition over basal resource between pure primary producers by model definition
-        if fid == 1        
-            for eid in vert.feed
-                if length(poolnet[eid].eat) == 1 #only pure prim producers   
-                    ext[eid] = false;
-                end
-            end
-            continue
-        end
         
         #find all strongest consumers
         maxstrength = typemin(Int);
         for eid in vert.feed
-            #if !haskey(g.vert,eid)#for debugging
-            #    error()
-            #end
             strength = colnet[eid].strength;
             if strength > maxstrength           # could possibly be optimized by better algorithm (not self made multi argmax)
                 maxstrength = strength;
@@ -363,7 +372,7 @@ function getprimext(poolnet::ENIgMaGraph, colnet::ENIgMaGraph,ce,cn,cm,cf,secext
         ext[maxids] .= false;   #delete strongest consumers from extinction list
     end
 
-    return [id for id = 1:length(ext) if ext[id]]; #return vec of all species ids that could go extinct
+    return [id for id in eachindex(ext) if ext[id]]; #return vec of all species ids that could go extinct
 end
 
 """
@@ -379,7 +388,7 @@ function getsecext!(g::ENIgMaGraph,extspec = Int[], extobj = Int[])
             if isempty(vert.eat) || !all(g.hasv[collect(vert.need)]) # at least one eat and all need relationships must be established and 
                 push!(extspec,id);
             end
-        else
+        elseif g.hasMod[id]
             !any(g.hasv[collect(vert.need)]) && push!(extobj,id);   #might be optimized by finding better way to index by set.. same in if above
         end
     end
@@ -404,7 +413,7 @@ function getpotcolonizers!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,colonizers =
 end
 
 #Introduces modifier/object from pool network to colony
-function introducemod!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,id_mod)
+function introduceMod!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,id_mod)
     feed = Set{Int}()
     for idf in poolnet[id_mod].feed    #...and add feeds manualy
         if colnet.hasv[idf]
@@ -412,7 +421,7 @@ function introducemod!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,id_mod)
             push!(feed,idf);
         end
     end
-    addmod!(colnet, id_mod, ENIgMaVert(Set{Int}(),Set{Int}(),Set{Int}(),feed)) #add modifier to colony
+    addMod!(colnet, id_mod, ENIgMaVert(Set{Int}(),Set{Int}(),Set{Int}(),feed)) #add modifier to colony
 end
 
 """
@@ -422,7 +431,10 @@ end
     
     Notifies other vertices of presence and introduces modifiers if necessary.
 """
-function colonize!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,colonizerid,colonizer = copy(poolnet.vert[colonizerid]))
+function colonize!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,colonizerid,colonizer = nothing)
+    if colonizer === nothing
+        colonizer = copy(poolnet.vert[colonizerid])
+    end
     #adjust eat and feed list
     for ide in colonizer.eat            #might be optimized by putting that into extra function
         if colnet.hasv[ide]
@@ -443,12 +455,12 @@ function colonize!(poolnet::ENIgMaGraph,colnet::ENIgMaGraph,colonizerid,colonize
     #add modifiers
     for id_mod in colonizer.make
         if !colnet.hasv[id_mod]  #if modifier doesnt exist yet create it
-            introducemod!(poolnet,colnet,id_mod)
+            introduceMod!(poolnet,colnet,id_mod)
         end
         addn!(colnet[id_mod],colonizerid)
     end
 
-    addspec!(colnet, colonizerid, colonizer);    # add species to colony
+    addSpec!(colnet, colonizerid, colonizer);    # add species to colony
 end
 
 
@@ -591,8 +603,8 @@ function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, c
             addn!(poolnet[mid],newid)
             addn!(colnet[mid],newid)
         end
-        addspec!(poolnet,newid,mutspecpool);
-        addspec!(colnet,newid,mutspeccol);
+        addSpec!(poolnet,newid,mutspecpool);
+        addSpec!(colnet,newid,mutspeccol);
     end
     return newid;
 end
@@ -636,14 +648,21 @@ function recreatecolnetdiverse(poolnet::ENIgMaGraph,it,ids,maxid::Int,globextspe
                 end
                 #use colonize! to introduce spec (it takes care of eats, feeds and makes and the respective modifier needs automatically)
                 colonize!(poolnet,colnet,id,spec)   
-            else                            #its a modifier
+            elseif poolnet.hasMod[id]                           #its a modifier
                 if !colnet.hasv[id]         #only add modifiers, that haven't yet been introduced by a species
                     introducemod!(poolnet,colnet,id);   #introducemod! takes care of feeds
                 end
+            else
+                basalRes = copy(poolnet[id])
+                for fId in basalRes.feed
+                    if !hasv[fId]
+                        delf!(basaleRes,fId)
+                    end
+                end
+                addBasalres!(colnet,id,basalRes)
             end
         end
     end
-    addn!(colnet[1],1);     #add need of basal resource to itself to make it survive without a species making it
     return colnet;
 end
 
@@ -657,7 +676,7 @@ recreatecolnetdiverse(simulationData::ENIgMaSimulationData,it) =
 function gettrophiclevels(net::ENIgMaGraph)
     spec = copy(net.spec)
     trophic_lvls = []
-    prev_lvl = Set{Int}(1)
+    prev_lvl = net.basalRes
     curr_lvl = Set{Int}()
     while true
         for id in prev_lvl
