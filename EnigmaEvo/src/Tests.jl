@@ -77,7 +77,7 @@ function testDeltaSPrePostEvent()
 end
 
 function testtrophlvls()
-	intm = [0 0 0 0 0 0 0 0
+	intm = [1 0 0 0 0 0 0 0
 			1 2 2 0 0 0 0 0		#lvl 1
 			1 0 2 0 0 0 0 0		#lvl 1
 			0 1 0 2 0 0 0 0		#lvl 2
@@ -114,7 +114,7 @@ end
 
 function checkbasicconsistency(net::ENIgMaGraph)
 	consistent = true;
-	if !(net.estsize == length(net.hasspec) == length(net.hasv) >= net.idmanager.maxid)
+	if !(net.estsize == length(net.hasspec) == length(net.hasv) == length(net.hasMod) == length(net.hasBasalRes) >= net.idmanager.maxid)
 		consistent = false;
 		println("Inconsistency:\n\testsize == $(net.estsize), length(hasspec) == $(length(net.hasspec)), length(hasv) == $(length(net.hasv)), maxid == $(net.idmanager.maxid)");
 	end
@@ -130,12 +130,30 @@ function checkbasicconsistency(net::ENIgMaGraph)
 		println("\tsetdiff(findall(net.hasspec),net.spec) = $(setdiff(spec,net.spec))")
 		println("\tsetdiff(net.spec,findall(net.hasspec)) = $(setdiff(net.spec,spec))")
 	end
-	vert = findall(net.hasv)
-	if !issetequal(vert,keys(net.vert))
+	basalRes = findall(net.hasBasalRes)
+	if !issetequal(basalRes,net.basalRes)
+		consistent = false;
+		println("Inconsistency:\n\t!issetequal(findall(net.hasBasalRes),net.basalRes)");
+		println("\tsetdiff(findall(net.hasBasalRes),net.basalRes) = $(setdiff(basalRes,net.basalRes))")
+		println("\tsetdiff(net.basalRes,findall(net.hasBasalRes)) = $(setdiff(net.basalRes,basalRes))")
+	end
+	mods = findall(net.hasMod)
+	if !issetequal(mods,net.mods)
+		consistent = false;
+		println("Inconsistency:\n\t!issetequal(findall(net.hasMod),net.mods)");
+		println("\tsetdiff(findall(net.hasMod),net.mods) = $(setdiff(mods,net.mods))")
+		println("\tsetdiff(net.mods,findall(net.hasMod)) = $(setdiff(net.mods,mods))")
+	end
+	verts = findall(net.hasv)
+	if !issetequal(verts,keys(net.vert))
 		consistent = false;
 		println("Inconsistency:\n\t!issetequal(findall(net.hasv),keys(net.vert))");
-		println("\tsetdiff(findall(net.hasv),keys(net.vert)) = $(setdiff(vert,keys(net.vert)))")
-		println("\tsetdiff(keys(net.vert),findall(net.hasv)) = $(setdiff(keys(net.vert),vert))")
+		println("\tsetdiff(findall(net.hasv),keys(net.vert)) = $(setdiff(verts,keys(net.vert)))")
+		println("\tsetdiff(keys(net.vert),findall(net.hasv)) = $(setdiff(keys(net.vert),verts))")
+	end
+
+	if any(net.hasspec .& net.hasBasalRes) || any(net.hasMod .& net.hasBasalRes) || any(net.hasspec .& net.hasMod)
+		println("Inconsistency:\n\tA vertex is marked as being of multiple types (species, modifier, basal resource).")
 	end
 	for (id,vert) in net
 		for fid in vert.feed
@@ -148,6 +166,9 @@ function checkbasicconsistency(net::ENIgMaGraph)
 			end
 		end
 		for eid in vert.eat
+			if eid == id
+				println("Inconsistency:\n\tThe vertex with id $id eats itself.")
+			end
 			if !net.hasv[eid]
 				consistent = false;
 				println("Inconsistency:\n\t$eid in net[$id].eat but hasv[$eid] == false.")
@@ -157,6 +178,9 @@ function checkbasicconsistency(net::ENIgMaGraph)
 			end
 		end
 		for mid in vert.make
+			if mid == id
+				println("Inconsistency:\n\tThe vertex with id $id makes itself.")
+			end
 			if !net.hasv[mid]
 				consistent = false;
 				println("Inconsistency:\n\t$mid in net[$id].make but hasv[$mid] == false.")
@@ -165,19 +189,35 @@ function checkbasicconsistency(net::ENIgMaGraph)
 					println("Inconsistency:\n\t$mid in net[$id].make but $(id) not in net[$mid].need.")
 			end
 		end
-		if !net.hasspec[id] && id != 1
+		if net.hasspec[id]
+			for nid in vert.need
+				if nid == id
+					println("Inconsistency:\n\tThe species with id $id needs itself.")
+				end
+			end
+		end
+		if net.hasMod[id]
+			if !isempty(vert.eat) || !isempty(vert.make)
+				println("Inconsistency:\n\tThe modifier with id $id is eating or making something.")
+			end
 			for nid in vert.need
 				if !net.hasspec[nid]
 					consistent = false;
-					println("Inconsistency:\n\t$nid in net[$id].need but hasspec[$nid] == false.")
+					println("Inconsistency:\n\t$nid in net[$id].need (a modifier) but hasspec[$nid] == false.")
 				end
 				if !net.hasv[nid]
 					consistent = false;
-					println("Inconsistency:\n\t$nid in net[$id].need but hasv[$nid] == false.")
+					println("Inconsistency:\n\t$nid in net[$id].need (a modifier) but hasv[$nid] == false.")
 				elseif !(id in net[nid].make)
 					consistent = false;
 					println("Inconsistency:\n\t$nid in net[$id].need but $(id) not in net[$nid].make.")
 				end
+			end
+		end
+
+		if net.hasBasalRes[id]
+			if !isempty(vert.eat) || !isempty(vert.need) || !isempty(vert.make)
+				println("Inconsistency:\n\tThe basal resource with id $id is eating, needing or making something.")
 			end
 		end
 
@@ -222,6 +262,16 @@ function checkconsistency(poolnet,colnet)
 		println("Inconsistency:\n\t!issubset(colnet.spec,poolnet.spec)")
 		println("\n\tsetdiff(colnet.spec,poolnet.spec) == $(setdiff(colnet.spec,poolnet.spec)).")
 	end
+	if !issubset(colnet.mods,poolnet.mods)
+		consistent = false;
+		println("Inconsistency:\n\t!issubset(colnet.mods,poolnet.mods)")
+		println("\n\tsetdiff(colnet.mods,poolnet.mods) == $(setdiff(colnet.mods,poolnet.mods)).")
+	end
+	if !issubset(colnet.basalRes,poolnet.basalRes)
+		consistent = false;
+		println("Inconsistency:\n\t!issubset(colnet.basalRes,poolnet.basalRes)")
+		println("\n\tsetdiff(colnet.basalRes,poolnet.basalRes) == $(setdiff(colnet.basalRes,poolnet.basalRes)).")
+	end
 	if !issubset(keys(colnet.vert),keys(poolnet.vert))
 		consistent = false;
 		println("Inconsistency:\n\t!issubset(keys(colnet.vert),keys(poolnet.vert))")
@@ -243,14 +293,14 @@ function checkconsistency(poolnet,colnet)
 			println("\n\tsetdiff(colnet[$id].feed, intersect(poolnet[$id].feed,keys(colnet.vert))) ==\n\t\t$(setdiff(colvert.feed, intersection)).")
 			println("\n\tsetdiff(intersect(poolnet[$id].feed,keys(colnet.vert)), colnet[$id].feed) ==\n\t\t$(setdiff(intersection, colvert.feed)).")
 		end
-		if colnet.hasspec[id]|| id == 1 		
+		if colnet.hasspec[id]		
 			if !issetequal(colvert.need, poolvert.need)
 				consistent = false;
 				println("Inconsistency:\n\t!issetequal(colnet[$id].need, poolnet[$id].need)")
 				println("\n\tsetdiff(colnet[$id].need, poolnet[$id].need) == $(setdiff(colvert.need, poolvert.need)).")
 				println("\n\tsetdiff(poolnet[$id].need, colnet[$id].need) == $(setdiff(poolvert.need, colvert.need)).")
 			end
-		else
+		elseif colnet.hasMod[id]
 			intersection = intersect(poolvert.need,colnet.spec);
 			if !issetequal(colvert.need, intersection)
 				consistent = false;
@@ -271,6 +321,7 @@ end
 
 function testmutation(ce,cn,cm,cf,thorough=false)
 	getinteractiontype = ENIgMaGraphs.getinteractiontype;
+	basalResInts = [0,1]
 	spints = [0,1,2];
     obints = [0,1,2,3];
 	
@@ -278,21 +329,19 @@ function testmutation(ce,cn,cm,cf,thorough=false)
 	#Further species 5,6, and object 7 to have all sorts of interactions and 8,9 not colonized species
 	function setup_toy_net()
 		
-		intm = [0 0 0 0 0 0 0 0 0
+		intm = [1 0 0 0 0 0 0 0 0
 				1 2 0 0 2 0 3 1 0
 				0 0 2 3 0 2 1 0 1
-				0 0 2 0 0 0 0 2 0
+				0 0 2 3 0 0 0 2 0
 				0 1 2 1 2 0 3 0 2
 				0 2 1 2 1 2 0 0 1
-				0 2 0 0 2 0 0 0 0
+				0 2 0 0 2 0 3 0 0
 				1 2 1 3 0 0 0 2 0
 				0 1 2 0 0 1 0 0 2];
 
 		pool_net = converttoENIgMaGraph(intm)
-		col_net = ENIgMaGraph(pool_net.estsize, pool_net.idmanager)
-		basalres = ENIgMaVert();
-		addn!(basalres,1);
-		addmod!(col_net,1,basalres);
+		col_net = ENIgMaGraph(pool_net.estsize, pool_net.idmanager);
+		addBasalRes!(col_net,1,ENIgMaVert());
 
 		for id in [2,3,5,6]
 			colonize!(pool_net,col_net,id)
@@ -489,16 +538,17 @@ end
 
 function test(thorough,random_seed = 0)
 	Random.seed!(random_seed);
-	include("EnigmaEvo/src/set_up_params.jl")
+	include("set_up_params.jl")
 
 	isErrorFree = testmutation(ce,cn,cm,cpred,thorough);
     isErrorFree &= get_extinction_size_distrib_test();
 	isErrorFree &= testDeltaSPrePostEvent();
+	isErrorFree &= testtrophlvls();
 
 	for logging in [true,false]
 		for restrict_colonization in [true,false]
 			for diverse in [0,1]
-				initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs);
+				initpoolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalResources,SSprobs,SOprobs,diverse);
 
 				thorough && (isErrorFree &= checkinitpoolconsistency(initpoolnet));
 
@@ -517,7 +567,8 @@ function test(thorough,random_seed = 0)
 end
 
 works = true;
-seeds = 334:335
-@distributed (&) for seed in seeds
+seeds = 534:554
+#@distributed (&) 
+@enter for seed in seeds
 	test(true,seed)
 end

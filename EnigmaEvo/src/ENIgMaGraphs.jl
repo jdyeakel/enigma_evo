@@ -8,13 +8,13 @@ module ENIgMaGraphs
 
 # exported functions variables are visible outside of the module if we include the module with using
 export ENIgMaGraph, ENIgMaVert, IdManager       #might be put in begin block? kinda didnt work
-export setuppool, assemblyevo, ENIgMaSimulationData
+export setUpPool, assemblyevo, ENIgMaSimulationData
 export adde!, addn!, addf!, addm!, dele!, deln!, delm!, delf!
 export getNumSpec,getNumBasalRes, getNumMods 
 export addSpec!,replacespec!,addMod!, addBasalRes!, delv!
 export getprimext, getsecext!, getpotcolonizers!
 export colonize!,mutate!
-export getnextid!
+export getNextId!
 export converttoENIgMaGraph, converttointeractionmat
 export gettrophiclevels, recreatecolnetdiverse
 
@@ -36,14 +36,14 @@ mutable struct IdManager
     IdManager(offset) = new(offset)
 end;
 
-setmaxid!(idmanager,maxid) = idmanager.maxid = maxid;
+setMaxId!(idmanager,maxid) = idmanager.maxid = maxid;
 
 """
     getnextid!(idmanager::IdManager)
 
     Returns the next available vertex id.
 """
-function getnextid!(idmanager::IdManager) #optimization idea: have IdManager save ids of globally extinct species to reassign them?
+function getNextId!(idmanager::IdManager) #optimization idea: have IdManager save ids of globally extinct species to reassign them?
     idmanager.maxid += 1;
     return idmanager.maxid;
 end
@@ -194,7 +194,7 @@ end
 
 ENIgMaGraph(estsize::Int) = ENIgMaGraph(estsize, IdManager(0));
 
-getnextid!(g::ENIgMaGraph) = getnextid!(g.idmanager);
+getNextId!(g::ENIgMaGraph) = getNextId!(g.idmanager);
 
 Base.iterate(g::ENIgMaGraph,i...) = iterate(g.vert,i...);
 Base.length(g::ENIgMaGraph) = length(g.vert);
@@ -233,7 +233,7 @@ function enlarge!(g::ENIgMaGraph,estsize::Int)
     g.hasv = vcat(g.hasv,falses(estsize - g.estsize));
     g.hasspec = vcat(g.hasspec,falses(estsize - g.estsize));
     g.hasBasalRes = vcat(g.hasBasalRes,falses(estsize - g.estsize));
-    g.hasMods = vcat(g.hasMods,falses(estsize - g.estsize));
+    g.hasMod = vcat(g.hasMod,falses(estsize - g.estsize));
     g.estsize = estsize;
 end
 
@@ -257,23 +257,23 @@ function addSpec!(g::ENIgMaGraph,id,v::ENIgMaVert)
     g.hasspec[id] = true;
 end
 
-replacespec!(g::ENIgMaGraph,id,v::ENIgMaVert) = addspec!(g::ENIgMaGraph,id,v::ENIgMaVert);     #here in case at some point erasing of old vert needs work might be optimized by having just g.vert[id] = v; would not make sure that vert has been there though
+replacespec!(g::ENIgMaGraph,id,v::ENIgMaVert) = addSpec!(g::ENIgMaGraph,id,v::ENIgMaVert);     #here in case at some point erasing of old vert needs work might be optimized by having just g.vert[id] = v; would not make sure that vert has been there though
 
 """
-    addmod!(g::ENIgMaGraph,id,v::ENIgMaVert)
+    addBasalRes!(g::ENIgMaGraph,id,v::ENIgMaVert)
 
-    Adds modifier/object 'v' with id 'id' to 'g'.
+    Adds basal resource 'v' with id 'id' to 'g'.
 """
-function addBasalres!(g::ENIgMaGraph,id,v::ENIgMaVert)
+function addBasalRes!(g::ENIgMaGraph,id,v::ENIgMaVert)
     id > g.estsize && enlarge!(g,Int(round(id*enlargementfactor)))
     g.vert[id] = v;
     g.hasv[id] = true;
-    push!(g.basalres,id)
-    g.hasBasalres[id] = true;
+    push!(g.basalRes,id)
+    g.hasBasalRes[id] = true;
 end
 
 """
-    addmod!(g::ENIgMaGraph,id,v::ENIgMaVert)
+    addMod!(g::ENIgMaGraph,id,v::ENIgMaVert)
 
     Adds modifier/object 'v' with id 'id' to 'g'.
 """
@@ -504,7 +504,7 @@ end
 """
 function mutate!(poolnet::ENIgMaGraph, colnet::ENIgMaGraph, spmutid, intmutid, change_in_int, old_int, new_int, diverse, ce, cn, cm, cpred)
     if diverse == 1
-        newid = getnextid!(poolnet);
+        newid = getNextId!(poolnet);
         #if newid == 341
         #    println(c);
         #end
@@ -659,7 +659,7 @@ function recreatecolnetdiverse(poolnet::ENIgMaGraph,it,ids,maxid::Int,globextspe
                         delf!(basaleRes,fId)
                     end
                 end
-                addBasalres!(colnet,id,basalRes)
+                addBasalRes!(colnet,id,basalRes)
             end
         end
     end

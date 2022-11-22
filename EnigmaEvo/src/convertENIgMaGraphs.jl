@@ -43,7 +43,7 @@ function converttoENIgMaGraph(intm,estSize=nothing)
 
     for i in 1:N
         vertType = intm[i,i]
-        id = getnextid!(g)  #get next id even if species already extinct to hopefully get inverse of converttointeractionmat
+        id = getNextId!(g)  #get next id even if species already extinct to hopefully get inverse of converttointeractionmat
         if vertType == 2
             addSpec!(g,id,ENIgMaVert())
         elseif vertType == 1 

@@ -27,7 +27,7 @@ function simulation(srcPath)   #supposedly its better to wrap stuff in functions
     compress::Bool = true;  j
     deltaSPrePostDicts = @distributed (vcat) for repetition in 1:repetitions
         
-        initpoolnet = setuppool(S,lambda,SSprobs,SOprobs,diverse);
+        initpoolnet = setUpPool(S,lambda,nBasalResources, SSprobs,SOprobs,diverse);
 
         # EVOLUTIONARY VERSION
         sd = assemblyevo(initpoolnet, rates0, maxits, cn,cm,ce,cpred, diverse, restrict_colonization, logging);

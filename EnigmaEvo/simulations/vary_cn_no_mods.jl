@@ -24,7 +24,7 @@ function simulation()   #supposedly its better to wrap stuff in functions and no
     loop_vars = collect((param,repetition) for param in param_vals for repetition in 1:repetitions_per_param);
 
     @distributed for (param,repetition) in loop_vars
-        initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs,diverse);
+        initpoolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalResources,SSprobs,SOprobs,diverse);
 
         # EVOLUTIONARY VERSION
         sd = assemblyevo(initpoolnet, rates0, maxits, cn,cm,ce,cpred, diverse, restrict_colonization, logging);

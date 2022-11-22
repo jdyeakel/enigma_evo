@@ -14,7 +14,7 @@ include(localpath*"loadfuncs.jl");
 include(localpath*"set_up_params.jl");
 
 #create random pool network
-poolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs,diverse);
+poolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalResources,SSprobs,SOprobs,diverse);
 
 # run a simulation with parameters given (always use a freshly initialized poolnet as the poolnet is changed during assembly)
 @time simulationData = sd = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)

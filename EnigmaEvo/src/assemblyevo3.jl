@@ -64,7 +64,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
 
     # If diversification is turned off, rates.rext -> 0 do that by hand
     if diverse == 0
-        rates = (rc = rates.rc,rsecext = rates.rsecext, rprimext = rates.rprimext, reo = rates.reo,revo = rates0.revo,rext = 0.);
+        rates = (rc = rates.rc,rsecext = rates.rsecext, rprimext = rates.rprimext, reo = rates.reo,revo = rates.revo,rext = 0.);
     end
 
     colonizers = Int[]; #later used to store ids of potential colonizers
@@ -97,7 +97,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         levo = max(getNumSpec(colnet) - 2,0); #means evolution can only occur if community has more than 2 species
 
         #COUNT POTENTIAL global extinction events (size of pool)
-        lext =  numspec(poolnet) - numspec(colnet) #- (colnet.hasv[2] ? 0 : 1) #species 2 can't go exinct
+        lext =  getNumSpec(poolnet) - getNumSpec(colnet) #- (colnet.hasv[2] ? 0 : 1) #species 2 can't go exinct
 
         # Calculate the full Rate
         Rate = rates.rc*length(colonizers) + rates.rprimext*length(primextspec) + rates.rsecext*length(secextspec) + rates.reo*length(extobj) + rates.revo*levo + rates.rext*lext;
@@ -264,7 +264,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             maxids[it] = poolnet.idmanager.maxid;
         end
 
-        sprich[it] = numspec(colnet);
+        sprich[it] = getNumSpec(colnet);
         rich[it] = length(colnet);
         pool[it] = length(poolnet);
         #NOTE: standardize mean strength between 0 and 1

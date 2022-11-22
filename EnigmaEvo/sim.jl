@@ -22,7 +22,7 @@ compress::Bool = true               #should the data be compressed before storin
 loop_vars = collect((cn,repetition) for cn in param_vals for repetition in 1:repetitions_per_param);
 
 @distributed for (cn,repetition) in loop_vars
-    initpoolnet::ENIgMaGraph = setuppool(S,lambda,SSprobs,SOprobs,diverse);
+    initpoolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalResources,SSprobs,SOprobs,diverse);
 
     # EVOLUTIONARY VERSION
     sd =  assemblyevo(initpoolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, logging);

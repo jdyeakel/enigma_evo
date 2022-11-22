@@ -15,14 +15,14 @@ function setUpPool(S, lambda, numBasalResources, SSProbs, SMProbs, diverse)
     
     #create basal resources
     for i in 1:numBasalResources
-        basResId = getnextid!(poolnet)
+        basResId = getNextId!(poolnet)
         addBasalRes!( poolnet, basResId, ENIgMaVert());
     end
 
     #create species, fill later
     #firstSpecId = numBasalResources + 1
     for i in 1:S
-        specId = getnextid!(poolnet)
+        specId = getNextId!(poolnet)
         addSpec!( poolnet, specId, ENIgMaVert() );
     end
 
@@ -36,7 +36,7 @@ function setUpPool(S, lambda, numBasalResources, SSProbs, SMProbs, diverse)
 
     for potMod in potMods                   # go through all modifiers and....
         if !isEmpty(potMod.need)            # ...check if they are created by any species
-            modId = getnextid!(poolnet)     # give the modifier an id
+            modId = getNextId!(poolnet)     # give the modifier an id
             for engineerId in potMod.need   # add all makes of that modifiers engineers
                 addm!(poolnet[engineerId],modId)
             end
@@ -67,12 +67,12 @@ function setUpPool(S, lambda, numBasalResources, SSProbs, SMProbs, diverse)
     #create all basal resource interactions analogous to above
     possibleEdges = [(specId,basalResId) for specId in poolnet.spec for basalResId in poolnet.basalRes]
     realizedEdges = sample(possibleEdges, numBasalResEats, replace = false)
-    for (predatorId, preyId) in view(realizedEdges,1:numModBasalResEats)
+    for (predatorId, preyId) in view(realizedEdges,1:numBasalResEats)
         adde!(poolnet[predatorId],predatorId,poolnet[preyId],preyId)
     end
 
     #create all species-species interactions analogous to above
-    possibleEdges = [id1,id2 for id1 in poolnet.spec for id2 in poolnet.spec if id1 != id2]
+    possibleEdges = [(id1,id2) for id1 in poolnet.spec for id2 in poolnet.spec if id1 != id2]
     realizedEdges = sample(possibleEdges, numSpecEats + numSpecNeeds, replace = false)
 
     for (predatorId, preyId) in view(realizedEdges,1:numSpecEats)
