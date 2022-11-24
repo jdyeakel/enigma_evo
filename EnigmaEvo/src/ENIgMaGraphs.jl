@@ -16,7 +16,7 @@ export getprimext, getsecext!, getpotcolonizers!
 export colonize!,mutate!
 export getNextId!
 export converttoENIgMaGraph, converttointeractionmat
-export gettrophiclevels, recreatecolnetdiverse
+export getTrophicLevels, recreatecolnetdiverse
 
 export InteractionType, ignoreInteraction, eatInteraction, needInteraction, makeInteraction
 export AbstractENIgMaEvent, ColonizationEvent, PrimaryExtinctionEvent, SecondaryExtinctionEvent
@@ -673,7 +673,7 @@ recreatecolnetdiverse(simulationData::ENIgMaSimulationData,it) =
     recreatecolnetdiverse(simulationData.poolnet,it,simulationData.CID,
         simulationData.maxids,simulationData.glob_ext_spec)
 
-function gettrophiclevels(net::ENIgMaGraph)
+function getTrophicLevels_shortesPath(net::ENIgMaGraph)
     spec = copy(net.spec)
     trophic_lvls = []
     prev_lvl = net.basalRes
@@ -693,6 +693,31 @@ function gettrophiclevels(net::ENIgMaGraph)
         curr_lvl, prev_lvl = empty!(prev_lvl),curr_lvl  #swap variables
     end
     return trophic_lvls
+end
+
+function getTrophicLevels(net)
+    pathLengths = Dict{Int,Vector{Int}}()
+    function followPath(path)
+        currId = path[end]
+        if haskey(pathLengths,currId)
+            push!(pathLengths[currId], length(path))
+        else
+            pathLengths[currId] = [length(path)]
+        end
+
+        for specId in net[currId].feed
+            if !(specId in path)
+                followPath(push!(path, specId))
+            end
+        end
+    end
+
+    for basalResId in net.basalRes
+        for specId in net[basalResId].feed
+            followPath([specId])
+        end
+    end
+    return Dict{Int,Float64}([specId => mean(lengths) for (specId,lengths) in pathLengths])
 end
 
 end #module

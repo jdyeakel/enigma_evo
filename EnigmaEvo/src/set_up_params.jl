@@ -1,7 +1,7 @@
 S::Int64 = 200;
-maxits::Int64 = 4_000;
+maxits::Int64 = 10_000;
 
-nBasalResources::Int = 15
+nBasalResources::Int = 20;
 const SOprobs = (   #as link types are mutually exclusive pn + pe + pm(function of lambda) <= 1 must be fulfilled!!!
 p_n=0.002, #0.002,
 p_e=0.01 #0.01
@@ -32,7 +32,7 @@ n_t::Float64 = 1.; #always set to 1
 #revo = Evolutionary rate
 #rext = Global extinction rate
 rates0::NamedTuple{(:rc, :rprimext, :rsecext, :reo, :revo, :rext), NTuple{6, Float64}} =
-    (rc = 1., rprimext = 10., rsecext = 30., reo = 1., revo = 0.035, rext = .005);
+    (rc = 1., rprimext = 10., rsecext = 30., reo = 1., revo = 0.035, rext = .016);
 
 #Turn diversification dynamic on or off
 # 0 = off

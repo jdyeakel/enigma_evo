@@ -568,7 +568,6 @@ end
 
 works = true;
 seeds = 534:554
-#@distributed (&) 
-@enter for seed in seeds
+@distributed (&) for seed in seeds
 	test(true,seed)
 end

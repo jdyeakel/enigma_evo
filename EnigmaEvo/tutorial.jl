@@ -18,7 +18,7 @@ poolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalResources,SSprobs,SOprobs,divers
 
 # run a simulation with parameters given (always use a freshly initialized poolnet as the poolnet is changed during assembly)
 @time simulationData = sd = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
-    simulation_data = assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, logging);
+    simulation_data = assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, createLog = logging);
 
 
 #plot some results:
@@ -26,7 +26,7 @@ plotlyjs()    #use the plotlyjs backend for interactivity
 #gr() use the gr backend for faster plots
 
 #Plot some time series and the distribution of extinction sizes ignoring the first 2000 itterations
-plot_simulation(simulationData,offset=2000,show=true)
+plot_simulation(sd,offset=2000,show=true)
 
 #plot the phylogeny
 plotPhylogeny(sd.phyloTree,sorted=true)
@@ -51,6 +51,10 @@ jldsave("tutorial.jld2",compress;simulationData)
 
 #for loading use eg the following
 simulationData_loaded = load("tutorial.jld2", "simulationData");
+
+#continue old run by setting final colony as initial colony of new run
+@time simulationData_continued = sd = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
+    simulation_data = assemblyevo(simulationData_loaded.poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, simulationData_loaded.colnet; createLog = logging);
 
 #How to:-------------------------------------------------------------------------------
 #get species with id from network
