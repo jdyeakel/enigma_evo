@@ -622,7 +622,7 @@ include("assemblyevo3.jl")
     - 'ids::Bitvector': Stores which species are in the colony at the given itteration. 
         Is true for all ids of species in the colony network.
     - 'maxid::Int': The maximal id given to a vertex at the given itteration.
-    - 'globextspec::Dict{Int,Pair{Int,ENIgMaVert}}': Dictionary that stores all (id,vertex) pairs
+    - 'globextspec::Dict{Int,Pair{Int,ENIgMaVert}}': Stores all (id => vertex) pairs
          of globally extinct species using the itteration they went extinct as keys.
     """
 function recreatecolnetdiverse(poolnet::ENIgMaGraph,it,ids,maxid::Int,globextspec)

@@ -24,32 +24,31 @@ lineplot(itterations,hcat(freqe,freqe_pool),xlabel="itteration",ylabel="freq eat
 lineplot(itterations,hcat(freqn,freqn_pool),xlabel="itteration",ylabel="freq need",title="Frequency of need interactions of new model")
 
 
-param_name = "cn"
-simulation_name = "vary_$(param_name)_no_engineers_rprimext=10";        #specify the name of the simulation
+paramName = "nBasalRes"
+simulationName = "vary_$(paramName)";        #specify the name of the simulation
 
-sprich_plt = plot(size = (4000,4000),xlabel = "clock time", ylabel = "species richness",legend = :topleft);
-freqe_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "average amount of eat interactions",legend = :topleft);
-freqn_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "average amount of need interactions",legend = :topleft);
+specRich_plt = plot(size = (4000,4000),xlabel = "clock time", ylabel = "species richness",legend = :topleft);
+meanEats_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "average amount of eat interactions",legend = :topleft);
+meanNeeds_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "average amount of need interactions",legend = :topleft);
 
-param_vals = 0:2:20
+param_vals = 1:10:101
 for param in param_vals
-    for rep in 1:2
-        filename = "$(param_name)=$(param)_repet=$(rep).jld2"
-        clock, freqe, freqn, sprich =
-            load("data/$(simulation_name)/$(filename)", "clock","freqe", "freqn", "sprich");
-        plot!(sprich_plt,clock,sprich,color=RGB(param/param_vals[end],0,0),label = "cn = $(param)");
-        plot!(freqe_plt,clock,freqe,color=RGB(param/param_vals[end],0,0),label = "cn = $(param)");
-        plot!(freqn_plt,clock,freqn,color=RGB(param/param_vals[end],0,0),label = "cn = $(param)");
+    for rep in 1:2:9
+        filename = "$(paramName)=$(param)_repet=$(rep).jld2"
+        sd = load("data/$(simulationName)/$(filename)", "simulationData");
+        plot!(sd.specRich_plt,sd.clock,sd.specRich,color=RGB(param/param_vals[end],0,0),label = "$(paramName) = $(param)");
+        plot!(sd.meanEats_plt,sd.clock,sd.meanEats,color=RGB(param/param_vals[end],0,0),label = "$(paramName) = $(param)");
+        plot!(sd.meanNeeds_plt,sd.clock,sd.meanNeeds,color=RGB(param/param_vals[end],0,0),label = "$(paramName) = $(param)");
         end
 end
 
-Plots.savefig(sprich_plt,"data/$simulation_name/sprich_plt.png");
-Plots.savefig(freqe_plt,"data/$simulation_name/freqe_plt.png");
-Plots.savefig(freqn_plt,"data/$simulation_name/freqn_plt.png");
+Plots.savefig(specRich_plt,"data/$simulationName/specRich_plt.png");
+Plots.savefig(meanEats_plt,"data/$simulationName/meanEats_plt.png");
+Plots.savefig(meanNeeds_plt,"data/$simulationName/meanNeeds_plt.png");
 
-display(sprich_plt)
-display(freqn_plt)
-display(freqe_plt)
+display(specRich_plt)
+display(meanNeeds_plt)
+display(meanEats_plt)
 
 
 

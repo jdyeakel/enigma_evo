@@ -1,21 +1,53 @@
 abstract type ENIgMaSimulationData end
 
-struct ENIgMaSimulationData_v1 <: ENIgMaSimulationData
+"""
+    Data type that stores the generated data of a simulation of the ENIgMaModel.
+
+# Extended help
+    #Fields
+    -'poolnet::ENIgMaGraph': The pool network at the end of the simulation.
+    -'colnet::ENIgMaGraph': The colony network at the end of the simulation.
+    -'phyloTree::ManyRootTree' The phylogenetic tree generated if diversification is on.
+    -'specRich::Vector{Int}': The colony's species richness in each itteration.
+    -'rich::Vector{Int}': The number of vertices in the colony for each itteration.
+    -'pool::Vector{Int}': The number of vertices in the pool for each itteration.
+    -'mstrength::Vector{Float64}': The (somewhat normalized) mean strength for each itteration.
+    -'clock::Vector{Float64}': The time since the start of the simulation for each itteration.
+    -'vertsInColony::BitArray': Stores which vertices are in the colony for each itteration.
+        vertsInColony[id,it] is true if vertex with id 'id' is in colony at itteration 'it'.
+    -'maxids::Vector{Int}': Saves the maximal vertex id for each itteration.
+    -'globextspec::Dict{Int,Pair{Int,ENIgMaVert}}': Stores all (id => vertex) pairs
+        of globally extinct species using the itteration they went extinct as keys.
+    -'meanEats::Vector{Float64}': The mean out-degree of the eat-subnetwork of the colony.
+    -'meanNeeds::Vector{Float64}': The mean out-degree of the need-subnetwork of the colony.
+    -'meanEats_pool::Vector{Float64}': The mean out-degree of the eat-subnetwork of the pool.
+    -'meanNeeds_pool::Vector{Float64}': The mean out-degree of the need-subnetwork of the pool.
+    -'meanSpecEats::Vector{Float64}': The mean out-degree of the species-species eat-subnetwork of the colony.
+    -'meanSpecNeeds::Vector{Float64}': The mean out-degree of the species-species need-subnetwork of the colony. 
+    -'meanSpecEats_pool::Vector{Float64}': The mean out-degree of the species-species eat-subnetwork of the pool.
+    -'meanSpecNeeds_pool::Vector{Float64}': The mean out-degree of the species-species need-subnetwork of the pool. 
+    -'events::Vector{AbstractENIgMaEvent}': Stores the event of each itteration.
+"""
+struct ENIgMaSimulationData_v2 <: ENIgMaSimulationData
     poolnet::ENIgMaGraph
     colnet::ENIgMaGraph
     phyloTree::ManyRootTree
-    sprich::Vector{Int}
+    specRich::Vector{Int}
     rich::Vector{Int}
     pool::Vector{Int}
     mstrength::Vector{Float64}
     clock::Vector{Float64}
-    CID::BitArray
+    vertsInColony::BitArray
     maxids::Vector{Int}
     globextspec::Dict{Int,Pair{Int,ENIgMaVert}}
-    freqe::Vector{Float64}
-    freqn::Vector{Float64}
-    freqe_pool::Vector{Float64}
-    freqn_pool::Vector{Float64}
+    meanEats::Vector{Float64}
+    meanNeeds::Vector{Float64}
+    meanEats_pool::Vector{Float64}
+    meanNeeds_pool::Vector{Float64}
+    meanSpecEats::Vector{Float64}
+    meanSpecNeeds::Vector{Float64}
+    meanSpecEats_pool::Vector{Float64}
+    meanSpecNeeds_pool::Vector{Float64}
     events::Vector{AbstractENIgMaEvent}
 end
 
@@ -33,14 +65,14 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     end
     
     # set up some monitoring buffers
-    sprich = Array{Int64}(undef,maxits);
+    specRich = Array{Int64}(undef,maxits);
     rich = Array{Int64}(undef,maxits);
     pool = Array{Int64}(undef,maxits);
     mstrength = Array{Float64}(undef,maxits);
     clock = Array{Float64}(undef,maxits);
     events = Array{AbstractENIgMaEvent}(undef,maxits);
     if createLog
-        CID = falses(poolnet.estsize,maxits);
+        vertsInColony = falses(poolnet.estsize,maxits);
         maxids = zeros(Int,maxits);
         globextspec = Dict{Int,Pair{Int,ENIgMaVert}}()    #Stores globally extinct species together with their ids. The keys are the iterations the species went extinct
     end
@@ -55,10 +87,14 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         createnodes!(phyloTree,Dict{String,Dict{String,Any}}("$id" => Dict{String,Any}("parentName"=>"superRoot", "version"=>1, "heritage"=>"") for id in poolnet.spec))
     end
 
-    freqe = Array{Float64}(undef,maxits);
-    freqn = Array{Float64}(undef,maxits);
-    freqe_pool = Array{Float64}(undef,maxits);
-    freqn_pool = Array{Float64}(undef,maxits);
+    meanEats = Array{Float64}(undef,maxits);
+    meanNeeds = Array{Float64}(undef,maxits);
+    meanEats_pool = Array{Float64}(undef,maxits);
+    meanNeeds_pool = Array{Float64}(undef,maxits);
+    meanSpecEats = Array{Float64}(undef,maxits);
+    meanSpecNeeds = Array{Float64}(undef,maxits);
+    meanSpecEats_pool = Array{Float64}(undef,maxits);
+    meanSpecNeeds_pool = Array{Float64}(undef,maxits);
 
     #mutstep = Float64[]#zeros(Float64,maxits);
     #evolvedstrength = Array{Float64}(undef,0);
@@ -203,8 +239,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
 
 
             if createLog
-                if poolnet.estsize > size(CID)[1];      #has the network grown bigger than our buffer?
-                    CID = vcat(CID,falses(poolnet.estsize - size(CID)[1],maxits));  #then extend the buffer
+                if poolnet.estsize > size(vertsInColony)[1];      #has the network grown bigger than our buffer?
+                    vertsInColony = vcat(vertsInColony,falses(poolnet.estsize - size(vertsInColony)[1],maxits));  #then extend the buffer
                 end
             end
 
@@ -259,25 +295,32 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         end
         
         #SAVE RESULTS IN BUFFERS
+        numSpec = getNumSpec(colnet)
+        numSpec_pool = getNumSpec(poolnet)
+
         if isempty(colnet.spec)
-            freqe[it] = freqn[it] = mstrength[it] = NaN64
-        else 
-            freqe[it] = sum(length(colnet[id].eat) for id in colnet.spec)/max(length(colnet),1);     #bit afraid of overflows...
-            freqn[it] = sum(length(colnet[id].need) for id in colnet.spec)/max(length(colnet),1);
+            meanEats[it] = meanNeeds[it] = meanSpecEats[it] = meanSpecNeeds[it] = mstrength[it] = NaN64
+        else
+            meanEats[it] = sum(length(colnet[id].eat) for id in colnet.spec)/numSpec;     #bit afraid of overflows...
+            meanNeeds[it] = sum(length(colnet[id].need) for id in colnet.spec)/numSpec;
+            meanSpecEats[it] = sum(count(colnet.hasspec[collect(colnet[id].eat)]) for id in colnet.spec)/numSpec;     #bit afraid of overflows...
+            meanSpecNeeds[it] = sum(count(poolnet.hasspec[collect(colnet[id].need)]) for id in colnet.spec)/numSpec;
             mstrength[it] = (mean( v.strength for (id,v) in colnet if colnet.hasspec[id] ) - minstrength)/(maxstrength - minstrength); #make strengths positive with a minimum of 1
         end
         if isempty(poolnet.spec)
-            freqe_pool[it] = freqn_pool[it] = 0
+            meanEats_pool[it] = meanNeeds_pool[it] = meanSpecEats_pool[it] = meanSpecNeeds_pool[it] = 0
         else
-            freqe_pool[it] = sum(length(poolnet[id].eat) for id in poolnet.spec)/max(length(poolnet),1);     #bit afraid of overflows...
-            freqn_pool[it] = sum(length(poolnet[id].need) for id in poolnet.spec)/max(length(poolnet),1);
+            meanEats_pool[it] = sum(length(poolnet[id].eat) for id in poolnet.spec)/numSpec_pool;     #bit afraid of overflows...
+            meanNeeds_pool[it] = sum(length(poolnet[id].need) for id in poolnet.spec)/numSpec_pool;
+            meanSpecEats_pool[it] = sum(count(poolnet.hasspec[collect(poolnet[id].eat)]) for id in poolnet.spec)/numSpec_pool;     #bit afraid of overflows...
+            meanSpecNeeds_pool[it] = sum(count(poolnet.hasspec[collect(poolnet[id].need)]) for id in poolnet.spec)/numSpec_pool;
         end
         if createLog     #could be significantly optimized by just saving the changes and reconstructing if necessary
-            CID[:,it] = colnet.hasv;
+            vertsInColony[:,it] = colnet.hasv;
             maxids[it] = poolnet.idmanager.maxid;
         end
 
-        sprich[it] = getNumSpec(colnet);
+        specRich[it] = getNumSpec(colnet);
         rich[it] = length(colnet);
         pool[it] = length(poolnet);
         #NOTE: standardize mean strength between 0 and 1
@@ -295,30 +338,34 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     end
 
     if createLog
-        return ENIgMaSimulationData_v1(
+        return ENIgMaSimulationData_v2(
             poolnet,
             colnet,
             phyloTree,
-            sprich,
+            specRich,
             rich,
             pool,
             mstrength,
             clock,
-            CID,
+            vertsInColony,
             maxids,
             globextspec,
-            freqe,
-            freqn,
-            freqe_pool,
-            freqn_pool,
+            meanEats,
+            meanNeeds,
+            meanEats_pool,
+            meanNeeds_pool,
+            meanSpecEats,
+            meanSpecNeeds,
+            meanSpecEats_pool,
+            meanSpecNeeds_pool,
             events
         )
     else
-        return ENIgMaSimulationData_v1(
+        return ENIgMaSimulationData_v2(
             poolnet,
             colnet,
             phyloTree,
-            sprich,
+            specRich,
             rich,
             pool,
             mstrength,
@@ -326,11 +373,35 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             BitVector(),
             Int[],
             Dict{Int,Pair{Int,ENIgMaVert}}(),
-            freqe,
-            freqn,
-            freqe_pool,
-            freqn_pool,
+            meanEats,
+            meanNeeds,
+            meanEats_pool,
+            meanNeeds_pool,
+            meanSpecEats,
+            meanSpecNeeds,
+            meanSpecEats_pool,
+            meanSpecNeeds_pool,
             events
         )
     end
+end
+
+#keep old versions of simulation Data in order to be able to load them from files
+struct ENIgMaSimulationData_v1 <: ENIgMaSimulationData
+    poolnet::ENIgMaGraph
+    colnet::ENIgMaGraph
+    phyloTree::ManyRootTree
+    sprich::Vector{Int}
+    rich::Vector{Int}
+    pool::Vector{Int}
+    mstrength::Vector{Float64}
+    clock::Vector{Float64}
+    CID::BitArray
+    maxids::Vector{Int}
+    globextspec::Dict{Int,Pair{Int,ENIgMaVert}}
+    freqe::Vector{Float64}
+    freqn::Vector{Float64}
+    freqe_pool::Vector{Float64}
+    freqn_pool::Vector{Float64}
+    events::Vector{AbstractENIgMaEvent}
 end

@@ -23,7 +23,7 @@ function simulation()   #supposedly its better to wrap stuff in functions and no
     compress::Bool = true;               #should the data be compressed before storing?
     loop_vars = collect((param,repetition) for param in param_vals for repetition in 1:repetitions_per_param);
 
-    @distributed for (param,repetition) in loop_vars
+    @distributed for (cn,repetition) in loop_vars
         initpoolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalResources,SSprobs,SOprobs,diverse);
 
         # EVOLUTIONARY VERSION
