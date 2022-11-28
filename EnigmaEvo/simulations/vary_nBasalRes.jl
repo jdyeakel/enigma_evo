@@ -11,17 +11,17 @@ include(localPath*"loadfuncs.jl");
 
 function simulation()   #supposedly its better to wrap stuff in functions and not use global variables if possible(not sure if typed ones are a problem)
     include(localPath*"set_up_params.jl");
-
+    maxits = 50_000
     #prepare everything for a simulation consisting of the variation of a parmeter
     paramName = "nBasalRes"
-    simulationName = "vary_$(paramName)";        #specify the name of the simulation
-    mkpath("data/$(simulationName)");    #make a folder with that name in the Data folder
+    simulationName = "vary_$(paramName)_50_000_it";        #specify the name of the simulation
+    mkpath("data/$(simulationName)/plots");    #make a folder with that name in the Data folder
     compress::Bool = true;
     jldsave("data/$(simulationName)/parameters.jld2",compress;
         rates0, maxits, cm,ce,cpred, diverse, restrict_colonization,
         logging,S,lambda,SSprobs,SOprobs,nBasalRes)
 
-    paramVals = 1:10:101;       #specify the parameter values that shall be simulated
+    paramVals = 11:10:101;       #specify the parameter values that shall be simulated
     repetsPerParam = 10;        #specify the number of repetitions per parameter value
                #should the data be compressed before storing?
     loop_vars = collect((param,repetition) for param in paramVals for repetition in 1:repetsPerParam);
@@ -30,7 +30,7 @@ function simulation()   #supposedly its better to wrap stuff in functions and no
         initpoolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
 
         # EVOLUTIONARY VERSION
-        sd = assemblyevo(initpoolnet, rates0, maxits, cn,cm,ce,cpred, diverse, restrict_colonization, logging);
+        sd = assemblyevo(initpoolnet, rates0, maxits, cn,cm,ce,cpred, diverse, restrict_colonization);
         
         jldsave("data/$(simulationName)/$(paramName)=$(nBasalRes)_repet=$repetition.jld2",compress; simulationData = sd)
     end

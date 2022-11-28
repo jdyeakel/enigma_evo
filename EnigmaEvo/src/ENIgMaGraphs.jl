@@ -673,7 +673,7 @@ recreatecolnetdiverse(simulationData::ENIgMaSimulationData,it) =
     recreatecolnetdiverse(simulationData.poolnet,it,simulationData.CID,
         simulationData.maxids,simulationData.glob_ext_spec)
 
-function getTrophicLevels_shortesPath(net::ENIgMaGraph)
+function getTrophicLevels_shortestPath(net::ENIgMaGraph)
     spec = copy(net.spec)
     trophic_lvls = []
     prev_lvl = net.basalRes

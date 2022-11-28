@@ -25,30 +25,38 @@ lineplot(itterations,hcat(freqn,freqn_pool),xlabel="itteration",ylabel="freq nee
 
 
 paramName = "nBasalRes"
-simulationName = "vary_$(paramName)";        #specify the name of the simulation
+simulationName = "vary_$(paramName)_50_000_it";        #specify the name of the simulation
 
-specRich_plt = plot(size = (4000,4000),xlabel = "clock time", ylabel = "species richness",legend = :topleft);
-meanEats_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "average amount of eat interactions",legend = :topleft);
-meanNeeds_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "average amount of need interactions",legend = :topleft);
+specRich_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "species richness",legend = :topright);
+meanEats_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "average amount of eat interactions",legend = :topright);
+meanNeeds_plt = plot(size = (1920,1080),xlabel = "clock time", ylabel = "average amount of need interactions",legend = :topright);
 
-param_vals = 1:10:101
-for param in param_vals
-    for rep in 1:2:9
-        filename = "$(paramName)=$(param)_repet=$(rep).jld2"
+finalSpecRichPlt = plot(xlabel="number of basal resources",ylabel="mean spec richness in last 500 itterations", legend=nothing);
+
+param_vals = 11:10:101
+for nBasalRes in param_vals
+    for rep in 1:10
+        filename = "$(paramName)=$(nBasalRes)_repet=$(rep).jld2"
         sd = load("data/$(simulationName)/$(filename)", "simulationData");
-        plot!(sd.specRich_plt,sd.clock,sd.specRich,color=RGB(param/param_vals[end],0,0),label = "$(paramName) = $(param)");
-        plot!(sd.meanEats_plt,sd.clock,sd.meanEats,color=RGB(param/param_vals[end],0,0),label = "$(paramName) = $(param)");
-        plot!(sd.meanNeeds_plt,sd.clock,sd.meanNeeds,color=RGB(param/param_vals[end],0,0),label = "$(paramName) = $(param)");
+        if  sd.clock[end] != 0. && maximum(sd.clock) < 1000
+            plot!(specRich_plt,sd.clock,sd.specRich,color=RGB(nBasalRes/param_vals[end],0,0),label = "$(paramName) = $(nBasalRes)");
+            plot!(meanEats_plt,sd.clock,sd.meanEats,color=RGB(nBasalRes/param_vals[end],0,0),label = "$(paramName) = $(nBasalRes)");
+            plot!(meanNeeds_plt,sd.clock,sd.meanNeeds,color=RGB(nBasalRes/param_vals[end],0,0),label = "$(paramName) = $(nBasalRes)");
+            scatter!(finalSpecRichPlt,[nBasalRes], [mean(sd.specRich[45_000:end])]);
         end
+    end
 end
 
-Plots.savefig(specRich_plt,"data/$simulationName/specRich_plt.png");
-Plots.savefig(meanEats_plt,"data/$simulationName/meanEats_plt.png");
-Plots.savefig(meanNeeds_plt,"data/$simulationName/meanNeeds_plt.png");
+Plots.savefig(specRich_plt,"data/$simulationName/plots/specRich_plt.png");
+Plots.savefig(meanEats_plt,"data/$simulationName/plots/meanEats_plt.png");
+Plots.savefig(meanNeeds_plt,"data/$simulationName/plots/meanNeeds_plt.png");
+Plots.savefig(finalSpecRichPlt,"data/$simulationName/plots/finalSpecRichPlt.png");
 
 display(specRich_plt)
 display(meanNeeds_plt)
 display(meanEats_plt)
+
+display(finalSpecRichPlt)
 
 
 

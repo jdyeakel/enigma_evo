@@ -1,23 +1,23 @@
-function plot_simulation(simulationData;offset=0,show=true)
-    sprich = simulationData.sprich
+function plot_simulation(simulationData::ENIgMaGraphs.ENIgMaSimulationData_v2;offset=0,show=true)
+    specRich = simulationData.specRich
     pool = simulationData.pool
-    freqe = simulationData.freqe
-    freqn = simulationData.freqn
-    freqe_pool = simulationData.freqe_pool
-    freqn_pool = simulationData.freqn_pool
+    meanEats = simulationData.meanEats
+    meanNeeds = simulationData.meanNeeds
+    meanEats_pool = simulationData.meanEats_pool
+    meanNeeds_pool = simulationData.meanNeeds_pool
     clock = simulationData.clock
 
-    offset > length(sprich) && error("Offset (= $offset) is greater or eaqual to the length of the data set (=$(length(sprich))).")
+    offset > length(specRich) && error("Offset (= $offset) is greater or eaqual to the length of the data set (=$(length(specRich))).")
 
     offsetTime = clock[offset]
     sprich_plt = vline([offsetTime], c=:grey, label="offset")
     freqe_plt = vline([offsetTime], c=:grey, label="offset")
     freqn_plt = vline([offsetTime], c=:grey, label="offset")
-    plot!(sprich_plt, clock, [sprich,pool], xlabel="clock time", ylabel="species richness", labels=["colony","pool"]);
-    plot!(freqe_plt,clock, [freqe,freqe_pool], xlabel="clock time", ylabel="average amount of eat interactions", labels=["colony","pool"]);
-    plot!(freqn_plt,clock, [freqn,freqn_pool], lxlabel="clock time", ylabel="average amount of need interactions", labels=["colony","pool"]);
+    plot!(sprich_plt, clock, [specRich,pool], xlabel="clock time", ylabel="species richness", labels=["colony","pool"]);
+    plot!(freqe_plt,clock, [meanEats,meanEats_pool], xlabel="clock time", ylabel="average amount of eat interactions", labels=["colony","pool"]);
+    plot!(freqn_plt,clock, [meanNeeds,meanNeeds_pool], lxlabel="clock time", ylabel="average amount of need interactions", labels=["colony","pool"]);
 
-    ext_size_plt = plotExtinctionLengthDist(sprich,offset; show = false)
+    ext_size_plt = plotExtinctionLengthDist(specRich,offset; show = false)
     l = @layout [
         [Plots.grid(3,1)] d{0.5w}
         ]
@@ -76,4 +76,54 @@ function plotPhylogeny(phyloTree;sorted=true)
     )
     #plot(phyloTree, marker_group = "evolution", series_annotations = text.("test" for i in 1:nnodes(phyloTree)), markersize = 15, markershape = :square, size=(1920,20_000))
     #plt = plot(phyloTree, marker_group = "evolution", c= :Accent_8, markerstrokewidth = .2, legend=:topleft, markersize = 5, markershape = :square, size=(1920,20_000))
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function plot_simulation(simulationData::ENIgMaGraphs.ENIgMaSimulationData_v1;offset=0,show=true)
+    sprich = simulationData.sprich
+    pool = simulationData.pool
+    freqe = simulationData.freqe
+    freqn = simulationData.freqn
+    freqe_pool = simulationData.freqe_pool
+    freqn_pool = simulationData.freqn_pool
+    clock = simulationData.clock
+
+    offset > length(sprich) && error("Offset (= $offset) is greater or eaqual to the length of the data set (=$(length(sprich))).")
+
+    offsetTime = clock[offset]
+    sprich_plt = vline([offsetTime], c=:grey, label="offset")
+    freqe_plt = vline([offsetTime], c=:grey, label="offset")
+    freqn_plt = vline([offsetTime], c=:grey, label="offset")
+    plot!(sprich_plt, clock, [sprich,pool], xlabel="clock time", ylabel="species richness", labels=["colony","pool"]);
+    plot!(freqe_plt,clock, [freqe,freqe_pool], xlabel="clock time", ylabel="average amount of eat interactions", labels=["colony","pool"]);
+    plot!(freqn_plt,clock, [freqn,freqn_pool], lxlabel="clock time", ylabel="average amount of need interactions", labels=["colony","pool"]);
+
+    ext_size_plt = plotExtinctionLengthDist(sprich,offset; show = false)
+    l = @layout [
+        [Plots.grid(3,1)] d{0.5w}
+        ]
+    summary_plt = plot(sprich_plt,freqe_plt,freqn_plt,ext_size_plt, layout=l,legend=false,size=(1920,1080));
+    if show
+        display(summary_plt)
+    end
+    return summary_plt
 end
