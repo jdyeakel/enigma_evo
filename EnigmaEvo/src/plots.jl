@@ -1,4 +1,4 @@
-function plot_simulation(simulationData::ENIgMaGraphs.ENIgMaSimulationData_v2;offset=0,show=true)
+function plot_simulation(simulationData::ENIgMaGraphs.ENIgMaSimulationData;offset=0,show=true)
     specRich = simulationData.specRich
     pool = simulationData.pool
     meanEats = simulationData.meanEats
@@ -96,7 +96,7 @@ end
 
 
 
-
+#for compatibility with old ENIgMaSimulationData_v1
 
 function plot_simulation(simulationData::ENIgMaGraphs.ENIgMaSimulationData_v1;offset=0,show=true)
     sprich = simulationData.sprich

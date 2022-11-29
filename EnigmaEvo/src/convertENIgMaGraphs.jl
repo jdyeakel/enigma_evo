@@ -75,3 +75,18 @@ function converttoENIgMaGraph(intm,estSize=nothing)
     end
     return g;
 end
+
+function convertToEatMatrix(g)
+    N = getNumSpec(g)
+    intm = zeros(Int,N,N);
+    sorted_spec = g.spec |> collect |> sort!
+    for (ind, id) in  enumerate(sorted_spec)
+        for eid in g[id].eat
+            if g.hasspec[eid]
+                intm[ind,findfirst(==(eid),sorted_spec)] = 1;
+            end
+        end
+    end
+
+    return intm;
+end

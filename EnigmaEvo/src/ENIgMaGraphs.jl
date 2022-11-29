@@ -15,7 +15,7 @@ export addSpec!,replacespec!,addMod!, addBasalRes!, delv!
 export getprimext, getsecext!, getpotcolonizers!
 export colonize!,mutate!
 export getNextId!
-export converttoENIgMaGraph, converttointeractionmat
+export converttoENIgMaGraph, converttointeractionmat, convertToEatMatrix
 export getTrophicLevels, recreatecolnetdiverse
 
 export InteractionType, ignoreInteraction, eatInteraction, needInteraction, makeInteraction
@@ -26,6 +26,7 @@ using Distributed
 @everywhere using Graphs
 @everywhere using Phylo
 @everywhere using Distributions
+@everywhere using RCall
 
 const enlargementfactor = 1.3; #controls how much buffer is added if estsize has to be increased
 
