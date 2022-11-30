@@ -552,7 +552,7 @@ function test(thorough,random_seed = 0)
 
 				thorough && (isErrorFree &= checkinitpoolconsistency(initpoolnet));
 
-				sd = assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse,restrict_colonization,logging);
+				sd,_ = assemblyevo(initpoolnet,rates0,maxits,cm,cn,ce,cpred,diverse,restrict_colonization,logging);
 
 				if !checkconsistency(sd.poolnet,sd.colnet)
 					iserrorfree = false;

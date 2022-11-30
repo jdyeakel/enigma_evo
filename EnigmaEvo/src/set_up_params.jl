@@ -1,5 +1,5 @@
 S::Int64 = 200;
-maxits::Int64 = 10_000;
+maxits::Int64 = 40_000;
 
 nBasalRes::Int = 20;
 const SOprobs = (   #as link types are mutually exclusive pn + pe + pm(function of lambda) <= 1 must be fulfilled!!!

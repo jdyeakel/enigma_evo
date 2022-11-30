@@ -207,10 +207,12 @@ Base.getindex(g::ENIgMaGraph,key...) = getindex(g.vert,key...);
 
 #allows to compare two networks
 function Base.:(==)(g1::ENIgMaGraph,g2::ENIgMaGraph)
-    if g1.hasv != g2.hasv ||
-       g1.hasspec != g2.hasspec ||
-       g1.hasBasalRes != g2.hasBasalRes ||
-       g1.hasMod != g2.hasMod ||
+    g1.idmanager.maxid != g2.idmanager.maxid && return false
+    estSize = min(g1.estsize,g2.estsize)
+    if g1.hasv[1:estSize] != g2.hasv[1:estSize] ||
+       g1.hasspec[1:estSize] != g2.hasspec[1:estSize] ||
+       g1.hasBasalRes[1:estSize] != g2.hasBasalRes[1:estSize] ||
+       g1.hasMod[1:estSize] != g2.hasMod[1:estSize] ||
        g1.spec != g2.spec ||
        g1.mods != g2.mods ||
        g1.basalRes != g2.basalRes
@@ -221,7 +223,7 @@ function Base.:(==)(g1::ENIgMaGraph,g2::ENIgMaGraph)
         if v.eat != cv.eat || 
            v.need != cv.need ||
            v.make != cv.make ||
-           v.feed != cv.feed
+           v.feed != cv.feed2
             return false
         end
     end
@@ -627,6 +629,7 @@ include("assemblyevo3.jl")
          of globally extinct species using the itteration they went extinct as keys.
     """
 function recreatecolnetdiverse(poolnet::ENIgMaGraph,it,ids,maxid::Int,globextspec)
+    poolnet = deepcopy(poolnet)
     #make sure the right species are in the poolnet.
     for (extit,(id,v)) in globextspec   # Loop over all species extinct after simulation
         if extit <= it                  # already extinct at itteration that is recreated?
@@ -639,6 +642,9 @@ function recreatecolnetdiverse(poolnet::ENIgMaGraph,it,ids,maxid::Int,globextspe
     end
     colnet::ENIgMaGraph = ENIgMaGraph(poolnet.estsize,IdManager(maxid));    #create empty net
     for id in eachindex(ids)                #add vertices one by one
+        if id == 265
+            print("debug")
+        end
         if ids[id]                          #is vert present?                                   
             if poolnet.hasspec[id]          #is it a spec?
                 spec = copy(poolnet[id]);
@@ -656,8 +662,8 @@ function recreatecolnetdiverse(poolnet::ENIgMaGraph,it,ids,maxid::Int,globextspe
             else
                 basalRes = copy(poolnet[id])
                 for fId in basalRes.feed
-                    if !hasv[fId]
-                        delf!(basaleRes,fId)
+                    if !colnet.hasv[fId]
+                        delf!(basalRes,fId)
                     end
                 end
                 addBasalRes!(colnet,id,basalRes)
@@ -667,12 +673,12 @@ function recreatecolnetdiverse(poolnet::ENIgMaGraph,it,ids,maxid::Int,globextspe
     return colnet;
 end
 
-recreatecolnetdiverse(poolnet,it,CID,maxids,glob_ext_spec) =
-    recreatecolnetdiverse(poolnet,it,CID[:,it],maxids[it],glob_ext_spec)
+recreatecolnetdiverse(poolnet,it,vertsInColony,maxids,globExtSpec) =
+    recreatecolnetdiverse(poolnet,it,vertsInColony[:,it],maxids[it],globExtSpec)
 
 recreatecolnetdiverse(simulationData::ENIgMaSimulationData,it) = 
-    recreatecolnetdiverse(simulationData.poolnet,it,simulationData.CID,
-        simulationData.maxids,simulationData.glob_ext_spec)
+    recreatecolnetdiverse(simulationData.poolnet,it,simulationData.vertsInColony,
+        simulationData.maxids,simulationData.globExtSpec)
 
 function getTrophicLevels_shortestPath(net::ENIgMaGraph)
     spec = copy(net.spec)

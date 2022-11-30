@@ -27,7 +27,7 @@ function simulation()   #supposedly its better to wrap stuff in functions and no
         initpoolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalResources,SSprobs,SOprobs,diverse);
 
         # EVOLUTIONARY VERSION
-        sd = assemblyevo(initpoolnet, rates0, maxits, cn,cm,ce,cpred, diverse, restrict_colonization, logging);
+        (sd,_) = assemblyevo(initpoolnet, rates0, maxits, cn,cm,ce,cpred, diverse, restrict_colonization, logging);
         
         jldsave("data/$(simulation_name)/$(param_name)=$(param)_repet=$repetition.jld2",compress; simulationData = sd, rates0, maxits, param,cm,ce,cpred, diverse, restrict_colonization, logging,S,lambda,SSprobs,SOprobs)
     end

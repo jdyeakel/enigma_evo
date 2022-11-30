@@ -1,4 +1,4 @@
-function plot_simulation(simulationData::ENIgMaGraphs.ENIgMaSimulationData;offset=0,show=true)
+function plotSimulation(simulationData::ENIgMaGraphs.ENIgMaSimulationData;offset=0,show=true)
     specRich = simulationData.specRich
     pool = simulationData.pool
     meanEats = simulationData.meanEats
@@ -13,15 +13,15 @@ function plot_simulation(simulationData::ENIgMaGraphs.ENIgMaSimulationData;offse
     sprich_plt = vline([offsetTime], c=:grey, label="offset")
     freqe_plt = vline([offsetTime], c=:grey, label="offset")
     freqn_plt = vline([offsetTime], c=:grey, label="offset")
-    plot!(sprich_plt, clock, [specRich,pool], xlabel="clock time", ylabel="species richness", labels=["colony","pool"]);
-    plot!(freqe_plt,clock, [meanEats,meanEats_pool], xlabel="clock time", ylabel="average amount of eat interactions", labels=["colony","pool"]);
-    plot!(freqn_plt,clock, [meanNeeds,meanNeeds_pool], lxlabel="clock time", ylabel="average amount of need interactions", labels=["colony","pool"]);
+    plot!(sprich_plt, clock, [specRich,pool], xlabel="clock time", ylabel="species richness", label=["colony","pool"], legend = true);
+    plot!(freqe_plt,clock, [meanEats,meanEats_pool], xlabel="clock time", ylabel="average amount of eat interactions", label=["colony","pool"]);
+    plot!(freqn_plt,clock, [meanNeeds,meanNeeds_pool], lxlabel="clock time", ylabel="average amount of need interactions", label=["colony","pool"]);
 
-    ext_size_plt = plotExtinctionLengthDist(specRich,offset; show = false)
+    #ext_size_plt = plotExtinctionLengthDist(specRich,offset; show = false)
     l = @layout [
-        [Plots.grid(3,1)] d{0.5w}
+        [Plots.grid(3,1)]
         ]
-    summary_plt = plot(sprich_plt,freqe_plt,freqn_plt,ext_size_plt, layout=l,legend=false,size=(1920,1080));
+    summary_plt = plot(sprich_plt,freqe_plt,freqn_plt, layout=l,size=(1920,1080));
     if show
         display(summary_plt)
     end
@@ -98,7 +98,7 @@ end
 
 #for compatibility with old ENIgMaSimulationData_v1
 
-function plot_simulation(simulationData::ENIgMaGraphs.ENIgMaSimulationData_v1;offset=0,show=true)
+function plotSimulation(simulationData::ENIgMaGraphs.ENIgMaSimulationData_v1;offset=0,show=true)
     sprich = simulationData.sprich
     pool = simulationData.pool
     freqe = simulationData.freqe
