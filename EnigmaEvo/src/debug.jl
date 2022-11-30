@@ -155,3 +155,33 @@ meandegreedist ./= sum(meandegreedist)
 
 lineplot(0:15,meandegreedist[1:16],xlabel="degree")
 println(meandegreedist[1:20])
+
+
+
+
+
+for (it, colnet) in extraData.oldColonies
+	rec_colnet = recreatecolnetdiverse(sd, it)
+	works = rec_colnet == colnet
+	if !works
+		error("Recreate colnet doesn't work properly for it $(it).")
+	else
+		println("yay :)")
+	end
+end
+
+colnet = extraData.oldColonies[11950]
+rec_colnet = recreatecolnetdiverse(sd, 11950)
+@enter colnet == rec_colnet
+
+@enter rec_colnet = recreatecolnetdiverse(sd, 11950)
+
+poolnet[221]
+sd.globExtSpec[findfirst(x->x.first == 444,sd.globExtSpec)]
+
+findfirst(x->x.first == 444,sd.globExtSpec)
+
+col_13500 = extraData.oldColonies[13500];
+col_13500[114]
+pool_21090 = extraData.oldPools[21090];
+pool_21090[114]

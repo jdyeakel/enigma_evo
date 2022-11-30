@@ -62,3 +62,28 @@ display(finalSpecRichPlt)
 
 node = getnode(phyloTree,getparent(phyloTree,"51v2"))
 node.data["evolution"]
+
+
+maxTrophLevels = maximum.(sd.trophLevels)
+findmax(maxTrophLevels)
+
+colnet_1950 = recreatecolnetdiverse(sd,1950)
+colnet_1950.spec
+
+eatMatrix = ENIgMaGraphs.convertToEatMatrixNonReduced(col_3770)
+eatMatrixReduced = ENIgMaGraphs.convertToEatMatrix(col_3770)
+R"""
+    library(MASS)  
+    library(NetIndices)
+    rtl<-TrophInd(t($eatMatrix))
+"""
+@rget rtl;
+trophLevels = rtl[:,:TL]
+maximum(trophLevels)
+
+"$(sort(trophLevels))"
+
+inds = sort(collect(col_3770.spec))
+
+
+eatMatrix[inds,inds] == eatMatrixReduced

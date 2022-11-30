@@ -16,7 +16,7 @@ abstract type ENIgMaSimulationData end
     -'vertsInColony::BitArray': Stores which vertices are in the colony for each itteration.
         vertsInColony[id,it] is true if vertex with id 'id' is in colony at itteration 'it'.
     -'maxids::Vector{Int}': Saves the maximal vertex id for each itteration.
-    -'globextspec::Dict{Int,Pair{Int,ENIgMaVert}}': Stores all (id => vertex) pairs
+    -'globExtSpec::Dict{Int,Pair{Int,ENIgMaVert}}': Stores all (id => vertex) pairs
         of globally extinct species using the itteration they went extinct as keys.
     -'meanEats::Vector{Float64}': The mean out-degree of the eat-subnetwork of the colony.
     -'meanNeeds::Vector{Float64}': The mean out-degree of the need-subnetwork of the colony.
@@ -28,6 +28,9 @@ abstract type ENIgMaSimulationData end
     -'meanSpecNeeds_pool::Vector{Float64}': The mean out-degree of the species-species need-subnetwork of the pool. 
     -'events::Vector{AbstractENIgMaEvent}': Stores the event of each itteration.
     -'trophLevels::Vector{Vector{Float64}}': The trophic levels in the colony for each itteration.
+    -'nPrimExtSpec::Vector{Float64}': The number of species that could go primarily extinct for each itteration.
+    -'nSecExtSpec::Vector{Float64}': The number of species that could go secondary extinct for each itteration.
+    -'nColonizers::Vector{Float64}': The number of species that could colonize for each itteration.
 """
 struct ENIgMaSimulationData_v3 <: ENIgMaSimulationData
     poolnet::ENIgMaGraph
@@ -40,7 +43,7 @@ struct ENIgMaSimulationData_v3 <: ENIgMaSimulationData
     clock::Vector{Float64}
     vertsInColony::BitArray
     maxids::Vector{Int}
-    globextspec::Dict{Int,Pair{Int,ENIgMaVert}}
+    globExtSpec::Dict{Int,Pair{Int,ENIgMaVert}}
     meanEats::Vector{Float64}
     meanNeeds::Vector{Float64}
     meanEats_pool::Vector{Float64}
@@ -51,6 +54,9 @@ struct ENIgMaSimulationData_v3 <: ENIgMaSimulationData
     meanSpecNeeds_pool::Vector{Float64}
     events::Vector{AbstractENIgMaEvent}
     trophLevels::Vector{Vector{Float64}}
+    nPrimExtSpec::Vector{Float64}
+    nSecExtSpec::Vector{Float64}
+    nColonizers::Vector{Float64}
 end
 
 function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, diverse, restrict_colonization::Bool, initColNet = missing; createLog = true)
@@ -98,6 +104,12 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     meanSpecNeeds = Array{Float64}(undef,maxits);
     meanSpecEats_pool = Array{Float64}(undef,maxits);
     meanSpecNeeds_pool = Array{Float64}(undef,maxits);
+    nPrimExtSpec = Vector{Float64}(undef,maxits)
+    nSecExtSpec = Vector{Float64}(undef,maxits)
+    nColonizers = Vector{Float64}(undef,maxits)
+
+    oldColonies = Dict{Int,ENIgMaGraph}()
+    oldPools = Dict{Int,ENIgMaGraph}()
 
     #mutstep = Float64[]#zeros(Float64,maxits);
     #evolvedstrength = Array{Float64}(undef,0);
@@ -321,20 +333,29 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         if createLog     #could be significantly optimized by just saving the changes and reconstructing if necessary
             vertsInColony[:,it] = colnet.hasv;
             maxids[it] = poolnet.idmanager.maxid;
+            if it % 10 == 0
+                eatMatrix = ENIgMaGraphs.convertToEatMatrix(colnet)
+                R"""
+                    library(MASS)  
+                    library(NetIndices)
+                    rtl<-TrophInd(t($eatMatrix))
+                """
+                @rget rtl;
+                push!(trophLevels, rtl[:,:TL])
 
-            eatMatrix = ENIgMaGraphs.convertToEatMatrix(colnet)
-            R"""
-                library(MASS)  
-                library(NetIndices)
-                rtl<-TrophInd(t($eatMatrix))
-            """
-            @rget rtl;
-            push!(trophLevels, rtl[:,:TL])
+                oldColonies[it] = deepcopy(colnet)
+                oldPools[it] = deepcopy(poolnet)
+            end
         end
 
         specRich[it] = getNumSpec(colnet);
         rich[it] = length(colnet);
         pool[it] = length(poolnet);
+
+        nPrimExtSpec[it] = length(primextspec)
+        nSecExtSpec[it] = length(secextspec)
+        nColonizers[it] = length(colonizers)
+
         #NOTE: standardize mean strength between 0 and 1
     end #end time steps
 
@@ -371,8 +392,12 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             meanSpecEats_pool,
             meanSpecNeeds_pool,
             events,
-            trophLevels
-        )
+            trophLevels,
+            nPrimExtSpec,
+            nSecExtSpec,
+            nColonizers
+        ), 
+        (oldColonies = oldColonies,oldPools = oldPools)  # for other data that is to be transfered only temporarily
     else
         return ENIgMaSimulationData_v3(
             poolnet,
@@ -395,8 +420,12 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             meanSpecEats_pool,
             meanSpecNeeds_pool,
             events,
-            []
-        )
+            [],
+            nPrimExtSpec,
+            nSecExtSpec,
+            nColonizers
+        ),
+        (oldColonies = oldColonies,oldPools = oldPools)
     end
 end
 

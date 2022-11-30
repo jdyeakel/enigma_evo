@@ -11,27 +11,31 @@ end;
 include(localpath*"loadfuncs.jl"); 
 
 #setup all parameters
-include(localpath*"set_up_params.jl");
+include(localpath*"set_up_params.jl");oldPools
 
+Random.seed!(2456526);
 #create random pool network
 poolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
 
 # run a simulation with parameters given (always use a freshly initialized poolnet as the poolnet is changed during assembly)
-@time simulationData = sd = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
-    simulation_data = assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, createLog = true);
+@time simulationData,_ = sd,extraData = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
+    assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, createLog = true);
 
 
 #plot some results:
-plotlyjs()    #use the plotlyjs backend for interactivity
+plotlyjs();    #use the plotlyjs backend for interactivity
 #gr() use the gr backend for faster plots
 
 #Plot some time series and the distribution of extinction sizes ignoring the first 2000 itterations
-plot_simulation(sd,offset=2000,show=true)
+plotSimulation(sd,offset=2000,show=true)
 
 #plot the phylogeny
 plotPhylogeny(sd.phyloTree,sorted=true)
 
-plot(sd.clock,sd.maxTrophLevel, xlabel = "clock time", ylabel="maximum trophic level")
+plot(sd.clock[10:10:end],[mean.(sd.trophLevels),maximum.(sd.trophLevels)], size=(1920,1080), xlabel = "clock time", ylabel="maximum trophic level")
+
+plot(sd.clock,[sd.specRich,sd.pool,sd.nColonizers,sd.specRich + sd.nColonizers,sd.nSecExtSpec,sd.nPrimExtSpec], size = (1920,1080),
+    label = ["species richness","pool spec richness", "#potential colonizers","specRich + colonizers", "#secondary ext. species", "#primary ext. species"])
 
 @time begin eatMatrix = ENIgMaGraphs.convertToEatMatrix(sd.colnet);
     

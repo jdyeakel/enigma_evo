@@ -76,7 +76,7 @@ function converttoENIgMaGraph(intm,estSize=nothing)
     return g;
 end
 
-function convertToEatMatrix(g)
+function convertToEatMatrix_non_reduced(g)
     N = getNumSpec(g)
     intm = zeros(Int,N,N);
     sorted_spec = g.spec |> collect |> sort!
@@ -85,6 +85,18 @@ function convertToEatMatrix(g)
             if g.hasspec[eid]
                 intm[ind,findfirst(==(eid),sorted_spec)] = 1;
             end
+        end
+    end
+
+    return intm;
+end
+
+function convertToEatMatrixNonReduced(g)
+    N = g.idmanager.maxid;
+    intm = zeros(Int,N,N);
+    for (id,v) in g
+        for eid in v.eat
+            intm[id,eid] = 1;
         end
     end
 
