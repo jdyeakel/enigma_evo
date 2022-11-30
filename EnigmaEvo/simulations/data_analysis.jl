@@ -65,12 +65,15 @@ node.data["evolution"]
 
 
 maxTrophLevels = maximum.(sd.trophLevels)
-findmax(maxTrophLevels)
+findmax(maximum.(sd.trophLevels))
+
+col_2560 = extraData.oldColonies[2560]
+pool_2560 = extraData.oldPools[2560]
 
 colnet_1950 = recreatecolnetdiverse(sd,1950)
 colnet_1950.spec
 
-eatMatrix = ENIgMaGraphs.convertToEatMatrixNonReduced(col_3770)
+eatMatrix = ENIgMaGraphs.convertToEatMatrixNonReduced(col_2560)
 eatMatrixReduced = ENIgMaGraphs.convertToEatMatrix(col_3770)
 R"""
     library(MASS)  
@@ -79,7 +82,7 @@ R"""
 """
 @rget rtl;
 trophLevels = rtl[:,:TL]
-maximum(trophLevels)
+findmax(trophLevels)
 
 "$(sort(trophLevels))"
 
@@ -87,3 +90,42 @@ inds = sort(collect(col_3770.spec))
 
 
 eatMatrix[inds,inds] == eatMatrixReduced
+
+function pathes_to_basal(net,id)
+    pathLengths = Dict{Int,Vector{Int}}()
+    function followPath(path)
+        currId = path[end]
+        if haskey(pathLengths,currId)
+            push!(pathLengths[currId], length(path))
+        else
+            pathLengths[currId] = [length(path)]
+        end
+
+        for specId in net[currId].feed
+            if !(specId in path)
+                followPath(push!(path, specId))
+            end
+        end
+    end
+
+    for basalResId in net.basalRes
+        for specId in net[basalResId].feed
+            followPath([specId])
+        end
+    end
+    ret = []
+    for path in values(pathLengths)
+        if path[end] == id
+            push!(ret,path)
+        end
+    end
+    return ret
+end
+
+pathes = pathes_to_basal(col_2560,208)
+
+ENIgMaGraphs.getConnectedSpec(col_2560)
+col_2560.spec
+sd.nPrimExtSpec[2560]
+
+mean(maximum.(sd.trophLevels)[900:end])

@@ -11,7 +11,7 @@ end;
 include(localpath*"loadfuncs.jl"); 
 
 #setup all parameters
-include(localpath*"set_up_params.jl");oldPools
+include(localpath*"set_up_params.jl");
 
 Random.seed!(2456526);
 #create random pool network

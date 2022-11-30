@@ -76,7 +76,7 @@ function converttoENIgMaGraph(intm,estSize=nothing)
     return g;
 end
 
-function convertToEatMatrix_non_reduced(g)
+function convertToEatMatrix(g)
     N = getNumSpec(g)
     intm = zeros(Int,N,N);
     sorted_spec = g.spec |> collect |> sort!

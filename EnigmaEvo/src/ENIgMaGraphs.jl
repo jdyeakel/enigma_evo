@@ -16,7 +16,7 @@ export getprimext, getsecext!, getpotcolonizers!
 export colonize!,mutate!
 export getNextId!
 export converttoENIgMaGraph, converttointeractionmat, convertToEatMatrix
-export getTrophicLevels, recreatecolnetdiverse
+export getTrophicLevels, recreatecolnetdiverse, getConnectedSpec
 
 export InteractionType, ignoreInteraction, eatInteraction, needInteraction, makeInteraction
 export AbstractENIgMaEvent, ColonizationEvent, PrimaryExtinctionEvent, SecondaryExtinctionEvent
@@ -725,6 +725,22 @@ function getTrophicLevels(net)
         end
     end
     return Dict{Int,Float64}([specId => mean(lengths) for (specId,lengths) in pathLengths])
+end
+
+function getConnectedSpec(net)
+    isConnected = falses(net.idmanager.maxid)
+    function getConnected(id,isConnected,net)
+        for fId in net[id].feed
+            if !isConnected[fId]
+                isConnected[fId] = true
+                getConnected(fId,isConnected,net)
+            end
+        end
+    end
+    for basalResId in net.basalRes
+        getConnected(basalResId,isConnected,net)
+    end
+    return [ind for ind in eachindex(isConnected) if isConnected[ind]]
 end
 
 end #module

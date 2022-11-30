@@ -334,14 +334,17 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             vertsInColony[:,it] = colnet.hasv;
             maxids[it] = poolnet.idmanager.maxid;
             if it % 10 == 0
-                eatMatrix = ENIgMaGraphs.convertToEatMatrix(colnet)
+                eatMatrix = ENIgMaGraphs.convertToEatMatrixNonReduced(colnet)
+                inds = sort!(vcat(collect(colnet.basalRes),getConnectedSpec(colnet)))
+
+                eatMatrix = eatMatrix[inds,inds]
                 R"""
                     library(MASS)  
                     library(NetIndices)
                     rtl<-TrophInd(t($eatMatrix))
                 """
                 @rget rtl;
-                push!(trophLevels, rtl[:,:TL])
+                push!(trophLevels, rtl[21:end,:TL] .- 1)
 
                 oldColonies[it] = deepcopy(colnet)
                 oldPools[it] = deepcopy(poolnet)
