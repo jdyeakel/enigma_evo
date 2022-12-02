@@ -65,67 +65,100 @@ node.data["evolution"]
 
 
 maxTrophLevels = maximum.(sd.trophLevels)
-findmax(maximum.(sd.trophLevels))
-
-col_2560 = extraData.oldColonies[2560]
-pool_2560 = extraData.oldPools[2560]
+findmax(maxTrophLevels)
 
 colnet_1950 = recreatecolnetdiverse(sd,1950)
 colnet_1950.spec
 
-eatMatrix = ENIgMaGraphs.convertToEatMatrixNonReduced(col_2560)
+eatMatrix = ENIgMaGraphs.convertToEatMatrixNonReduced(col_3770)
 eatMatrixReduced = ENIgMaGraphs.convertToEatMatrix(col_3770)
 R"""
     library(MASS)  
     library(NetIndices)
-    rtl<-TrophInd(t($eatMatrix))
+    rtl<-TrophInd(t($medRedEatMat))
 """
 @rget rtl;
 trophLevels = rtl[:,:TL]
-findmax(trophLevels)
+maximum(trophLevels)
 
 "$(sort(trophLevels))"
 
-inds = sort(collect(col_3770.spec))
+inds = sort(collect(union(col_3770.spec,col_3770.basalRes)))
 
 
-eatMatrix[inds,inds] == eatMatrixReduced
+medRedEatMat = eatMatrix[inds,inds]
 
-function pathes_to_basal(net,id)
-    pathLengths = Dict{Int,Vector{Int}}()
-    function followPath(path)
-        currId = path[end]
-        if haskey(pathLengths,currId)
-            push!(pathLengths[currId], length(path))
-        else
-            pathLengths[currId] = [length(path)]
-        end
 
-        for specId in net[currId].feed
-            if !(specId in path)
-                followPath(push!(path, specId))
-            end
-        end
-    end
+paramName = "sqrt.(rPrimExt,rSecExt)"
+simulationName = "varyExtinctionsForTrophLevel";        #specify the name of the simulation
+sqrtParamVals = 1:.5:10;       #specify the parameter values that shall be simulated
+repets = [1]        #specify the number of repetitions per parameter value
+           #should the data be compressed before storing?
+loop_vars = [(sqrtRPrimExt,sqrtRSecExt,repetition) for sqrtRPrimExt in sqrtParamVals for sqrtRSecExt in sqrtParamVals for repetition in repets];
 
-    for basalResId in net.basalRes
-        for specId in net[basalResId].feed
-            followPath([specId])
-        end
-    end
-    ret = []
-    for path in values(pathLengths)
-        if path[end] == id
-            push!(ret,path)
-        end
-    end
-    return ret
+using SharedArrays
+numParams = length(sqrtParamVals)
+heatMapMax = SharedArray{Float64}((numParams,numParams));
+heatMapMean = SharedArray{Float64}((numParams,numParams));
+@distributed for (sqrtRPrimExt,sqrtRSecExt,repetition) in loop_vars
+    sd = load("EnigmaEvo/data/$(simulationName)/$(paramName)=($(sqrtRPrimExt),$(sqrtRSecExt))_repet=$repetition.jld2",  "simulationData")
+    indSec = findfirst(==(sqrtRSecExt),sqrtParamVals)
+    indPrim = findfirst(==(sqrtRPrimExt),sqrtParamVals)
+
 end
+using PlotlyJS
+gr()
+PlotlyJS.plot(PlotlyJS.heatmap(x = paramVals .^2, y = paramVals .^2, z=heatMapMax))
+UnicodePlots.heatmap((heatMapMax))
+UnicodePlots.heatmap((heatMapMean))
+data = [1 20 30; 20 1 60; 30 60 1]
+Plots.heatmap(heatMapMax)
 
-pathes = pathes_to_basal(col_2560,208)
 
-ENIgMaGraphs.getConnectedSpec(col_2560)
-col_2560.spec
-sd.nPrimExtSpec[2560]
+data = [1 20 30; 20 1 60; 30 60 1]
 
-mean(maximum.(sd.trophLevels)[900:end])
+PlotlyJS.plot(PlotlyJS.heatmap(z=data))
+
+
+
+function analyse()
+    paramName = "(rPrimExt,rSecExt)"
+    simulationName = "varyExtinctionsForTrophLevel"; 
+    compress = true
+    paramVals = (1:.5:10).^2;       #specify the parameter values that shall be simulated
+    numParams = length(paramVals)
+    nRepets = 50
+    repets = 1:nRepets
+            
+    loop_vars = [(primInd,rPrimExt,secInd,rSecExt,repetition) for (primInd,rPrimExt) in enumerate(paramVals)
+        for (secInd,rSecExt) in enumerate(paramVals) for repetition in repets];
+
+    heatMapMax = SharedArray{Float64}((numParams,numParams,nRepets));
+    heatMapMean = SharedArray{Float64}((numParams,numParams,nRepets));
+    @sync @distributed for (primInd,rPrimExt,secInd,rSecExt,repetition) in loop_vars
+
+        sd = load("data/$(simulationName)/$(paramName)=($(rPrimExt),$(rSecExt))_repet=$repetition.jld2","simulationData")
+        
+        trophLevels = sd.trophLevels
+        heatMapMax[primInd,secInd,repetition] = mean(maximum.(trophLevels))
+        heatMapMean[primInd,secInd,repetition] = mean(mean.(trophLevels))
+
+        jldsave("data/$(simulationName)/$(paramName)=($(rPrimExt),$(rSecExt))_repet=$repetition.jld2",compress; simulationData = sd, rates0)
+    end
+
+    jldsave("data/$(simulationName)/results.jld2",compress; heatMapMax, heatMapMean)
+
+    plotlyjs()
+    maxPlot = Plots.heatmap(paramVals, paramVals, dropdims(mean(heatMapMax,dims=3),dims=3),
+        size = (1280,720), xlabel = "primary extinction rate", ylabel = "secondary extinction rate",
+        title = "Average maximal trophic level in itterations 9500 to 10000")
+    meanPlot = Plots.heatmap(paramVals, paramVals, dropdims(mean(heatMapMean,dims=3),dims=3),
+        size = (1280,720), xlabel = "primary extinction rate", ylabel = "secondary extinction rate",
+        title = "Average mean trophic level in itterations 9500 to 10000")
+
+    display(maxPlot)
+    display(meanPlot)
+
+    Plots.savefig(maxPlot,"data/$simulationName/plots/maxTrophLevelPlot.png");
+    Plots.savefig(meanPlot,"data/$simulationName/plots/meanTrophLevelPlot.png");
+end

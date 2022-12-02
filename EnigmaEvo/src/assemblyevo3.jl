@@ -73,11 +73,11 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     end
     
     # set up some monitoring buffers
-    specRich = Array{Int64}(undef,maxits);
-    rich = Array{Int64}(undef,maxits);
-    pool = Array{Int64}(undef,maxits);
-    mstrength = Array{Float64}(undef,maxits);
-    clock = Array{Float64}(undef,maxits);
+    specRich = zeros(Int64,maxits);
+    rich = zeros(Int64,maxits);
+    pool = zeros(Int64,maxits);
+    clock = zeros(Float64,maxits);
+    mstrength = zeros(Float64,maxits);
     events = Array{AbstractENIgMaEvent}(undef,maxits);
     if createLog
         vertsInColony = falses(poolnet.estsize,maxits);
@@ -88,7 +88,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
 
     #initialize phylogenetic tree
     phyloTree = ManyRootTree()  #create phylo genetic tree
-    if diverse == 1  #in non diverse case phylogeny kinda weird
+    if diverse == 1.5  #in non diverse case phylogeny kinda weird
         ##create root nodes
         #createnodes!(phyloTree,Dict{String,Dict{String,Any}}("$(id)_root" => Dict{String,Any}("timestamp" => 0) for id in poolnet.spec))
         superRoot = createnode!(phyloTree,"superRoot", data=Dict{String,Any}("timestamp"=>0.0,"evolution" => ""))
@@ -96,20 +96,20 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         createnodes!(phyloTree,Dict{String,Dict{String,Any}}("$id" => Dict{String,Any}("parentName"=>"superRoot", "version"=>1, "heritage"=>"") for id in poolnet.spec))
     end
 
-    meanEats = Array{Float64}(undef,maxits);
-    meanNeeds = Array{Float64}(undef,maxits);
-    meanEats_pool = Array{Float64}(undef,maxits);
-    meanNeeds_pool = Array{Float64}(undef,maxits);
-    meanSpecEats = Array{Float64}(undef,maxits);
-    meanSpecNeeds = Array{Float64}(undef,maxits);
-    meanSpecEats_pool = Array{Float64}(undef,maxits);
-    meanSpecNeeds_pool = Array{Float64}(undef,maxits);
-    nPrimExtSpec = Vector{Float64}(undef,maxits)
-    nSecExtSpec = Vector{Float64}(undef,maxits)
-    nColonizers = Vector{Float64}(undef,maxits)
+    meanEats = zeros(Float64,maxits);
+    meanNeeds = zeros(Float64,maxits);
+    meanEats_pool = zeros(Float64,maxits);
+    meanNeeds_pool = zeros(Float64,maxits);
+    meanSpecEats = zeros(Float64,maxits);
+    meanSpecNeeds = zeros(Float64,maxits);
+    meanSpecEats_pool = zeros(Float64,maxits);
+    meanSpecNeeds_pool = zeros(Float64,maxits);
+    nPrimExtSpec = zeros(Float64,maxits)
+    nSecExtSpec = zeros(Float64,maxits)
+    nColonizers = zeros(Float64,maxits)
 
-    oldColonies = Dict{Int,ENIgMaGraph}()
-    oldPools = Dict{Int,ENIgMaGraph}()
+    #oldColonies = Dict{Int,ENIgMaGraph}()
+    #oldPools = Dict{Int,ENIgMaGraph}()
 
     #mutstep = Float64[]#zeros(Float64,maxits);
     #evolvedstrength = Array{Float64}(undef,0);
@@ -264,7 +264,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             #update phylogenic Tree (approach a bit unintuitive.
             # I keep the leaf nodes unattached, just move them forward and let them save their current version
             # and where they are currently attached without actually attaching them)
-            if diverse == 1
+            if diverse == 1.5
                 leafNode = getnode(phyloTree,"$(spmutid)")      #get the leaf node of the mutating species to move it to the present        
                 soonGrandParent = getnode(phyloTree,leafNode.data["parentName"])   #get its parent's and soon to be grandparent's name 
 
@@ -300,7 +300,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             events[it] = GlobalExtinctionEvent(globextid) 
 
             #update Phylogenetic tree
-            if diverse == 1
+            if diverse == 1.5
                 nowExtNode = getnode(phyloTree,"$(globextid)")
                 parent = getnode(phyloTree,nowExtNode.data["parentName"])
                 createbranch!(phyloTree,parent,nowExtNode,t - parent.data["timestamp"])
@@ -333,7 +333,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         if createLog     #could be significantly optimized by just saving the changes and reconstructing if necessary
             vertsInColony[:,it] = colnet.hasv;
             maxids[it] = poolnet.idmanager.maxid;
-            if it % 10 == 0
+            if it >= 9500 && it % 10 == 0
                 eatMatrix = ENIgMaGraphs.convertToEatMatrixNonReduced(colnet)
                 inds = sort!(vcat(collect(colnet.basalRes),getConnectedSpec(colnet)))
 
@@ -346,8 +346,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
                 @rget rtl;
                 push!(trophLevels, rtl[21:end,:TL] .- 1)
 
-                oldColonies[it] = deepcopy(colnet)
-                oldPools[it] = deepcopy(poolnet)
+                #oldColonies[it] = deepcopy(colnet)
+                #oldPools[it] = deepcopy(poolnet)
             end
         end
 
@@ -362,7 +362,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         #NOTE: standardize mean strength between 0 and 1
     end #end time steps
 
-    if diverse == 1
+    if diverse == 1.5
         #finalize phylogenetic tree
         for survivorId in poolnet.spec
             survivingNode = getnode(phyloTree,"$(survivorId)")
@@ -400,7 +400,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             nSecExtSpec,
             nColonizers
         ), 
-        (oldColonies = oldColonies,oldPools = oldPools)  # for other data that is to be transfered only temporarily
+        ()#oldColonies = oldColonies,oldPools = oldPools)  # for other data that is to be transfered only temporarily
     else
         return ENIgMaSimulationData_v3(
             poolnet,
@@ -428,7 +428,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             nSecExtSpec,
             nColonizers
         ),
-        (oldColonies = oldColonies,oldPools = oldPools)
+        ()#oldColonies = oldColonies,oldPools = oldPools)
     end
 end
 

@@ -13,7 +13,7 @@ include(localpath*"loadfuncs.jl");
 #setup all parameters
 include(localpath*"set_up_params.jl");
 
-Random.seed!(2456526);
+#Random.seed!(2456526);
 #create random pool network
 poolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
 
@@ -21,7 +21,11 @@ poolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
 @time simulationData,_ = sd,extraData = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
     assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, createLog = true);
 
-
+    testMax,testMean = load("EnigmaEvo/data/varyExtinctionsForTrophLevel/results.jld2", "heatMapMax", "heatMapMean")
+    maxPlot = Plots.heatmap(1:2, 1:2, dropdims(mean(testMax,dims=3),dims=3),
+           size = (1280,720), xlabel = "primary extinction rate", ylabel = "secondary extinction rate",
+           title = "Average maximal trophic level in itterations 9500 to 10000")
+           Plots.savefig(maxPlot,"EnigmaEvo/data/varyExtinctionsForTrophLevel/plots/maxTrophLevelPlot.svg")
 #plot some results:
 plotlyjs();    #use the plotlyjs backend for interactivity
 #gr() use the gr backend for faster plots
@@ -48,7 +52,7 @@ R"""
 maximum(rtl[:,:TL]);
 end
 sd.trophLevels[end]
-plot(sd.clock,[mean.(sd.trophLevels),maximum.(sd.trophLevels)],labels=["mean","max"], xlabel = "clock time", ylabel = "trophic level")
+Plots.plot(sd.clock,[mean.(sd.trophLevels),maximum.(sd.trophLevels)],labels=["mean","max"], xlabel = "clock time", ylabel = "trophic level")
 
 #use functions of the Graphs package on ENIgMaGraphs
 #@enter strongly_connected_components(colnet)
