@@ -185,3 +185,5 @@ col_13500 = extraData.oldColonies[13500];
 col_13500[114]
 pool_21090 = extraData.oldPools[21090];
 pool_21090[114]
+n = 16
+Plots.heatmap(rand(n,n),size=(1920,1080))
