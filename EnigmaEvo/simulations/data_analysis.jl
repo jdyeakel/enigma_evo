@@ -133,32 +133,44 @@ function analyse()
     loop_vars = [(primInd,rPrimExt,secInd,rSecExt,repetition) for (primInd,rPrimExt) in enumerate(paramVals)
         for (secInd,rSecExt) in enumerate(paramVals) for repetition in repets];
 
-    heatMapMax = SharedArray{Float64}((numParams,numParams,nRepets));
-    heatMapMean = SharedArray{Float64}((numParams,numParams,nRepets));
+    monitoredParams = 
+    specRichHeatMapMax = SharedArray{Float64}((numParams,numParams,nRepets));
+    specRichHeatMapMean = SharedArray{Float64}((numParams,numParams,nRepets));
     @sync @distributed for (primInd,rPrimExt,secInd,rSecExt,repetition) in loop_vars
 
         sd = load("data/$(simulationName)/$(paramName)=($(rPrimExt),$(rSecExt))_repet=$repetition.jld2","simulationData")
         
-        trophLevels = sd.trophLevels
-        heatMapMax[primInd,secInd,repetition] = mean(maximum.(trophLevels))
-        heatMapMean[primInd,secInd,repetition] = mean(mean.(trophLevels))
-
-        jldsave("data/$(simulationName)/$(paramName)=($(rPrimExt),$(rSecExt))_repet=$repetition.jld2",compress; simulationData = sd, rates0)
+        specRich = sd.specRich[9500:end]
+        specRichHeatMapMax[primInd,secInd,repetition] = mean(maximum.(specRich))
+        specRichHeatMapMean[primInd,secInd,repetition] = mean(mean.(specRich))
     end
 
     jldsave("data/$(simulationName)/results.jld2",compress; heatMapMax, heatMapMean)
 
     plotlyjs()
-    maxPlot = Plots.heatmap(paramVals, paramVals, dropdims(mean(heatMapMax,dims=3),dims=3),
-        size = (1280,720), xlabel = "primary extinction rate", ylabel = "secondary extinction rate",
+    maxPlot = Plots.heatmap(paramVals, paramVals, dropdims(mean(specRichHeatMapMax,dims=3),dims=3),
+        size = (1280,720), xlabel = "secondary extinction rate", ylabel = "primary extinction rate",
         title = "Average maximal trophic level in itterations 9500 to 10000")
-    meanPlot = Plots.heatmap(paramVals, paramVals, dropdims(mean(heatMapMean,dims=3),dims=3),
-        size = (1280,720), xlabel = "primary extinction rate", ylabel = "secondary extinction rate",
+    meanPlot = Plots.heatmap(paramVals, paramVals, dropdims(mean(specRichHeatMapMean,dims=3),dims=3),
+        size = (1280,720), xlabel = "secondary extinction rate", ylabel = "primary extinction rate",
         title = "Average mean trophic level in itterations 9500 to 10000")
 
-    display(maxPlot)
-    display(meanPlot)
-
-    Plots.savefig(maxPlot,"data/$simulationName/plots/maxTrophLevelPlot.png");
-    Plots.savefig(meanPlot,"data/$simulationName/plots/meanTrophLevelPlot.png");
+    Plots.savefig(maxPlot,"data/$simulationName/plots/maxTrophLevelPlot.html");
+    Plots.savefig(meanPlot,"data/$simulationName/plots/meanTrophLevelPlot.html");
 end
+
+
+
+paramName = "(rPrimExt,rExt)"
+simulationName = "heatmapPrimExtVsGlobExt";        #specify the name of the simulation
+compress::Bool = true;  #should the data be compressed before storing?
+
+
+primVals = [.1,.5,1,1.5,2,3,5,10,15,20,40]       #specify the parameter values that shall be simulated
+globVals = [.001,.005,.01,.016,.3,.35,.45,.7,1.,2.,5.]
+numPrimVals = length(primVals)
+numGlobVals = length(globVals)
+
+nRepets = 50
+repets = 1:nRepets
+

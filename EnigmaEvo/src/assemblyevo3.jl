@@ -31,8 +31,9 @@ abstract type ENIgMaSimulationData end
     -'nPrimExtSpec::Vector{Float64}': The number of species that could go primarily extinct for each itteration.
     -'nSecExtSpec::Vector{Float64}': The number of species that could go secondary extinct for each itteration.
     -'nColonizers::Vector{Float64}': The number of species that could colonize for each itteration.
+    -'runFinished::Bool': States if run was finished and did not stop prematurely.
 """
-struct ENIgMaSimulationData_v3 <: ENIgMaSimulationData
+struct ENIgMaSimulationData_v4 <: ENIgMaSimulationData
     poolnet::ENIgMaGraph
     colnet::ENIgMaGraph
     phyloTree::ManyRootTree
@@ -57,6 +58,7 @@ struct ENIgMaSimulationData_v3 <: ENIgMaSimulationData
     nPrimExtSpec::Vector{Float64}
     nSecExtSpec::Vector{Float64}
     nColonizers::Vector{Float64}
+    runFinished::Bool
 end
 
 function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, diverse, restrict_colonization::Bool, initColNet = missing; createLog = true)
@@ -108,6 +110,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     nSecExtSpec = zeros(Float64,maxits)
     nColonizers = zeros(Float64,maxits)
 
+    runFinished = true
+
     #oldColonies = Dict{Int,ENIgMaGraph}()
     #oldPools = Dict{Int,ENIgMaGraph}()
 
@@ -158,6 +162,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         # Calculate the full Rate
         Rate = rates.rc*length(colonizers) + rates.rprimext*length(primextspec) + rates.rsecext*length(secextspec) + rates.reo*length(extobj) + rates.revo*levo + rates.rext*lext;
         if Rate == 0
+            runFinished = false
             println("Warning: No action was taken at iteration $it as no action was possible.")
             println("         Maybe the system evolved to a state where no species can colonize and almost all went extinct?")
             println("         Aborting simulation prematurely.")
@@ -374,7 +379,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     end
 
     if createLog
-        return ENIgMaSimulationData_v3(
+        return ENIgMaSimulationData_v4(
             poolnet,
             colnet,
             phyloTree,
@@ -398,11 +403,12 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             trophLevels,
             nPrimExtSpec,
             nSecExtSpec,
-            nColonizers
+            nColonizers,
+            runFinished
         ), 
         ()#oldColonies = oldColonies,oldPools = oldPools)  # for other data that is to be transfered only temporarily
     else
-        return ENIgMaSimulationData_v3(
+        return ENIgMaSimulationData_v4(
             poolnet,
             colnet,
             phyloTree,
@@ -426,7 +432,8 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             [],
             nPrimExtSpec,
             nSecExtSpec,
-            nColonizers
+            nColonizers,
+            runFinished
         ),
         ()#oldColonies = oldColonies,oldPools = oldPools)
     end
@@ -501,4 +508,63 @@ struct ENIgMaSimulationData_v2 <: ENIgMaSimulationData
     meanSpecEats_pool::Vector{Float64}
     meanSpecNeeds_pool::Vector{Float64}
     events::Vector{AbstractENIgMaEvent}
+end
+
+"""
+    Data type that stores the generated data of a simulation of the ENIgMaModel.
+
+# Extended help
+    #Fields
+    -'poolnet::ENIgMaGraph': The pool network at the end of the simulation.
+    -'colnet::ENIgMaGraph': The colony network at the end of the simulation.
+    -'phyloTree::ManyRootTree' The phylogenetic tree generated if diversification is on.
+    -'specRich::Vector{Int}': The colony's species richness in each itteration.
+    -'rich::Vector{Int}': The number of vertices in the colony for each itteration.
+    -'pool::Vector{Int}': The number of vertices in the pool for each itteration.
+    -'mstrength::Vector{Float64}': The (somewhat normalized) mean strength for each itteration.
+    -'clock::Vector{Float64}': The time since the start of the simulation for each itteration.
+    -'vertsInColony::BitArray': Stores which vertices are in the colony for each itteration.
+        vertsInColony[id,it] is true if vertex with id 'id' is in colony at itteration 'it'.
+    -'maxids::Vector{Int}': Saves the maximal vertex id for each itteration.
+    -'globExtSpec::Dict{Int,Pair{Int,ENIgMaVert}}': Stores all (id => vertex) pairs
+        of globally extinct species using the itteration they went extinct as keys.
+    -'meanEats::Vector{Float64}': The mean out-degree of the eat-subnetwork of the colony.
+    -'meanNeeds::Vector{Float64}': The mean out-degree of the need-subnetwork of the colony.
+    -'meanEats_pool::Vector{Float64}': The mean out-degree of the eat-subnetwork of the pool.
+    -'meanNeeds_pool::Vector{Float64}': The mean out-degree of the need-subnetwork of the pool.
+    -'meanSpecEats::Vector{Float64}': The mean out-degree of the species-species eat-subnetwork of the colony.
+    -'meanSpecNeeds::Vector{Float64}': The mean out-degree of the species-species need-subnetwork of the colony. 
+    -'meanSpecEats_pool::Vector{Float64}': The mean out-degree of the species-species eat-subnetwork of the pool.
+    -'meanSpecNeeds_pool::Vector{Float64}': The mean out-degree of the species-species need-subnetwork of the pool. 
+    -'events::Vector{AbstractENIgMaEvent}': Stores the event of each itteration.
+    -'trophLevels::Vector{Vector{Float64}}': The trophic levels in the colony for each itteration.
+    -'nPrimExtSpec::Vector{Float64}': The number of species that could go primarily extinct for each itteration.
+    -'nSecExtSpec::Vector{Float64}': The number of species that could go secondary extinct for each itteration.
+    -'nColonizers::Vector{Float64}': The number of species that could colonize for each itteration.
+"""
+struct ENIgMaSimulationData_v3 <: ENIgMaSimulationData
+    poolnet::ENIgMaGraph
+    colnet::ENIgMaGraph
+    phyloTree::ManyRootTree
+    specRich::Vector{Int}
+    rich::Vector{Int}
+    pool::Vector{Int}
+    mstrength::Vector{Float64}
+    clock::Vector{Float64}
+    vertsInColony::BitArray
+    maxids::Vector{Int}
+    globExtSpec::Dict{Int,Pair{Int,ENIgMaVert}}
+    meanEats::Vector{Float64}
+    meanNeeds::Vector{Float64}
+    meanEats_pool::Vector{Float64}
+    meanNeeds_pool::Vector{Float64}
+    meanSpecEats::Vector{Float64}
+    meanSpecNeeds::Vector{Float64}
+    meanSpecEats_pool::Vector{Float64}
+    meanSpecNeeds_pool::Vector{Float64}
+    events::Vector{AbstractENIgMaEvent}
+    trophLevels::Vector{Vector{Float64}}
+    nPrimExtSpec::Vector{Float64}
+    nSecExtSpec::Vector{Float64}
+    nColonizers::Vector{Float64}
 end
