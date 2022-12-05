@@ -23,13 +23,13 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
     maxits = 10_000
     #prepare everything for a simulation consisting of the variation of a parmeter
     paramName = "(rPrimExt,rSecExt)"
-    simulationName = "varyExtinctionsForTrophLevel_zoomIn";        #specify the name of the simulation
+    simulationName = "varyExtinctionsForTrophLevel";        #specify the name of the simulation
     mkpath("data/$(simulationName)/runs");    #make a folder with that name in the Data folder including plots subfolder
     mkpath("data/$(simulationName)/plots");    #make a folder with that name in the Data folder including plots subfolder
     compress::Bool = true;  #should the data be compressed before storing?
 
 
-    paramVals = 0.5:.5:6.5       #specify the parameter values that shall be simulated
+    paramVals = (1:0.5:10).^2#0.5:.5:6.5       #specify the parameter values that shall be simulated
     numParams = length(paramVals)
     nRepets = 50
     repets = 1:nRepets
@@ -113,21 +113,23 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
 
     nFinishedRunsPlot = Plots.heatmap(string.(paramVals), string.(paramVals),  dropdims(sum(runFinished,dims=3),dims=3),
     size = (720,720), xlabel = "secondary extinction rate", ylabel = "primary extinction rate",
-    title = "Number of successfull runs used")
+    title = "Number of successfull runs used", xticks = :all, yticks = :all, xrotation = 60)
 
     Plots.savefig(nFinishedRunsPlot,"data/$simulationName/plots/nFinishedRunsPlot.html");
 
     for vecZParam in endVectorialZParams
         maxPlot = Plots.heatmap(string.(paramVals), string.(paramVals), dropdims(mean(heatMapsMax[vecZParam],dims=3),dims=3),
         size = (720,720), xlabel = "secondary extinction rate", ylabel = "primary extinction rate",
-        title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000")
+        title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000", xticks = :all,
+        yticks = :all, xrotation = 60)
 
         Plots.savefig(maxPlot,"data/$simulationName/plots/max_$(String(vecZParam))Plot.html");
 
         if any(isnan,heatMapsMax[vecZParam])
             maxPlot = Plots.heatmap(string.(paramVals), string.(paramVals), NaNStatistics.nanmean(heatMapsMax[vecZParam],dim=3),
             size = (720,720), xlabel = "secondary extinction rate", ylabel = "primary extinction rate",
-            title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000 - ignoring NaNs.")
+            title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000 - ignoring NaNs.", 
+            xticks = :all, yticks = :all, xrotation = 60)
 
             Plots.savefig(maxPlot,"data/$simulationName/plots/max_$(String(vecZParam))Plot_ignoreNaNs.html");
         end
@@ -136,14 +138,16 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
     for zParam in zParams
         meanPlot = Plots.heatmap(string.(paramVals), string.(paramVals), dropdims(mean(heatMapsMean[zParam],dims=3),dims=3),
             size = (720,720), xlabel = "secondary extinction rate", ylabel = "primary extinction rate",
-            title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000")
+            title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000", xticks = :all,
+            yticks = :all, xrotation = 60)
 
         Plots.savefig(meanPlot,"data/$simulationName/plots/mean_$(String(zParam))Plot.html");
 
         if any(isnan,heatMapsMean[zParam])
             meanPlot = Plots.heatmap(string.(paramVals), string.(paramVals), NaNStatistics.nanmean(heatMapsMean[zParam],dim=3),
             size = (720,720), xlabel = "secondary extinction rate", ylabel = "primary extinction rate",
-            title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000 - ignoring NaNs")
+            title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000 - ignoring NaNs",
+            xticks = :all, yticks = :all, xrotation = 60)
 
             Plots.savefig(meanPlot,"data/$simulationName/plots/mean_$(String(zParam))Plot_ignoreNaNs.html");
         end

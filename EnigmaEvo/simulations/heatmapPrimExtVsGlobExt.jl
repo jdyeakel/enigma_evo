@@ -31,8 +31,8 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
         rates0, maxits, cm,ce,cpred, diverse, restrict_colonization,
         logging,S,lambda,SSprobs,SOprobs,nBasalRes)
 
-    primVals = [.1,.5,1,1.5,2,3,5,10,15,20,40]       #specify the parameter values that shall be simulated
-    globVals = [.001,.005,.01,.016,.3,.35,.45,.7,1.,2.,5.]
+    primVals = [#=.1,.5,=#1,1.5,2,3,5,10,15,20,40]       #specify the parameter values that shall be simulated
+    globVals = [.022,.03,.035,.045,.06,.085,.11] #[.001,.005,.01,.016,.022,.03,.035,.045,.06,.085,.11,.3,.35,.45,.7,1.,2.,5.]
     numPrimVals = length(primVals)
     numGlobVals = length(globVals)
 
@@ -114,7 +114,7 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
 
     nFinishedRunsPlot = Plots.heatmap(string.(globVals), string.(primVals),dropdims(sum(runFinished,dims=3),dims=3),
     size = (720,720), xlabel = "global extinction rate", ylabel = "primary extinction rate",
-    title = "Number of successfull runs used")
+    title = "Number of successfull runs used", xticks = :all, yticks = :all)
 
     Plots.savefig(nFinishedRunsPlot,"data/$simulationName/plots/nFinishedRunsPlot.html");
 
@@ -122,14 +122,14 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
     for vecZParam in endVecZParams
         maxPlot = Plots.heatmap(string.(globVals), string.(primVals),dropdims(mean(heatMapsMax[vecZParam],dims=3),dims=3),
         size = (720,720), xlabel = "global extinction rate", ylabel = "primary extinction rate",
-        title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000")
+        title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000", xticks = :all, yticks = :all)
 
         Plots.savefig(maxPlot,"data/$simulationName/plots/max_$(String(vecZParam))Plot.html");
 
         if any(isnan,heatMapsMax[vecZParam])
             maxPlot = Plots.heatmap(string.(globVals), string.(primVals),NaNStatistics.nanmean(heatMapsMax[vecZParam],dim=3),
             size = (720,720), xlabel = "global extinction rate", ylabel = "primary extinction rate",
-            title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000 - ignoring NaNs.")
+            title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000 - ignoring NaNs.", xticks = :all, yticks = :all)
 
             Plots.savefig(maxPlot,"data/$simulationName/plots/max_$(String(vecZParam))Plot_ignoreNaNs.html");
         end
@@ -138,14 +138,14 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
     for zParam in zParams
         meanPlot = Plots.heatmap(string.(globVals), string.(primVals),dropdims(mean(heatMapsMean[zParam],dims=3),dims=3),
             size = (720,720), xlabel = "global extinction rate", ylabel = "primary extinction rate",
-            title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000")
+            title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000", xticks = :all, yticks = :all)
 
         Plots.savefig(meanPlot,"data/$simulationName/plots/mean_$(String(zParam))Plot.html");
 
         if any(isnan,heatMapsMean[zParam])
             meanPlot = Plots.heatmap(string.(globVals), string.(primVals),NaNStatistics.nanmean(heatMapsMean[zParam],dim=3),
             size = (720,720), xlabel = "global extinction rate", ylabel = "primary extinction rate",
-            title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000 - ignoring NaNs")
+            title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000 - ignoring NaNs", xticks = :all, yticks = :all)
 
             Plots.savefig(meanPlot,"data/$simulationName/plots/mean_$(String(zParam))Plot_ignoreNaNs.html");
         end

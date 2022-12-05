@@ -26,19 +26,18 @@ function simulation_primExtVsREvoCoupledRGlob(onlyPlots=false,fromResults=false;
     mkpath("data/$(simulationName)/plots");    #make a folder with that name in the Data folder including plots subfolder
     mkpath("data/$(simulationName)/runs"); 
     compress::Bool = true;  #should the data be compressed before storing?
-
-    jldsave("data/$(simulationName)/parameters.jld2",compress;
-        rates0, maxits, cm,ce,cpred, diverse, restrict_colonization,
-        logging,S,lambda,SSprobs,SOprobs,nBasalRes)
-
+    
     primVals = [1,1.5,2,2.5,3,4,5,10,15,20]       #specify the parameter values that shall be simulated
-    rEvoVals = [.005,.01,.016,0.22,.3,.35,.45,.55,.7,1.,2.]
+    rEvoVals = [0.005, 0.01, 0.016, 0.022, 0.03, 0.035, 0.045, 0.06, 0.08, 0.22, 0.3, 0.35, 0.45, 0.55, 0.7, 1.0, 2.0]#0.015:.0005:0.022
     numPrimVals = length(primVals)
     numREvoVals = length(rEvoVals)
-
     nRepets = 50
     repets = 1:nRepets
 
+    jldsave("data/$(simulationName)/parameters.jld2",compress;
+        rates0, maxits, cm,ce,cpred, diverse, restrict_colonization,
+        logging,S,lambda,SSprobs,SOprobs,nBasalRes,primVals, rEvoVals, nRepets)
+        
     endVecZParams = [:trophLevels]
     allTimeScalarZParams = Symbol[:specRich, :pool, :meanEats, :meanNeeds,  :nPrimExtSpec, :nSecExtSpec, :nColonizers]
     zParams = [endVecZParams; allTimeScalarZParams]
@@ -67,8 +66,8 @@ function simulation_primExtVsREvoCoupledRGlob(onlyPlots=false,fromResults=false;
 
         runFinished = SharedArray{Bool}((numPrimVals,numREvoVals,nRepets))
 
-        loop_vars = [(primInd,rPrimExt,rEvoInd,rEvo,repetition) for (primInd,rPrimExt) in enumerate(primVals)
-        for (rEvoInd,rEvo) in enumerate(rEvoVals) for repetition in repets];
+        loop_vars = [(primInd,rPrimExt,rEvoInd,rEvo,repetition) for repetition in repets
+            for (primInd,rPrimExt) in enumerate(primVals) for (rEvoInd,rEvo) in enumerate(rEvoVals)];
 
         @sync @distributed for (primInd,rPrimExt,rEvoInd,rEvo,repetition) in loop_vars
             if onlyPlots
@@ -112,42 +111,42 @@ function simulation_primExtVsREvoCoupledRGlob(onlyPlots=false,fromResults=false;
     
     plotlyjs()
 
-    nFinishedRunsPlot = Plots.heatmap("(".*string.(rEvoVals).*", ".*string.(rEvoVals.*couplingfactor).*")", string.(primVals), dropdims(sum(runFinished,dims=3),dims=3),
+    nFinishedRunsPlot = Plots.heatmap("(".*string.(rEvoVals).*", ".*string.(rEvoVals.*couplingFactor).*")", string.(primVals), dropdims(sum(runFinished,dims=3),dims=3),
         size = (720,720), xlabel = "(evolutionary rate, global extinction rate)", ylabel = "primary extinction rate",
-        title = "Number of successfull runs used", xrotation = 60)
+        title = "Number of successfull runs used", xrotation = 60, xticks = :all, yticks = :all)
 
     Plots.savefig(nFinishedRunsPlot,"data/$simulationName/plots/nFinishedRunsPlot.html");
 
 
     for vecZParam in endVecZParams
-        maxPlot = Plots.heatmap("(".*string.(rEvoVals).*", ".*string.(rEvoVals.*couplingfactor).*")", string.(primVals), dropdims(mean(heatMapsMax[vecZParam],dims=3),dims=3),
+        maxPlot = Plots.heatmap("(".*string.(rEvoVals).*", ".*string.(rEvoVals.*couplingFactor).*")", string.(primVals), dropdims(mean(heatMapsMax[vecZParam],dims=3),dims=3),
             size = (720,720), xlabel = "(evolutionary rate, global extinction rate)", ylabel = "primary extinction rate",
-            title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000", xrotation = 60)
+            title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000", xrotation = 60, xticks = :all, yticks = :all)
 
         Plots.savefig(maxPlot,"data/$simulationName/plots/max_$(String(vecZParam))Plot.html");
 
         if any(isnan,heatMapsMax[vecZParam])
-            maxPlot = Plots.heatmap("(".*string.(rEvoVals).*", ".*string.(rEvoVals.*couplingfactor).*")", string.(primVals), NaNStatistics.nanmean(heatMapsMax[vecZParam],dim=3),
+            maxPlot = Plots.heatmap("(".*string.(rEvoVals).*", ".*string.(rEvoVals.*couplingFactor).*")", string.(primVals), NaNStatistics.nanmean(heatMapsMax[vecZParam],dim=3),
                 size = (720,720), xlabel = "(evolutionary rate, global extinction rate)", ylabel = "primary extinction rate",
-                title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000 - ignoring NaNs.", xrotation = 60)
+                title = "Average maximal $(zParamLongNames[vecZParam]) in itterations 9500 to 10000 - ignoring NaNs.", xrotation = 60, xticks = :all, yticks = :all)
 
             Plots.savefig(maxPlot,"data/$simulationName/plots/max_$(String(vecZParam))Plot_ignoreNaNs.html");
         end
     end
 
     for zParam in zParams
-        meanPlot = Plots.heatmap("(".*string.(rEvoVals).*", ".*string.(rEvoVals.*couplingfactor).*")", string.(primVals), dropdims(mean(heatMapsMean[zParam],dims=3),dims=3),
+        meanPlot = Plots.heatmap("(".*string.(rEvoVals).*", ".*string.(rEvoVals.*couplingFactor).*")", string.(primVals), dropdims(mean(heatMapsMean[zParam],dims=3),dims=3),
             size = (720,720), xlabel = "(evolutionary rate, global extinction rate)", ylabel = "primary extinction rate",
-            title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000", xrotation = 60)
+            title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000", xrotation = 60, xticks = :all, yticks = :all)
 
         Plots.savefig(meanPlot,"data/$simulationName/plots/mean_$(String(zParam))Plot.html");
 
         if any(isnan,heatMapsMean[zParam])
-            meanPlot = Plots.heatmap("(".*string.(rEvoVals).*", ".*string.(rEvoVals.*couplingfactor).*")", string.(primVals), NaNStatistics.nanmean(heatMapsMean[zParam],dim=3),
+            meanPlot = Plots.heatmap("(".*string.(rEvoVals).*", ".*string.(rEvoVals.*couplingFactor).*")", string.(primVals), NaNStatistics.nanmean(heatMapsMean[zParam],dim=3),
                 size = (720,720), xlabel = "(evolutionary rate, global extinction rate)", ylabel = "primary extinction rate",
-                title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000 - ignoring NaNs", xrotation = 60)
+                title = "Average mean $(zParamLongNames[zParam]) in itterations 9500 to 10000 - ignoring NaNs", xrotation = 60, xticks = :all, yticks = :all)
 
             Plots.savefig(meanPlot,"data/$simulationName/plots/mean_$(String(zParam))Plot_ignoreNaNs.html");
         end
     end
-end 
+end     

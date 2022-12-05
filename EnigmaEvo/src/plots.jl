@@ -62,8 +62,8 @@ function plotPhylogeny(phyloTree;sorted=true)
     display(bar(pairs(evosDistribution),
         yaxis="probability",
         title = "Distribution of evolution types",
-        size = (1000,400)#=,
-        layout = Layout(xaxis_type = "category")=#
+        size = (1000,400),
+        xticks = :all
     ))
 
     plot(phyloTree, 
