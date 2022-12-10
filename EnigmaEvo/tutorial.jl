@@ -19,10 +19,10 @@ poolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
 
 # run a simulation with parameters given (always use a freshly initialized poolnet as the poolnet is changed during assembly)
 @time simulationData,_ = sd,extraData = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
-    assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, createLog = true);
+    assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, sd.colnet, createLog = true);
 
-    testMax,testMean = load("EnigmaEvo/data/varyExtinctionsForTrophLevel/results.jld2", "heatMapMax", "heatMapMean")
-    maxPlot = Plots.heatmap(1:2, 1:2, dropdims(mean(testMax,dims=3),dims=3),
+testMax,testMean = load("EnigmaEvo/data/varyExtinctionsForTrophLevel/results.jld2", "heatMapMax", "heatMapMean")
+maxPlot = Plots.heatmap(1:2, 1:2, dropdims(mean(testMax,dims=3),dims=3),
            size = (1280,720), xlabel = "primary extinction rate", ylabel = "secondary extinction rate",
            title = "Average maximal trophic level in itterations 9500 to 10000")
            Plots.savefig(maxPlot,"EnigmaEvo/data/varyExtinctionsForTrophLevel/plots/maxTrophLevelPlot.svg")
@@ -38,8 +38,8 @@ plotPhylogeny(sd.phyloTree,sorted=true)
 
 plot(sd.clock[10:10:end],[mean.(sd.trophLevels),maximum.(sd.trophLevels)], size=(1920,1080), xlabel = "clock time", ylabel="maximum trophic level")
 
-plot(sd.clock,[sd.specRich,sd.pool,sd.nColonizers,sd.specRich + sd.nColonizers,sd.nSecExtSpec,sd.nPrimExtSpec], size = (1920,1080),
-    label = ["species richness","pool spec richness", "#potential colonizers","specRich + colonizers", "#secondary ext. species", "#primary ext. species"])
+plot(sd.clock,[sd.specRich,sd.pool,sd.nColonizers,sd.specRich + sd.nColonizers,sd.nSecExtSpec,sd.nPrimExtSpec, sd.specRich - sd.nSecExtSpec - sd.nPrimExtSpec], size = (1920,1080),
+    label = ["species richness" "pool spec richness" "#potential colonizers" "specRich + colonizers"  "#secondary ext. species" "#primary ext. species" "specRich - nPrimExt - n SecExt"])
 
 @time begin eatMatrix = ENIgMaGraphs.convertToEatMatrix(sd.colnet);
     
@@ -69,7 +69,7 @@ Plots.histogram!(ΔSPost, alpha=.5, normalize=true,yaxis=:log, label="post event
 # save everything you want to use later in file 
 compress = true;    #should data be compressed?
 #put all variable to be saved after semicolon, order doesnt matter, name of variable will be identifier in file
-jldsave("tutorial.jld2",compress;simulationData)
+jldsave("data/exponentialSpecGrowth.jld2",compress;simulationData,rates0)
 
 #for loading use eg the following
 simulationData_loaded = load("tutorial.jld2", "simulationData");

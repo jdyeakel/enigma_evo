@@ -338,13 +338,13 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         if createLog     #could be significantly optimized by just saving the changes and reconstructing if necessary
             vertsInColony[:,it] = colnet.hasv;
             maxids[it] = poolnet.idmanager.maxid;
-            if it >= 9500 && it % 10 == 0
+            if it >= maxits - 1500 && it % 30 == 0
                 eatMatrix = ENIgMaGraphs.convertToEatMatrixNonReduced(colnet)
                 inds = sort!(vcat(collect(colnet.basalRes),getConnectedSpec(colnet)))
 
                 eatMatrix = eatMatrix[inds,inds]
                 R"""
-                    library(MASS)  
+                    library(MASS)
                     library(NetIndices)
                     rtl<-TrophInd(t($eatMatrix))
                 """

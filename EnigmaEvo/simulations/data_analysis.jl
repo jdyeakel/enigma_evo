@@ -174,3 +174,43 @@ numGlobVals = length(globVals)
 nRepets = 50
 repets = 1:nRepets
 
+
+
+maxits = 10_000
+#prepare everything for a simulation consisting of the variation of a parmeter
+paramName = "(rPrimExt,rSecExt)"
+simulationName = "varyExtinctionsForTrophLevel";        #specify the name of the simulation
+mkpath("data/$(simulationName)/runs");    #make a folder with that name in the Data folder including plots subfolder
+mkpath("data/$(simulationName)/plots");    #make a folder with that name in the Data folder including plots subfolder
+compress::Bool = true;  #should the data be compressed before storing?
+
+
+paramVals = (1:0.5:10).^2#0.5:.5:6.5       #specify the parameter values that shall be simulated
+numParams = length(paramVals)
+nRepets = 50
+repets = 1:nRepets
+
+repetition = 2
+
+plots = Array{Plots.Plot}(undef,numParams,numParams)
+nets = Array{ENIgMaSimulationData}(undef,numParams,numParams)
+
+bounded = SharedArray{Bool}((numParams,numParams,nRepets))
+
+for (primInd,rPrimExt) in enumerate(paramVals), (secInd,rSecExt) in enumerate(paramVals)
+    sd,rates0 = load("data/$(simulationName)/runs/$(paramName)=($(rPrimExt),$(rSecExt))_repet=$repetition.jld2", "simulationData","rates0")
+    linReg = lm(@formula(specRich ~ clock), DataFrame(clock = sd.clock[2000:end], specRich = sd.specRich[2000:end]))
+
+    #nets[primInd,secInd] = sd
+    #plots[primInd,secInd] = plot(sd.clock,sd.specRich,title="(rPrimExt,rSecExt) = $((rPrimExt,rSecExt))",ylabel = "specRich", xlabel = "clock", show = false)
+end
+
+plots
+
+summaryPlt = plot(plots..., size = (3500, 1500), legend = false)
+
+Plots.savefig(summaryPlt,"data/$(simulationName)/plots/specRichTimeSeriesOvervies_2.html")
+
+rPrimExt,rSecExt = 1.,1.
+
+GLM.coeftable(linReg).cols[4][2]
