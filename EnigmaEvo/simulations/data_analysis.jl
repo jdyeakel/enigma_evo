@@ -175,6 +175,17 @@ nRepets = 50
 repets = 1:nRepets
 
 
+@enum NetworkGrowthType begin
+    uncertain = 0
+    boundedUncertain = 1
+    boundedStable = 2
+    boundedUnstable = 3
+    unboundedUncertain =4
+    undboundedLinear = 5
+    unboundedExponential = 6
+    trivial = 7
+end
+
 
 maxits = 10_000
 #prepare everything for a simulation consisting of the variation of a parmeter
@@ -194,16 +205,57 @@ repetition = 2
 
 plots = Array{Plots.Plot}(undef,numParams,numParams)
 nets = Array{ENIgMaSimulationData}(undef,numParams,numParams)
-
+using SharedArrays
 bounded = SharedArray{Bool}((numParams,numParams,nRepets))
+netGrowthTypes = SharedArray{NetworkGrowthType}((numParams,numParams,nRepets))
 
-for (primInd,rPrimExt) in enumerate(paramVals), (secInd,rSecExt) in enumerate(paramVals)
+
+const maxSlope = 0.1
+const maxRecursionDepth = 5
+
+using GLM
+using DataFrames
+
+@everywhere function checkBoundedness(sd,rates,bounded,primInd,rPrimExt,secInd,rSecExt,repet,recursionDepth=0;offset = 0)
+    linReg = lm(@formula(specRich ~ clock), DataFrame(clock = sd.clock[offset:end], specRich = sd.specRich[offset:end]))
+
+    coefTable = GLM.coeftable
+
+    lower95 = coefTable[5][2]
+    upper95 = coefTable[6][2]
+
+    if lower95 > maxSlope
+        bounded[primInd,secInd,parameter] = false
+        netGrowthTypes[primInd,secInd,parameter] = unboundedUncertain
+    elseif upper95 < maxSlope# && lower95 > -maxSlope
+        bounded[primInd,secInd,parameter] = true
+        netGrowthTypes[primInd,secInd,parameter] = boundedUncertain
+    else
+        if recursionDepth < maxRecursionDepth
+            sd,_ = assemblyevo(poolnet, rates, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, sd.colnet)
+            checkBoundedness(sd,rates,bounded,primInd,rPrimExt,secInd,rSecExt,repet,recursionDepth+1)
+        else
+            netGrowthTypes[primInd,secInd,parameter] = uncertain
+        end
+    end
+end
+
+@sync @distributed for (primInd,rPrimExt) in enumerate(paramVals), (secInd,rSecExt) in enumerate(paramVals), repetition in repets
     sd,rates0 = load("data/$(simulationName)/runs/$(paramName)=($(rPrimExt),$(rSecExt))_repet=$repetition.jld2", "simulationData","rates0")
-    linReg = lm(@formula(specRich ~ clock), DataFrame(clock = sd.clock[2000:end], specRich = sd.specRich[2000:end]))
 
+    checkBoundedness(sd,rates,bounded,primInd,rPrimExt,secInd,rSecExt,repet;offset = 2_000)
     #nets[primInd,secInd] = sd
     #plots[primInd,secInd] = plot(sd.clock,sd.specRich,title="(rPrimExt,rSecExt) = $((rPrimExt,rSecExt))",ylabel = "specRich", xlabel = "clock", show = false)
 end
+
+boundedPlot = Plots.heatmap(string.(paramVals), string.(paramVals), dropdims(count(bounded,dims=3),dims=3),
+size = (720,720), xlabel = "secondary extinction rate", ylabel = "primary extinction rate",
+title = "Number of runs categorized as bounded.", xticks = :all,
+yticks = :all, xrotation = 60)
+
+Plots.savefig(boundedPlot,"data/$simulationName/plots/boundedPlot.html");
+
+
 
 plots
 
@@ -213,4 +265,4 @@ Plots.savefig(summaryPlt,"data/$(simulationName)/plots/specRichTimeSeriesOvervie
 
 rPrimExt,rSecExt = 1.,1.
 
-GLM.coeftable(linReg).cols[4][2]
+GLM.coeftable(linReg).cols[5][2]
