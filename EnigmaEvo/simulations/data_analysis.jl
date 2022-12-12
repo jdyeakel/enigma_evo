@@ -219,7 +219,7 @@ using DataFrames
 @everywhere function checkBoundedness(sd,rates,bounded,primInd,rPrimExt,secInd,rSecExt,repet,recursionDepth=0;offset = 0)
     linReg = lm(@formula(specRich ~ clock), DataFrame(clock = sd.clock[offset:end], specRich = sd.specRich[offset:end]))
 
-    coefTable = GLM.coeftable
+    coefTable = GLM.coeftable.cols
 
     lower95 = coefTable[5][2]
     upper95 = coefTable[6][2]
