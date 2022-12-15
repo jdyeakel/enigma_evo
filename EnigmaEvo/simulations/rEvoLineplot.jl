@@ -166,3 +166,58 @@ function simulation(onlyPlots=false,fromResults=false;couplingFactor=.5)   #supp
         end
     end
 end
+
+paramName = "rPrimExt,rSecExt,evoInd";
+simulationName = "specRichAndTrophLvlOverPrimExt2";
+
+
+primVals = [3.5]
+nPrimVals = length(primVals)
+secVals = [1.,10.]
+nSecVals = length(secVals)
+#evoVals = exp10.(range(log10(0.005), stop=log10(2), length=40));
+evoInds = [6,28,37];
+nEvoInds = length(evoInds)
+nRepets = 50;
+repets = 1:nRepets;
+
+
+
+loop_vars = [(primInd,rPrimExt,secInd,rSecExt,evoIndInd,evoInd,repetition) for (primInd,rPrimExt) in enumerate(primVals)
+    for (secInd,rSecExt) in enumerate(secVals) for (evoIndInd,evoInd) in enumerate(evoInds) for repetition in repets];
+
+
+
+sds = Array{ENIgMaSimulationData}(undef,nPrimVals,nSecVals,nEvoInds,nRepets)
+for (primInd,rPrimExt,secInd,rSecExt,evoIndInd,evoInd,repetition) in loop_vars
+    fileName = "data/$(simulationName)/runs/$(paramName)=($(rPrimExt),$(rSecExt),$(evoInd))_repet=$repetition.jld2" 
+    if isfile(fileName)
+        sd = load(fileName, "simulationData")
+    else
+        continue
+    end
+    sds[primInd,secInd,evoIndInd] = sd
+end
+
+endVectorialZParams = [:trophLevels]
+allTimeScalarZParams = Symbol[:specRich, :pool, :meanEats, :meanNeeds,  :nPrimExtSpec, :nSecExtSpec, :nColonizers]
+zParams = [endVectorialZParams; allTimeScalarZParams]
+zParamLongNames = Dict{Symbol,String}(
+    :trophLevels => "trophic level",
+    :specRich => "species richness",
+    :pool => "species richness in the pool",
+    :meanEats => "mean number of eats per species",
+    :meanNeeds => "mean number of needs per species",
+    :nPrimExtSpec => "number of primary extinction candidates",
+    :nSecExtSpec => "number of secondary extinction candidates",
+    :nColonizers => "number of potential Colonizers"
+)
+
+maxResults, meanResults, runFinished = 
+    load("data/$(simulationName)/results.jld2", "maxResults", "meanResults", "runFinished")
+
+using StatsPlots
+
+for zParam in zParams
+    #maxResults[zParam] = maxResults[zParam][:,:,evoInds,]
+    boxPlot = boxplot(["low evo rate" "medium evo rate" "high evo rate"],meanResults[1,1,])

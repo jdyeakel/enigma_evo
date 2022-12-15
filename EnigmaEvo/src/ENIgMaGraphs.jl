@@ -27,6 +27,7 @@ using Distributed
 @everywhere using Phylo
 @everywhere using Distributions
 @everywhere using RCall
+@everywhere using OffsetArrays
 
 const enlargementfactor = 1.3; #controls how much buffer is added if estsize has to be increased
 
@@ -742,5 +743,41 @@ function getConnectedSpec(net)
     end
     return [ind for ind in eachindex(isConnected) if isConnected[ind]]
 end
+
+function _getDegrees(g, linkTypes)
+    degrees = zeros(Int,getNumSpec(g))
+    for (ind,specId) in enumerate(g.spec)
+        spec = g[specId]
+        for type in linkTypes
+            degrees[ind] += length(getfield(spec,type))
+        end
+    end
+    return degrees
+end
+
+function getDegrees(g::ENIgMaGraph, linkType::Symbol)
+    if linkType === :all || linkType === :in
+        return _getDegrees(g, (:eat,:need,:make))
+    end
+    linkType == :pred && (linkType = :feed) 
+    if linkType ∉ (:eat,:need,:make,:feed);
+        error(":$(linkType) could not be interpreted as a type of interactions.\n\t Valid are: :all,:in,:eat,:need,:make,:feed and :pred.")
+    end
+    return _getDegrees(g,(linkType,))
+end
+
+function getDegreeDist(degrees::Vector{Int})
+    uniqueDegrees = unique(degrees)
+    maxDegree = maximum(uniqueDegrees)
+
+    degreeDist = OffsetArray{Int}(zeros(Int,maxDegree+1),0:maxDegree)
+    for degree in uniqueDegrees
+        degreeDist[degree] = count(==(degree),degrees)
+    end
+    return degreeDist
+end
+
+getDegreeDist(g::ENIgMaGraph, linkType::Symbol) = getDegreeDist(getDegrees(g,linkType));
+
 
 end #module

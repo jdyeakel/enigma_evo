@@ -284,3 +284,7 @@ mosum_output = MOSUM(ts,80)
 mosum_plot(mosum_output)
 
 WBS_return = WBS(ts)
+
+
+#get boxplots
+evoVals = 10^-2, 10-.5, 10-1
