@@ -21,6 +21,7 @@ export getTrophicLevels, recreatecolnetdiverse, getConnectedSpec
 export InteractionType, ignoreInteraction, eatInteraction, needInteraction, makeInteraction
 export AbstractENIgMaEvent, ColonizationEvent, PrimaryExtinctionEvent, SecondaryExtinctionEvent
 export ObjectExtinctionEvent, GlobalExtinctionEvent, MutationEvent, isMutationType
+export getDegrees, getDegreeDist
 
 using Distributed
 @everywhere using Graphs

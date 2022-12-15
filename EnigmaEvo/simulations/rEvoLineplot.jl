@@ -13,6 +13,7 @@ include(localPath*"loadfuncs.jl");
 
 using SharedArrays
 @everywhere import NaNStatistics
+import StatsPlots
 
 function simulation(onlyPlots=false,fromResults=false;couplingFactor=.5)   #supposedly its better to wrap stuff in functions and not use global variables if possible(not sure if typed ones are a problem)
     if fromResults && !onlyPlots
@@ -131,9 +132,9 @@ function simulation(onlyPlots=false,fromResults=false;couplingFactor=.5)   #supp
 
         for vecZParam in endVectorialZParams
             maxPlot = plot(evoVals, dropdims(mean(selectdim(maxResults[vecZParam],1,primInd),dims=3),dims=3),
-            xlabel = xLabel, ylabel = zParamLongNames[vecZParam],
-            #title = "Average maximal $(zParamLongNames[vecZParam]) in itterations $(maxits - 1500) to $maxits",
-            xaxis = :log, labels = seriesLabels)
+                xlabel = xLabel, ylabel = zParamLongNames[vecZParam],
+                #title = "Average maximal $(zParamLongNames[vecZParam]) in itterations $(maxits - 1500) to $maxits",
+                xaxis = :log, labels = seriesLabels)
 
             Plots.savefig(maxPlot,"$(plotPath)/max_$(String(vecZParam))Plot.html");
 
@@ -175,7 +176,7 @@ primVals = [3.5]
 nPrimVals = length(primVals)
 secVals = [1.,10.]
 nSecVals = length(secVals)
-#evoVals = exp10.(range(log10(0.005), stop=log10(2), length=40));
+evoVals = exp10.(range(log10(0.005), stop=log10(2), length=40));
 evoInds = [6,28,37];
 nEvoInds = length(evoInds)
 nRepets = 50;
@@ -196,7 +197,7 @@ for (primInd,rPrimExt,secInd,rSecExt,evoIndInd,evoInd,repetition) in loop_vars
     else
         continue
     end
-    sds[primInd,secInd,evoIndInd] = sd
+    sds[primInd,secInd,evoIndInd,repetition] = sd
 end
 
 endVectorialZParams = [:trophLevels]
@@ -216,8 +217,19 @@ zParamLongNames = Dict{Symbol,String}(
 maxResults, meanResults, runFinished = 
     load("data/$(simulationName)/results.jld2", "maxResults", "meanResults", "runFinished")
 
-using StatsPlots
+boxLabels = vec(repeat(transpose(["rEvo = $(evoVals[evoInd])" for evoInd in evoInds]),nRepets));
+for (primInd,rPrimExt) in enumerate primVals
+    boxPlotPath = "data/$simulationName/plots/boxplots/rPrimExt=$(rPrimExt)"
+    mkpath(boxPlotPath)
+    for zParam in zParams
+        #maxResults[zParam] = maxResults[zParam][:,:,evoInds,]
+        StatsPlots.violin(boxLabels, vec(transpose(meanResults[primInd,1,evoInds,:])),
+            ylabel = zParamLongNames[zParam], side = :left, label = "rSecExt = $(secVals[1])" )
+        violinPlot = StatsPlots.violin!(boxLabels, vec(transpose(meanResults[primInd,2,evoInds,:])),
+            ylabel = zParamLongNames[zParam], side = :right, label = "rSecExt = $(secVals[2])" )
+        savefig(violinPlot,"$boxPlotPath/mean_$(zParam)ViolinPlot.html")
+    end
+end
 
-for zParam in zParams
-    #maxResults[zParam] = maxResults[zParam][:,:,evoInds,]
-    boxPlot = boxplot(["low evo rate" "medium evo rate" "high evo rate"],meanResults[1,1,])
+StatsPlots.violin(vec(repeat(["sfds" "w" "fbv"],50)), vec(rand(50,3)), side = :left, label = "left")
+StatsPlots.violin!(rand(["sfds", "w", "fbv"],150), rand(150), side = :right, label = "right")
