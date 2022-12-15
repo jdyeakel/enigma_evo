@@ -101,25 +101,25 @@ function boundednessHeatmap()
 
     boundedPlot = Plots.heatmap(string.(paramVals), string.(paramVals),
         dropdims(mapslices(page->count(isBounded,page), netGrowthTypes, dims = 3),dims=3),
-        size = (720,720), xlabel = "(rEvo,rExt)", ylabel = "primary extinction rate",
+        size = (720,720), xlabel = "secondary extinction rate", ylabel = "primary extinction rate",
         title = "Number of runs categorized as bounded.", xticks = :all,
-        yticks = :all, xrotation = 60)
+        yticks = :all, xrotation = 60, show = false)
 
     Plots.savefig(boundedPlot,"data/$simulationName/plots/boundedPlot.html");
 
     unboundedPlot = Plots.heatmap(string.(paramVals), string.(paramVals),
         dropdims(mapslices(page->count(isUnbounded,page), netGrowthTypes, dims = 3),dims=3),
-        size = (720,720), xlabel = "(rEvo,rExt)", ylabel = "primary extinction rate",
+        size = (720,720), xlabel = "secondary extinction rate", ylabel = "primary extinction rate",
         title = "Number of runs categorized as unbounded.", xticks = :all,
-        yticks = :all, xrotation = 60)
+        yticks = :all, xrotation = 60, show = false)
 
     Plots.savefig(unboundedPlot,"data/$simulationName/plots/unboundedPlot.html");
 
     uncertainPlot = Plots.heatmap(string.(paramVals), string.(paramVals),
         dropdims(mapslices(page->count(==(uncertain),page), netGrowthTypes, dims = 3),dims=3),
-        size = (720,720), xlabel = "(rEvo,rExt)", ylabel = "primary extinction rate",
+        size = (720,720), xlabel = "secondary extinction rate", ylabel = "primary extinction rate",
         title = "Number of runs that could not be categorized.", xticks = :all,
-        yticks = :all, xrotation = 60)
+        yticks = :all, xrotation = 60, show = false)
 
     Plots.savefig(uncertainPlot,"data/$simulationName/plots/uncertainPlot.html");
 end
@@ -133,12 +133,12 @@ function boundednessHeatmapEvo(;couplingFactor = .5)
     #prepare everything for a simulation consisting of the variation of a parmeter
     paramName = "(rPrimExt,rEvo)"
     simulationName = "heatmapPrimExtVs(REvoCoupledRGlob)";        #specify the name of the simulation
-    mkpath("data/$(simulationName)/plots");    #make a folder with that name in the Data folder including plots subfolder
+    mkpath("data/$(simulationName)/plots");     #make a folder with that name in the Data folder including plots subfolder
     mkpath("data/$(simulationName)/runs"); 
     compress::Bool = true;  #should the data be compressed before storing?
     
-    primVals = [1,1.5,2,2.5,3,4,5,10,15,20]       #specify the parameter values that shall be simulated
-    rEvoVals = [0.005, 0.01, 0.016, 0.022, 0.03, 0.035, 0.045, 0.06, 0.08, 0.22, 0.3, 0.35, 0.45, 0.55, 0.7, 1.0, 2.0]#0.015:.0005:0.022
+    primVals = [1,1.5,2,2.5,3,4,5,10,15,20]     #specify the parameter values that shall be simulated
+    rEvoVals = [0.005, 0.01, 0.016, 0.022, 0.03, 0.035, 0.045, 0.06, 0.08, 0.22, 0.3, 0.35, 0.45, 0.55, 0.7, 1.0, 2.0]  #0.015:.0005:0.022
     numPrimVals = length(primVals)
     numREvoVals = length(rEvoVals)
     nRepets = 50
@@ -196,7 +196,7 @@ function boundednessHeatmapEvo(;couplingFactor = .5)
         string.(primVals), dropdims(mapslices(page->count(isBounded,page), netGrowthTypes, dims = 3),dims=3),
         size = (720,720), xlabel = "(rEvo,rExt)", ylabel = "primary extinction rate",
         title = "Number of runs categorized as bounded.", xticks = :all,
-        yticks = :all, xrotation = 60)
+        yticks = :all, xrotation = 60, show = false)
 
     Plots.savefig(boundedPlot,"data/$simulationName/plots/boundedPlot.html");
 
@@ -204,7 +204,7 @@ function boundednessHeatmapEvo(;couplingFactor = .5)
     string.(primVals), dropdims(mapslices(page->count(isUnbounded,page), netGrowthTypes, dims = 3),dims=3),
     size = (720,720), xlabel = "(rEvo,rExt)", ylabel = "primary extinction rate",
     title = "Number of runs categorized as unbounded.", xticks = :all,
-    yticks = :all, xrotation = 60)
+    yticks = :all, xrotation = 60, show = false)
 
     Plots.savefig(unboundedPlot,"data/$simulationName/plots/unboundedPlot.html");
 
@@ -212,7 +212,7 @@ function boundednessHeatmapEvo(;couplingFactor = .5)
     string.(primVals), dropdims(mapslices(page->count(==(uncertain),page), netGrowthTypes, dims = 3),dims=3),
     size = (720,720), xlabel = "(rEvo,rExt)", ylabel = "primary extinction rate",
     title = "Number of runs that could not be categorized.", xticks = :all,
-    yticks = :all, xrotation = 60)
+    yticks = :all, xrotation = 60, show = false)
 
     Plots.savefig(uncertainPlot,"data/$simulationName/plots/uncertainPlot.html");
 end

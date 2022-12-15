@@ -85,7 +85,7 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
                 initpoolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
                 rates0 = (rc = 1., rprimext = rPrimExt, rsecext = rSecExt, reo = 1., revo = 0.35, rext = 0.16);
                 # EVOLUTIONARY VERSION
-                (sd,_) = assemblyevo(initpoolnet, rates0, maxits, cn,cm,ce,cpred, diverse, restrict_colonization);
+                (sd,_) = assemblyevo(initpoolnet, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization);
 
                 jldsave("data/$(simulationName)/runs/$(paramName)=($(rPrimExt),$(rSecExt))_repet=$repetition.jld2",compress;
                     simulationData = sd, rates0)
@@ -116,7 +116,8 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
         load("data/$(simulationName)/results.jld2", "maxResults", "meanResults", "runFinished")
     end
     
-    plotlyjs()
+    gr()#plotlyjs()
+
 
     seriesLabels = reshape(["rSecExt = $rSecExt" for rSecExt in secVals], (1,nSecVals))
 
@@ -161,4 +162,16 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
             Plots.savefig(meanPlot,"data/$simulationName/plots/mean_$(String(zParam))Plot_ignoreNaNs.html");
         end
     end
+
+    #meanPlot = plot(primVals[10:end], dropdims(mean(meanResults[:specRich],dims=3),dims=3)[10:end,:],
+    #ylabel = zParamLongNames[:specRich],
+    ##title = "Average mean $(zParamLongNames[zParam]) in itterations $(maxits - 1500) to $maxits",
+    #yaxis = :log, labels = "specRich: " .* seriesLabels, legend = :topleft)
+#
+    #meanPlot = plot!(twinx(),primVals[10:end], dropdims(mean(meanResults[:meanEats],dims=3),dims=3)[10:end,:],
+    #xlabel = "primary extinction rate", ylabel = zParamLongNames[:meanEats],
+    ##title = "Average mean $(zParamLongNames[zParam]) in itterations $(maxits - 1500) to $maxits",
+    #yaxis = :log, labels = "meanEats: " .* seriesLabels,c = [:green :black])
+#
+    #Plots.savefig(meanPlot,"data/$simulationName/plots/mean_specRichAndMeanEatsPlot.html");
 end

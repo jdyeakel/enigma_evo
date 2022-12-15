@@ -83,7 +83,7 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
                 initpoolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
                 rates0 = (rc = 1., rprimext = rPrimExt, rsecext = 10., reo = 1., revo = 0.35, rext = rGlobExt);
                 # EVOLUTIONARY VERSION
-                (sd,_) = assemblyevo(initpoolnet, rates0, maxits, cn,cm,ce,cpred, diverse, restrict_colonization);
+                (sd,_) = assemblyevo(initpoolnet, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization);
 
                 jldsave("data/$(simulationName)/runs/$(paramName)=($(rPrimExt),$(rGlobExt))_repet=$repetition.jld2",compress;
                     simulationData = sd, rates0)

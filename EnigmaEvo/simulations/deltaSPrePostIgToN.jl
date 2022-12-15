@@ -30,7 +30,7 @@ function simulation(srcPath)   #supposedly its better to wrap stuff in functions
         initpoolnet = setUpPool(S,lambda,nBasalResources, SSprobs,SOprobs,diverse);
 
         # EVOLUTIONARY VERSION
-        (sd,_) = assemblyevo(initpoolnet, rates0, maxits, cn,cm,ce,cpred, diverse, restrict_colonization, logging);
+        (sd,_) = assemblyevo(initpoolnet, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization, logging);
         
         jldsave("data/$(simulation_name)/repet=$repetition.jld2",compress; simulationData = sd, rates0, maxits,cm,ce,cpred, diverse, restrict_colonization, logging,S,lambda,SSprobs,SOprobs)
         

@@ -327,7 +327,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             meanSpecNeeds[it] = sum(count(poolnet.hasspec[collect(colnet[id].need)]) for id in colnet.spec)/numSpec;
             mstrength[it] = (mean( v.strength for (id,v) in colnet if colnet.hasspec[id] ) - minstrength)/(maxstrength - minstrength); #make strengths positive with a minimum of 1
         end
-        if isempty(poolnet.spec)
+        if isempty(poolneit.spec)
             meanEats_pool[it] = meanNeeds_pool[it] = meanSpecEats_pool[it] = meanSpecNeeds_pool[it] = 0
         else
             meanEats_pool[it] = sum(length(poolnet[id].eat) for id in poolnet.spec)/numSpec_pool;     #bit afraid of overflows...
