@@ -19,13 +19,8 @@ poolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
 
 # run a simulation with parameters given (always use a freshly initialized poolnet as the poolnet is changed during assembly)
 @time simulationData,_ = sd,extraData = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
-    assemblyevo(poolnet, rates0, maxits, cn,cn,ce,cpred, diverse, restrict_colonization, sd.colnet, createLog = true);
+    assemblyevo(poolnet, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization, createLog = true);
 
-testMax,testMean = load("EnigmaEvo/data/varyExtinctionsForTrophLevel/results.jld2", "heatMapMax", "heatMapMean")
-maxPlot = Plots.heatmap(1:2, 1:2, dropdims(mean(testMax,dims=3),dims=3),
-           size = (1280,720), xlabel = "primary extinction rate", ylabel = "secondary extinction rate",
-           title = "Average maximal trophic level in itterations 9500 to 10000")
-           Plots.savefig(maxPlot,"EnigmaEvo/data/varyExtinctionsForTrophLevel/plots/maxTrophLevelPlot.svg")
 #plot some results:
 plotlyjs();    #use the plotlyjs backend for interactivity
 #gr() use the gr backend for faster plots

@@ -266,3 +266,21 @@ Plots.savefig(summaryPlt,"data/$(simulationName)/plots/specRichTimeSeriesOvervie
 rPrimExt,rSecExt = 1.,1.
 
 GLM.coeftable(linReg).cols[5][2]
+
+rPrimExt = 12.25
+rSecExt = 6.25
+repetition = 1
+sd,rates0 = load("data/$(simulationName)/runs/$(paramName)=($(rPrimExt),$(rSecExt))_repet=$repetition.jld2", "simulationData","rates0")
+
+using Changepoints
+ts = Vector{Float64}(sd.specRich[3000:end])
+plot(sd.clock[3000:end],ts)
+pelt_cpt,pelt_cost = @PELT ts Normal(:?,100.) 20.; 
+changepoint_plot(ts,pelt_cpt)
+crops_output = @PELT ts Normal(:?,100.) 1. 100.; 
+elbow_plot(crops_output)
+
+mosum_output = MOSUM(ts,80)
+mosum_plot(mosum_output)
+
+WBS_return = WBS(ts)
