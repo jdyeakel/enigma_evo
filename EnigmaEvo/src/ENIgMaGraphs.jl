@@ -771,11 +771,11 @@ function getDegreeDist(degrees::Vector{Int})
     uniqueDegrees = unique(degrees)
     maxDegree = maximum(uniqueDegrees)
 
-    degreeDist = OffsetArray{Int}(zeros(Int,maxDegree+1),0:maxDegree)
+    degreeCounts = zeros(Int,maxDegree+1)
     for degree in uniqueDegrees
-        degreeDist[degree] = count(==(degree),degrees)
+        degreeCounts[degree + 1] = count(==(degree),degrees)
     end
-    return degreeDist
+    return 0:maxDegree,degreeCounts
 end
 
 getDegreeDist(g::ENIgMaGraph, linkType::Symbol) = getDegreeDist(getDegrees(g,linkType));

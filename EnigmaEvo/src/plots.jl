@@ -13,9 +13,9 @@ function plotSimulation(simulationData::ENIgMaGraphs.ENIgMaSimulationData;offset
     sprich_plt = vline([offsetTime], c=:grey, label="offset")
     freqe_plt = vline([offsetTime], c=:grey, label="offset")
     freqn_plt = vline([offsetTime], c=:grey, label="offset")
-    plot!(sprich_plt, clock, [specRich,pool], xlabel="clock time", ylabel="species richness", label=["colony","pool"], legend = true);
-    plot!(freqe_plt,clock, [meanEats,meanEats_pool], xlabel="clock time", ylabel="average amount of eat interactions", label=["colony","pool"]);
-    plot!(freqn_plt,clock, [meanNeeds,meanNeeds_pool], lxlabel="clock time", ylabel="average amount of need interactions", label=["colony","pool"]);
+    plot!(sprich_plt, clock, [specRich,pool], xlabel="clock time", ylabel="species richness", label=["colony" "pool"], legend = true);
+    plot!(freqe_plt,clock, [meanEats,meanEats_pool], xlabel="clock time", ylabel="average amount of eat interactions", label=["colony" "pool"]);
+    plot!(freqn_plt,clock, [meanNeeds,meanNeeds_pool], lxlabel="clock time", ylabel="average amount of need interactions", label=["colony" "pool"]);
 
     #ext_size_plt = plotExtinctionLengthDist(specRich,offset; show = false)
     l = @layout [

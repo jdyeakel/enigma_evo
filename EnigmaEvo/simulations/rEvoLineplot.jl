@@ -24,7 +24,7 @@ function simulation(onlyPlots=false,fromResults=false;couplingFactor=.5)   #supp
     maxits = 30_000
     #prepare everything for a simulation consisting of the variation of a parmeter
     paramName = "rPrimExt,rSecExt,evoInd"
-    simulationName = "specRichAndTrophLvlOverPrimExt2";        #specify the name of the simulation
+    simulationName = "rEvoInDepth";        #specify the name of the simulation
     mkpath("data/$(simulationName)/runs");    #make a folder with that name in the Data folder including plots subfolder
     mkpath("data/$(simulationName)/plots");    #make a folder with that name in the Data folder including plots subfolder
     compress::Bool = true;  #should the data be compressed before storing?
@@ -36,6 +36,8 @@ function simulation(onlyPlots=false,fromResults=false;couplingFactor=.5)   #supp
     nSecVals = length(secVals)
     evoVals = exp10.(range(log10(0.005), stop=log10(2), length=40))
     nEvoVals = length(evoVals)
+    evoInds = [6,28,37];    #hand picked indices of values of special interest 
+    nEvoInds = length(evoInds)
     nRepets = 50
     repets = 1:nRepets
 
@@ -120,9 +122,12 @@ function simulation(onlyPlots=false,fromResults=false;couplingFactor=.5)   #supp
     plotlyjs()
     xLabel = "evolutionary rate (2*global extinction rate)"
     seriesLabels = reshape(["rSecExt = $rSecExt" for rSecExt in secVals], (1,nSecVals))
+    boxLabels = vec(repeat(reshape(["rEvo = $(evoVals[evoInd])" for evoInd in evoInds],(1,nEvoInds)),nRepets));
     for (primInd,rPrimExt) in enumerate(primVals)
         plotPath = "data/$simulationName/plots/rPrimExt=$(rPrimExt)"
         mkpath(plotPath)
+        boxPlotPath = "data/$simulationName/plots/boxplots/rPrimExt=$(rPrimExt)"
+        mkpath(boxPlotPath)
 
         nFinishedRunsPlot = scatter(evoVals,  dropdims(sum(selectdim(runFinished,1,primInd),dims=3),dims=3),
             xlabel = xLabel, ylabel = "number of successfull runs used",
@@ -146,6 +151,13 @@ function simulation(onlyPlots=false,fromResults=false;couplingFactor=.5)   #supp
 
                 Plots.savefig(maxPlot,"$(plotPath)/max_$(String(vecZParam))Plot_ignoreNaNs.html");
             end
+
+
+            StatsPlots.violin(boxLabels, vec(transpose(maxResults[vecZParam][primInd,evoInds,1,:])),
+                ylabel = zParamLongNames[vecZParam], side = :left, label = "rSecExt = $(secVals[1])" )
+            violinPlot = StatsPlots.violin!(boxLabels, vec(transpose(maxResults[vecZParam][primInd,evoInds,2,:])),
+                ylabel = zParamLongNames[vecZParam], side = :right, label = "rSecExt = $(secVals[2])" )
+            Plots.savefig(violinPlot,"$boxPlotPath/max_$(vecZParam)ViolinPlot.html")
         end
 
         for zParam in zParams
@@ -164,12 +176,24 @@ function simulation(onlyPlots=false,fromResults=false;couplingFactor=.5)   #supp
 
                 Plots.savefig(meanPlot,"$(plotPath)/mean_$(String(zParam))Plot_ignoreNaNs.html");
             end
+
+            StatsPlots.violin(boxLabels, vec(transpose(meanResults[zParam][primInd,evoInds,1,:])),
+                ylabel = zParamLongNames[zParam], side = :left, label = "rSecExt = $(secVals[1])" )
+            violinPlot = StatsPlots.violin!(boxLabels, vec(transpose(meanResults[zParam][primInd,evoInds,2,:])),
+                ylabel = zParamLongNames[zParam], side = :right, label = "rSecExt = $(secVals[2])" )
+            Plots.savefig(violinPlot,"$boxPlotPath/mean_$(zParam)ViolinPlot.html")
+
         end
+        StatsPlots.violin(boxLabels, vec(transpose(meanResults[:specRich][primInd,evoInds,1,:] ./ meanResults[:pool][primInd,evoInds,1,:])),
+            ylabel = "specRich / pool", side = :left, label = "rSecExt = $(secVals[1])" )
+        violinPlot = StatsPlots.violin!(boxLabels, vec(transpose(meanResults[:specRich][primInd,evoInds,2,:] ./ meanResults[:pool][primInd,evoInds,2,:])),
+            side = :right, label = "rSecExt = $(secVals[2])" )
+        Plots.savefig(violinPlot,"$boxPlotPath/colonyPoolRatioViolinPlot.html")
     end
 end
 
 paramName = "rPrimExt,rSecExt,evoInd";
-simulationName = "specRichAndTrophLvlOverPrimExt2";
+simulationName = "rEvoInDepth";
 
 
 primVals = [3.5]
@@ -199,6 +223,32 @@ for (primInd,rPrimExt,secInd,rSecExt,evoIndInd,evoInd,repetition) in loop_vars
     end
     sds[primInd,secInd,evoIndInd,repetition] = sd
 end
+
+jldsave("data/$(simulationName)/detailedResults.jld2",true; simulationDatasets = sds)
+
+sds = load("data/$(simulationName)/detailedResults.jld2", "simulationDatasets");
+
+linkType = :eat
+primInd = 1
+evoIndInd = 3
+degreeDistPlots = Array{Plots.Plot}(undef,7,7)
+for repet in 1:49
+    StatsPlots.violin(["rEvo = $(evoVals[evoInds[evoIndInd]])"], ENIgMaGraphs.getDegrees(sds[primInd,1,evoIndInd,repet].colnet,linkType),
+        ylabel = "Links of type $linkType degree", side = :left, label = "rSecExt = $(secVals[1])" )
+    violinPlot = StatsPlots.violin!(["rEvo = $(evoVals[evoInds[evoIndInd]])"], ENIgMaGraphs.getDegrees(sds[primInd,2,evoIndInd,repet].colnet,linkType),
+        ylabel = "Links of type $linkType degree", side = :right, label = "rSecExt = $(secVals[2])" )
+    degreeDistPlots[repet] = violinPlot
+end
+
+for repet in 1:49
+    #bar(ENIgMaGraphs.getDegreeDist(sds[primInd,1,evoIndInd,repet].colnet,linkType)...,xticks = :all,
+    #    xlabel = "Links of type $linkType degree",ylabel = "count", alpha = .5, label = "rSecExt = $(secVals[1])" )
+    degreePlot = bar(ENIgMaGraphs.getDegreeDist(sds[primInd,2,evoIndInd,repet].colnet,linkType)...,xticks = :all, #yaxis = :log,
+        xlabel = "Links of type $linkType degree",ylabel = "count", alpha = .5, label = "rSecExt = $(secVals[2])")
+    degreeDistPlots[repet] = degreePlot
+end
+
+summaryPlt = plot(degreeDistPlots..., size = (1920, 1080), legend = false)
 
 endVectorialZParams = [:trophLevels]
 allTimeScalarZParams = Symbol[:specRich, :pool, :meanEats, :meanNeeds,  :nPrimExtSpec, :nSecExtSpec, :nColonizers]
@@ -230,6 +280,3 @@ for (primInd,rPrimExt) in enumerate primVals
         savefig(violinPlot,"$boxPlotPath/mean_$(zParam)ViolinPlot.html")
     end
 end
-
-StatsPlots.violin(vec(repeat(["sfds" "w" "fbv"],50)), vec(rand(50,3)), side = :left, label = "left")
-StatsPlots.violin!(rand(["sfds", "w", "fbv"],150), rand(150), side = :right, label = "right")

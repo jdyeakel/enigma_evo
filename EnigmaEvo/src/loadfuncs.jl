@@ -1,7 +1,7 @@
 using Distributed
 #using DataFrames
 #using Images
-using UnicodePlots
+#using UnicodePlots #currently not used and causes naming ambiguities with Plots
 using Plots
 
 #@everywhere using AxisArrays
