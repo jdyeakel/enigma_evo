@@ -163,6 +163,19 @@ function simulation(onlyPlots=false,fromResults=false)   #supposedly its better 
         end
     end
 
+    zParam = :meanEats
+
+    meanPlot = plot(primVals, diff(dropdims(mean(meanResults[zParam],dims=3),dims=3),dims=2),
+    xlabel = "primary extinction rate", ylabel = " mean eats for rSecExt = 10 - mean eats for rSecExt = 1")
+
+    Plots.savefig(meanPlot,"data/$simulationName/plots/meanEatsDifferencePlot.html");
+
+    meanEats = dropdims(mean(meanResults[zParam],dims=3),dims=3)
+    meanPlot = plot(primVals, diff(meanEats,dims=2),
+    xlabel = "primary extinction rate", ylabel = " mean eats for rSecExt = 10 - mean eats for rSecExt = 1")
+
+    Plots.savefig(meanPlot,"data/$simulationName/plots/meanEatsDifferencePlot.html");
+
     #meanPlot = plot(primVals[10:end], dropdims(mean(meanResults[:specRich],dims=3),dims=3)[10:end,:],
     #ylabel = zParamLongNames[:specRich],
     ##title = "Average mean $(zParamLongNames[zParam]) in itterations $(maxits - 1500) to $maxits",

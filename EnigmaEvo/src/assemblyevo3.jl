@@ -90,7 +90,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
 
     #initialize phylogenetic tree
     phyloTree = ManyRootTree()  #create phylo genetic tree
-    if diverse == 1.5  #in non diverse case phylogeny kinda weird
+    if diverse == 1  #in non diverse case phylogeny kinda weird
         ##create root nodes
         #createnodes!(phyloTree,Dict{String,Dict{String,Any}}("$(id)_root" => Dict{String,Any}("timestamp" => 0) for id in poolnet.spec))
         superRoot = createnode!(phyloTree,"superRoot", data=Dict{String,Any}("timestamp"=>0.0,"evolution" => ""))
@@ -131,6 +131,15 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
     secextspec = Int[]; #later used to store ids of spec that could go extinct secondarily
     extobj = Int[];     #later used to store ids of objects that could go extinct
 
+    lastEventMutation = false;
+    nMutSpec = zeros(Int,3,3,2);
+    nPrimUnstableParents = zeros(Int,3,3,2); 
+    nSecUnstableParents = zeros(Int,3,3,2); 
+    nPrimUnstableNewSpec = zeros(Int,3,3,2);
+    nSecUnstableNewSpec = zeros(Int,3,3,2);
+    nPrimUnstableIntSpec = zeros(Int,3,3,2);
+    nSecUnstableIntSpec = zeros(Int,3,3,2);
+
     t=0;
     it = 0;
     while it < maxits
@@ -152,6 +161,34 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
 
         #2) PRIMARY EXTINCTIONS by competition
         primextspec = getprimext(poolnet,colnet,ce,cn,cm,cf,secextspec);
+
+        if lastEventMutation
+            lastEv = events[it]
+            newSpecId = lastEv.newSpecId
+            parentSpecId = lastEv.parentSpecId
+            intSpecId = lastEv.interactentId
+            newIntInd = Int(lastEv.newInteraction) + 1
+            oldIntInd = Int(lastEv.oldInteraction) + 1
+            changeIntId = lastEv.changeInInteraction ? 1 : 2
+            nMutSpec[oldIntInd,newIntInd,changeIntId] += 1
+            if  parentSpecId ∈ primextspec
+                nPrimUnstableParents[oldIntInd,newIntInd,changeIntId] += 1  
+            elseif  parentSpecId ∈ secextspec
+                nSecUnstableParents[oldIntInd,newIntInd,changeIntId] += 1
+            end
+            if  newSpecId ∈ primextspec
+                nPrimUnstableNewSpec[oldIntInd,newIntInd,changeIntId] += 1  
+            elseif  newSpecId ∈ secextspec
+                nSecUnstableNewSpec[oldIntInd,newIntInd,changeIntId] += 1
+            end
+            if  intSpecId ∈ primextspec
+                nPrimUnstableIntSpec[oldIntInd,newIntInd,changeIntId] += 1  
+            elseif  intSpecId ∈ secextspec
+                nSecUnstableIntSpec[oldIntInd,newIntInd,changeIntId] += 1
+            end
+            lastEventMutation = false;
+        end
+        
 
         #COUNT POTENTIAL evolutionary events (size of community)
         levo = max(getNumSpec(colnet) - 1,0); #means evolution can only occur if community has more than 1 species
@@ -265,11 +302,12 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             end
 
             events[it] = MutationEvent(spmutid,intmutid,newId,InteractionType(old_int),InteractionType(new_int), change_in_int);
+            lastEventMutation = true;
 
             #update phylogenic Tree (approach a bit unintuitive.
             # I keep the leaf nodes unattached, just move them forward and let them save their current version
             # and where they are currently attached without actually attaching them)
-            if diverse == 1.5
+            if diverse == 1
                 leafNode = getnode(phyloTree,"$(spmutid)")      #get the leaf node of the mutating species to move it to the present        
                 soonGrandParent = getnode(phyloTree,leafNode.data["parentName"])   #get its parent's and soon to be grandparent's name 
 
@@ -305,7 +343,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             events[it] = GlobalExtinctionEvent(globextid) 
 
             #update Phylogenetic tree
-            if diverse == 1.5
+            if diverse == 1
                 nowExtNode = getnode(phyloTree,"$(globextid)")
                 parent = getnode(phyloTree,nowExtNode.data["parentName"])
                 createbranch!(phyloTree,parent,nowExtNode,t - parent.data["timestamp"])
@@ -325,7 +363,7 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             meanNeeds[it] = sum(length(colnet[id].need) for id in colnet.spec)/numSpec;
             meanSpecEats[it] = sum(count(colnet.hasspec[collect(colnet[id].eat)]) for id in colnet.spec)/numSpec;     #bit afraid of overflows...
             meanSpecNeeds[it] = sum(count(poolnet.hasspec[collect(colnet[id].need)]) for id in colnet.spec)/numSpec;
-            mstrength[it] = (mean( v.strength for (id,v) in colnet if colnet.hasspec[id] ) - minstrength)/(maxstrength - minstrength); #make strengths positive with a minimum of 1
+            mstrength[it] = mean( v.strength for (id,v) in colnet if colnet.hasspec[id] ) #(mean( v.strength for (id,v) in colnet if colnet.hasspec[id] ) - minstrength)/(maxstrength - minstrength); #make strengths positive with a minimum of 1
         end
         if isempty(poolnet.spec)
             meanEats_pool[it] = meanNeeds_pool[it] = meanSpecEats_pool[it] = meanSpecNeeds_pool[it] = 0
@@ -363,11 +401,9 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
         nPrimExtSpec[it] = length(primextspec)
         nSecExtSpec[it] = length(secextspec)
         nColonizers[it] = length(colonizers)
-
-        #NOTE: standardize mean strength between 0 and 1
     end #end time steps
 
-    if diverse == 1.5
+    if diverse == 1
         #finalize phylogenetic tree
         for survivorId in poolnet.spec
             survivingNode = getnode(phyloTree,"$(survivorId)")
@@ -406,7 +442,16 @@ function assemblyevo(poolnet::ENIgMaGraph, rates, maxits, cm, cn, ce, cf, divers
             nColonizers,
             runFinished
         ), 
-        ()#oldColonies = oldColonies,oldPools = oldPools)  # for other data that is to be transfered only temporarily
+        (
+            nMutSpec,
+            nPrimUnstableParents,
+            nSecUnstableParents,
+            nPrimUnstableNewSpec,
+            nSecUnstableNewSpec,
+            nPrimUnstableIntSpec,
+            nSecUnstableIntSpec
+        )
+        #oldColonies = oldColonies,oldPools = oldPools)  # for other data that is to be transfered only temporarily
     else
         return ENIgMaSimulationData_v4(
             poolnet,

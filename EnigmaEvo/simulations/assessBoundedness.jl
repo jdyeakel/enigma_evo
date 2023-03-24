@@ -20,7 +20,7 @@ using SharedArrays
     boundedUncertain = 1
     boundedStable = 2
     boundedUnstable = 3
-    unboundedUncertain =4
+    unboundedUncertain = 4
     undboundedLinear = 5
     unboundedExponential = 6
     trivial = 7
@@ -124,8 +124,98 @@ function boundednessHeatmap()
     Plots.savefig(uncertainPlot,"data/$simulationName/plots/uncertainPlot.html");
 end
 
+function boundednessEvoLinePlot(;couplingFactor = .5)
+    include("src/set_up_params.jl")
+    maxits = 30_000
+    #prepare everything for a simulation consisting of the variation of a parmeter
+    paramName = "rPrimExt,rSecExt,evoInd"
+    simulationName = "rEvoLinePlotHighGlobExt"#"rEvoInDepth";        #specify the name of the simulation
+    mkpath("data/$(simulationName)/runs");    #make a folder with that name in the Data folder including plots subfolder
+    mkpath("data/$(simulationName)/plots");    #make a folder with that name in the Data folder including plots subfolder
+    compress::Bool = true;  #should the data be compressed before storing?
+ 
+    primVals = [3.5]       #specify the parameter values that shall be simulated
+    nPrimVals = length(primVals)
+    secVals = [1.,10.]
+    nSecVals = length(secVals)
+    evoVals = exp10.(range(log10(0.005), stop=log10(2), length=40))[1:30]
+    nEvoVals = length(evoVals)
+    evoInds = [6,28,37];    #hand picked indices of values of special interest 
+    nEvoInds = length(evoInds)
+    nRepets = 50
+    repets = 1:nRepets
+
+    bounded = SharedArray{Bool}((nEvoVals,nSecVals,nRepets))
+    netGrowthTypes = SharedArray{NetworkGrowthType}((nEvoVals,nSecVals,nRepets))
+
+    maxSlope = 0.1
+    maxRecursionDepth = 0
+
+    @everywhere function checkBoundedness(sd,rates,bounded,netGrowthTypes,rEvoInd,secInd,repet,maxSlope,maxRecursionDepth,
+        maxits,cm,cn,ce,cPred,diverse,restrict_colonization,recursionDepth=0;offset = 1)
+        linReg = lm(@formula(specRich ~ clock), DataFrame(clock = sd.clock[offset:end], specRich = sd.specRich[offset:end]))
+
+        coefTable = GLM.coeftable(linReg).cols
+
+        lower95 = coefTable[5][2]
+        upper95 = coefTable[6][2]
+
+        if lower95 > maxSlope
+            bounded[rEvoInd,secInd,repet] = false
+            netGrowthTypes[rEvoInd,secInd,repet] = unboundedUncertain
+        elseif upper95 < maxSlope# && lower95 > -maxSlope
+            bounded[rEvoInd,secInd,repet] = true
+            netGrowthTypes[rEvoInd,secInd,repet] = boundedUncertain
+        else
+            if recursionDepth < maxRecursionDepth
+                sd,_ = assemblyevo(sd.poolnet, rates, maxits, cn,cm,ce,cpred, diverse, restrict_colonization, sd.colnet)
+                checkBoundedness(sd,rates,bounded,netGrowthTypes,rEvoInd,secInd,repet,maxSlope,maxRecursionDepth,
+                    maxits,cm,cn,ce,cPred,diverse,restrict_colonization,recursionDepth+1)
+            else
+                netGrowthTypes[rEvoInd,secInd,repet] = uncertain
+            end
+        end
+    end
 
 
+    loop_vars = [(rEvoInd,rPrimExt,secInd,rSecExt,repetition) for repetition in repets
+        for rPrimExt in primVals for (secInd,rSecExt) in enumerate(secVals) for rEvoInd in eachindex(evoVals)];
+
+    @sync @distributed for (rEvoInd,rPrimExt,secInd,rSecExt,repetition) in loop_vars
+        sd,rates0 = load("data/$(simulationName)/runs/$(paramName)=($(rPrimExt),$(rSecExt),$(rEvoInd))_repet=$repetition.jld2",
+            "simulationData","rates0")
+
+        checkBoundedness(sd,rates0,bounded,netGrowthTypes,rEvoInd,secInd,repetition,maxSlope,maxRecursionDepth,
+            maxits,cm,cn,ce,cpred,diverse,restrict_colonization;offset = 15_000)
+        #nets[primInd,rEvoInd] = sd
+        #plots[primInd,rEvoInd] = plot(sd.clock,sd.specRich,title="(rPrimExt,rEvo) = $((rPrimExt,rEvo))",ylabel = "specRich", xlabel = "clock", show = false)
+    end
+
+    plotlyjs()
+
+    seriesLabels = reshape(["rSecExt = $rSecExt" for rSecExt in secVals], (1,nSecVals))
+
+    boundedPlot = Plots.plot(evoVals, dropdims(mapslices(page->count(isBounded,page), netGrowthTypes, dims = 3),dims=3),
+        xlabel = "rEvo", ylabel = "number of runs categorized as bounded",
+        title = "Number of runs categorized as bounded.", xaxis = :log,
+        labels = seriesLabels, show = false)
+
+    Plots.savefig(boundedPlot,"data/$simulationName/plots/boundedPlot.html");
+
+    unboundedPlot = Plots.plot(evoVals, dropdims(mapslices(page->count(isUnbounded,page), netGrowthTypes, dims = 3),dims=3),
+        xlabel = "rEvo", ylabel = "number of runs categorized as unbounded",
+        title = "Number of runs categorized as unbounded.", xaxis = :log,
+        labels = seriesLabels, show = false)
+
+    Plots.savefig(unboundedPlot,"data/$simulationName/plots/unboundedPlot.html");
+
+    uncertainPlot = Plots.plot(evoVals, dropdims(mapslices(page->count(==(uncertain),page), netGrowthTypes, dims = 3),dims=3),
+        xlabel = "rEvo", ylabel = "number of runs categorized as uncertain",
+        title = "Number of runs categorized as uncertain.", xaxis = :log,
+        labels = seriesLabels, show = false)
+
+    Plots.savefig(uncertainPlot,"data/$simulationName/plots/uncertainPlot.html");
+end
 
 function boundednessHeatmapEvo(;couplingFactor = .5)
     include("src/set_up_params.jl")

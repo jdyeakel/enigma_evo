@@ -24,7 +24,7 @@ function simulation(onlyPlots=false,fromResults=false;couplingFactor=.5)   #supp
     maxits = 30_000
     #prepare everything for a simulation consisting of the variation of a parmeter
     paramName = "rPrimExt,rSecExt,evoInd"
-    simulationName = "rEvoInDepth";        #specify the name of the simulation
+    simulationName = "rEvoLinePlotHighGlobExt";        #specify the name of the simulation
     mkpath("data/$(simulationName)/runs");    #make a folder with that name in the Data folder including plots subfolder
     mkpath("data/$(simulationName)/plots");    #make a folder with that name in the Data folder including plots subfolder
     compress::Bool = true;  #should the data be compressed before storing?
@@ -34,9 +34,9 @@ function simulation(onlyPlots=false,fromResults=false;couplingFactor=.5)   #supp
     nPrimVals = length(primVals)
     secVals = [1.,10.]
     nSecVals = length(secVals)
-    evoVals = exp10.(range(log10(0.005), stop=log10(2), length=40))
+    evoVals = exp10.(range(log10(0.005), stop=log10(2), length=40))[1:30]
     nEvoVals = length(evoVals)
-    evoInds = [6,28,37];    #hand picked indices of values of special interest 
+    evoInds = [6,28]#,37];    #hand picked indices of values of special interest 
     nEvoInds = length(evoInds)
     nRepets = 50
     repets = 1:nRepets
@@ -120,78 +120,79 @@ function simulation(onlyPlots=false,fromResults=false;couplingFactor=.5)   #supp
     end
     
     plotlyjs()
-    xLabel = "evolutionary rate (2*global extinction rate)"
+    xLabel = "evolutionary rate ($(1/couplingFactor)*global extinction rate)"
     seriesLabels = reshape(["rSecExt = $rSecExt" for rSecExt in secVals], (1,nSecVals))
     boxLabels = vec(repeat(reshape(["rEvo = $(evoVals[evoInd])" for evoInd in evoInds],(1,nEvoInds)),nRepets));
     for (primInd,rPrimExt) in enumerate(primVals)
         plotPath = "data/$simulationName/plots/rPrimExt=$(rPrimExt)"
         mkpath(plotPath)
-        boxPlotPath = "data/$simulationName/plots/boxplots/rPrimExt=$(rPrimExt)"
+        boxPlotPath = "data/$simulationName/plots/boxplots/logY/rPrimExt=$(rPrimExt)"
         mkpath(boxPlotPath)
 
         nFinishedRunsPlot = scatter(evoVals,  dropdims(sum(selectdim(runFinished,1,primInd),dims=3),dims=3),
-            xlabel = xLabel, ylabel = "number of successfull runs used",
+            xlabel = xLabel, ylabel = "number of successfull runs used", legend = :bottomleft,
             xaxis = :log, title = "Number of successfull runs used", labels = seriesLabels)
 
-        Plots.savefig(nFinishedRunsPlot,"$(plotPath)/nFinishedRunsPlot.html");
+        Plots.savefig(nFinishedRunsPlot,"$(plotPath)/nFinishedRunsPlot.svg");
 
         for vecZParam in endVectorialZParams
             maxPlot = plot(evoVals, dropdims(mean(selectdim(maxResults[vecZParam],1,primInd),dims=3),dims=3),
                 xlabel = xLabel, ylabel = zParamLongNames[vecZParam],
                 #title = "Average maximal $(zParamLongNames[vecZParam]) in itterations $(maxits - 1500) to $maxits",
-                xaxis = :log, labels = seriesLabels)
+                xaxis = :log, labels = seriesLabels, legend = :topleft)
 
-            Plots.savefig(maxPlot,"$(plotPath)/max_$(String(vecZParam))Plot.html");
+            Plots.savefig(maxPlot,"$(plotPath)/max_$(String(vecZParam))Plot.svg");
 
             if any(isnan,maxResults[vecZParam])
                 maxPlot = plot(evoVals, NaNStatistics.nanmean(selectdim(maxResults[vecZParam],1,primInd),dim=3),
                 xlabel = xLabel, ylabel = zParamLongNames[vecZParam],
                 #title = "Average maximal $(zParamLongNames[vecZParam]) in itterations $(maxits - 1500) to $maxits - ignoring NaNs.", 
-                xaxis = :log, labels = seriesLabels)
+                xaxis = :log, labels = seriesLabels, legend = :topleft)
 
-                Plots.savefig(maxPlot,"$(plotPath)/max_$(String(vecZParam))Plot_ignoreNaNs.html");
+                Plots.savefig(maxPlot,"$(plotPath)/max_$(String(vecZParam))Plot_ignoreNaNs.svg");
             end
 
 
             StatsPlots.violin(boxLabels, vec(transpose(maxResults[vecZParam][primInd,evoInds,1,:])),
-                ylabel = zParamLongNames[vecZParam], side = :left, label = "rSecExt = $(secVals[1])" )
+                ylabel = zParamLongNames[vecZParam], side = :left, label = "rSecExt = $(secVals[1])", yaxis = :log )
             violinPlot = StatsPlots.violin!(boxLabels, vec(transpose(maxResults[vecZParam][primInd,evoInds,2,:])),
-                ylabel = zParamLongNames[vecZParam], side = :right, label = "rSecExt = $(secVals[2])" )
-            Plots.savefig(violinPlot,"$boxPlotPath/max_$(vecZParam)ViolinPlot.html")
+                ylabel = zParamLongNames[vecZParam], side = :right, label = "rSecExt = $(secVals[2])", yaxis = :log )
+            Plots.savefig(violinPlot,"$boxPlotPath/max_$(vecZParam)ViolinPlot.svg")
         end
 
         for zParam in zParams
             meanPlot = plot(evoVals, dropdims(mean(selectdim(meanResults[zParam],1,primInd),dims=3),dims=3),
                 xlabel = xLabel, ylabel = zParamLongNames[zParam],
                 #title = "Average mean $(zParamLongNames[zParam]) in itterations $(maxits - 1500) to $maxits",
-                xaxis = :log, yaxis = :log, labels = seriesLabels)
+                xaxis = :log, yaxis = :log, labels = seriesLabels, legend = :topleft)
 
-            Plots.savefig(meanPlot,"$(plotPath)/mean_$(String(zParam))Plot.html");
+            Plots.savefig(meanPlot,"$(plotPath)/mean_$(String(zParam))Plot.svg");
 
             if any(isnan,meanResults[zParam])
                 meanPlot = plot(evoVals, NaNStatistics.nanmean(selectdim(meanResults[zParam],1,primInd),dim=3),
                 xlabel = xLabel, ylabel = zParamLongNames[zParam],
                 #title = "Average mean $(zParamLongNames[zParam]) in itterations $(maxits - 1500) to $maxits - ignoring NaNs",
-                xaxis = :log, yaxis = :log, labels = seriesLabels)
+                xaxis = :log, yaxis = :log, labels = seriesLabels, legend = :topleft)
 
-                Plots.savefig(meanPlot,"$(plotPath)/mean_$(String(zParam))Plot_ignoreNaNs.html");
+                Plots.savefig(meanPlot,"$(plotPath)/mean_$(String(zParam))Plot_ignoreNaNs.svg");
             end
 
             StatsPlots.violin(boxLabels, vec(transpose(meanResults[zParam][primInd,evoInds,1,:])),
-                ylabel = zParamLongNames[zParam], side = :left, label = "rSecExt = $(secVals[1])" )
+                ylabel = zParamLongNames[zParam], side = :left, label = "rSecExt = $(secVals[1])", yaxis = :log )
             violinPlot = StatsPlots.violin!(boxLabels, vec(transpose(meanResults[zParam][primInd,evoInds,2,:])),
-                ylabel = zParamLongNames[zParam], side = :right, label = "rSecExt = $(secVals[2])" )
-            Plots.savefig(violinPlot,"$boxPlotPath/mean_$(zParam)ViolinPlot.html")
+                ylabel = zParamLongNames[zParam], side = :right, label = "rSecExt = $(secVals[2])", yaxis = :log )
+            Plots.savefig(violinPlot,"$boxPlotPath/mean_$(zParam)ViolinPlot.svg")
 
         end
         StatsPlots.violin(boxLabels, vec(transpose(meanResults[:specRich][primInd,evoInds,1,:] ./ meanResults[:pool][primInd,evoInds,1,:])),
             ylabel = "specRich / pool", side = :left, label = "rSecExt = $(secVals[1])" )
         violinPlot = StatsPlots.violin!(boxLabels, vec(transpose(meanResults[:specRich][primInd,evoInds,2,:] ./ meanResults[:pool][primInd,evoInds,2,:])),
             side = :right, label = "rSecExt = $(secVals[2])" )
-        Plots.savefig(violinPlot,"$boxPlotPath/colonyPoolRatioViolinPlot.html")
+        Plots.savefig(violinPlot,"$boxPlotPath/colonyPoolRatioViolinPlot.svg")
     end
 end
 
+#=
 paramName = "rPrimExt,rSecExt,evoInd";
 simulationName = "rEvoInDepth";
 
@@ -204,6 +205,8 @@ evoVals = exp10.(range(log10(0.005), stop=log10(2), length=40));
 evoInds = [6,28,37];
 nEvoInds = length(evoInds)
 nRepets = 50;
+
+
 repets = 1:nRepets;
 
 
@@ -277,6 +280,7 @@ for (primInd,rPrimExt) in enumerate primVals
             ylabel = zParamLongNames[zParam], side = :left, label = "rSecExt = $(secVals[1])" )
         violinPlot = StatsPlots.violin!(boxLabels, vec(transpose(meanResults[primInd,2,evoInds,:])),
             ylabel = zParamLongNames[zParam], side = :right, label = "rSecExt = $(secVals[2])" )
-        savefig(violinPlot,"$boxPlotPath/mean_$(zParam)ViolinPlot.html")
+        savefig(violinPlot,"$boxPlotPath/mean_$(zParam)ViolinPlot.svg")
     end
 end
+=#

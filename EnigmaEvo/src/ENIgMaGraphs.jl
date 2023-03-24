@@ -21,7 +21,7 @@ export getTrophicLevels, recreatecolnetdiverse, getConnectedSpec
 export InteractionType, ignoreInteraction, eatInteraction, needInteraction, makeInteraction
 export AbstractENIgMaEvent, ColonizationEvent, PrimaryExtinctionEvent, SecondaryExtinctionEvent
 export ObjectExtinctionEvent, GlobalExtinctionEvent, MutationEvent, isMutationType
-export getDegrees, getDegreeDist
+export getDegrees, getDegreeDist, modifiedSDSimilarities
 
 using Distributed
 @everywhere using Graphs
@@ -779,6 +779,56 @@ function getDegreeDist(degrees::Vector{Int})
 end
 
 getDegreeDist(g::ENIgMaGraph, linkType::Symbol) = getDegreeDist(getDegrees(g,linkType));
+
+function _modifiedSDSimilarities(g,specIds,types)
+    S = length(specIds)
+    SDs = zeros(Int(S*(S-1)/2))
+    for (it1,id1) in enumerate(specIds[1:end-1])
+        for (it2,id2) in enumerate(specIds[it1+1:end])
+            spec1 = g[id1]
+            spec2 = g[id2]
+            #S*(S-1)/2 - (S - it1 + 1)(S - it1)/2 + it2 ==
+            #(S^2 - S - S^2 + S*it1 + S*it1 - it1^2 - S + it1)/2 + it2  ==
+            #S*it1 - S - it1*(it1 - 1)/2 + it2 (index: big triangle - small triangle (see as linear indices in lower triangular matrix))
+            SDs[S*it1 - S - it1*(it1 - 1)÷2 + it2] = sum(2*(length(intersect(getfield(spec1,type),getfield(spec2,type)))) for type in types)/
+                    sum(length(getfield(spec1,type)) + length(getfield(spec2,type)) for type in types)
+        end
+    end
+    return SDs,specIds
+end
+
+"""
+modifiedSDSimilarities(g::ENIgMaGraph, specIds, linkType::Symbol)
+
+Computes a modified version of the Soerensen-Dice Similarity Coefficient for all distinct
+pairs of distinct species.
+
+This modified Soerensen-Dice Coefficient of two species is defined to be two times the 
+number of links with type defined by 'linkType' they have in common
+(meaning the same type of link to the same node) divided by the sum of their total
+number of links with types defined by 'linkTypes'.
+
+"""
+function modifiedSDSimilarities(g::ENIgMaGraph, specIds, linkType::Symbol)
+    if linkType === :all || linkType === :in
+        return _modifiedSDSimilarities(g, specIds, (:eat,:need,:make))
+    end
+    linkType == :pred && (linkType = :feed) 
+    if linkType ∉ (:eat,:need,:make,:feed);
+        error(":$(linkType) could not be interpreted as a type of interactions.\n\t Valid are: :all,:in,:eat,:need,:make,:feed and :pred.")
+    end
+    return _modifiedSDSimilarities(g,specIds,(linkType,))
+end
+
+modifiedSDSimilarities(g::ENIgMaGraph) = 
+    modifiedSDSimilarities(g,collect(g.spec), :all)
+
+modifiedSDSimilarities(g::ENIgMaGraph,specIds) =
+    modifiedSDSimilarities(g::ENIgMaGraph,specIds, :all)
+
+modifiedSDSimilarities(g::ENIgMaGraph, linkType::Symbol) =
+     modifiedSDSimilarities(g,collect(g.spec),linkType)
+
 
 
 end #module

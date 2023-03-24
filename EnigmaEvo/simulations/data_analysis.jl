@@ -275,7 +275,7 @@ sd,rates0 = load("data/$(simulationName)/runs/$(paramName)=($(rPrimExt),$(rSecEx
 using Changepoints
 ts = Vector{Float64}(sd.specRich[3000:end])
 plot(sd.clock[3000:end],ts)
-pelt_cpt,pelt_cost = @PELT ts Normal(:?,100.) 20.; 
+pelt_cpt,pelt_cost = @PELT ts Normal(:?,100.) 1.; 
 changepoint_plot(ts,pelt_cpt)
 crops_output = @PELT ts Normal(:?,100.) 1. 100.; 
 elbow_plot(crops_output)
@@ -288,3 +288,145 @@ WBS_return = WBS(ts)
 
 #get boxplots
 evoVals = 10^-2, 10-.5, 10-1
+
+test = load("../data/rEvoInDepth/detailedResults.jld2")
+
+
+
+#test hypotheses why specRich decreases with increasing rEvo
+
+count(ev -> isMutationType(ev,ignoreInteraction,needInteraction) || 
+    isMutationType(ev, eatInteraction,needInteraction), sd.events)
+count(ev -> typeof(ev) == MutationEvent, sd.events)
+nGlobExts = 0;
+nExtMutualisms = 0
+for (it,ev) in enumerate(sd.events)
+    typeof(ev) != GlobalExtinctionEvent && continue
+    extId, extSpec = sd.globExtSpec[it]
+    nGlobExts += 1
+    if !isempty(extSpec.need)
+        nExtMutualisms += 1
+    end
+end
+
+nGlobExts
+nExtMutualisms
+
+count(v -> isempty(v[2].need) && sd.poolnet.hasspec[v[1]],sd.poolnet.vert)/getNumSpec(sd.poolnet)
+count(v -> isempty(v[2].need) && sd.poolnet.hasspec[v[1]],sd.colnet.vert)/getNumSpec(sd.colnet)
+
+using NaNStatistics
+
+rates0::NamedTuple{(:rc, :rprimext, :rsecext, :reo, :revo, :rext), NTuple{6, Float64}} =
+    (rc = 1., rprimext = 3.5, rsecext = 1., reo = 1., revo = .1, rext = .05);
+
+nRepet = 50
+averageBranchSizes = zeros(nRepet,2)
+sds = Array{ENIgMaGraphs.ENIgMaSimulationData_v4}(undef,50)
+branchSizes = zeros(Int,S + nBasalRes,nRepet);
+for repet in 1:nRepet
+
+poolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
+@time simulationData,_ = sd,extraData = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
+    assemblyevo(poolnet, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization, createLog = true);
+
+# #= nMutSpec,
+# nPrimUnstableParents, 
+# nSecUnstableParents,
+# nPrimUnstableNewSpec,
+# nSecUnstableNewSpec,
+# nPrimUnstableIntSpec,
+# nSecUnstableIntSpec = extraData;
+
+# nUnstableParents = nSecUnstableParents + nPrimUnstableParents;
+# nUnstableNewSpec = nSecUnstableNewSpec + nPrimUnstableNewSpec;
+# nUnstableIntSpec = nSecUnstableIntSpec + nPrimUnstableIntSpec;
+# nSumUnstableParents = sum(nUnstableParents);
+# nSumUnstableNewSpec = sum(nUnstableNewSpec);
+# nSumUnstableIntSpec = sum(nUnstableIntSpec);
+# nSumMutSpec = sum(nMutSpec);
+
+
+
+# ratioUnstableParents = nUnstableParents./nMutSpec;
+# ratioUnstableNewSpec = nUnstableNewSpec./nMutSpec;
+# ratioUnstableIntSpec = nUnstableIntSpec./nMutSpec;
+
+# ratioSumUnstableParents = nSumUnstableParents/nSumMutSpec;
+# ratioSumUnstableNewSpec = nSumUnstableNewSpec/nSumMutSpec;
+# ratioSumUnstableIntSpec = nSumUnstableIntSpec/nSumMutSpec;
+
+# ratioUnstableTotal = ratioUnstableParents + ratioUnstableNewSpec + ratioUnstableIntSpec
+# ratioSumUnstableTotal = ratioSumUnstableParents + ratioSumUnstableNewSpec + ratioSumUnstableIntSpec
+
+# ratioLocalExtCandidates = mean((sd.nSecExtSpec[2000:end] .+ sd.nPrimExtSpec[2000:end])./sd.specRich[2000:end])
+
+# mean(sd.specRich[2000:end]./(sd.pool[2000:end] .- 20)) =#
+# #ratioUnstableTotal_NaNFree = nansum(cat(ratioUnstableParents , ratioUnstableNewSpec, ratioUnstableIntSpec,dims=4),dims=4)0
+
+pT = sd.phyloTree;
+root = getroot(pT);
+for survId in sd.poolnet.spec
+    surv = getnode(pT,"$survId")
+    heritage = surv.data["heritage"]
+    if heritage == ""
+        branchSizes[survId,repet] += 1
+    else
+        ancestorStr = heritage[2:(findfirst('v',heritage)-1)]
+        branchSizes[parse(Int,ancestorStr),repet] += 1
+    end
+end
+sds[repet] = sd;
+#averageBranchSizes[repet,:] = [sum(branchSizes[:,repet])/count(!iszero,branchSizes), sd.specRich[end]]
+end
+
+jldsave("rEvo_dip_lowEvo.jld2",true;sds,branchSizes)
+sds, branchSizes = load("rEvo_dip.jld2","sds","branchSizes");
+
+maximum(branchSizes,dims=1)
+mean(maximum(branchSizes,dims=1))
+scatter(averageBranchSizes[:,1],averageBranchSizes[:,2])
+
+meanOutDegreeIsh = dropdims(sum(branchSizes.^2,dims=1)./sum(branchSizes,dims=1),dims=1)
+specRichs = [sd.specRich[end] for sd in sds]
+Plots.scatter(meanOutDegreeIsh,specRichs)
+cor(meanOutDegreeIsh,specRichs)
+
+plotlyjs()
+
+
+#measure similarity with Sorensen-Dice coefficient
+rates0::NamedTuple{(:rc, :rprimext, :rsecext, :reo, :revo, :rext), NTuple{6, Float64}} =
+    (rc = 1., rprimext = 3.5, rsecext = 1., reo = 1., revo = .1, rext = .05);
+
+poolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
+@time simulationData,_ = sd,extraData = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
+    assemblyevo(poolnet, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization, createLog = true);
+
+    SDsPool,specIdsPool = modifiedSDSimilarities(poolnet);
+    SDsCol,specIdsCol = modifiedSDSimilarities(sd.colnet);
+    SDsColInPool,specIdsColInPool = modifiedSDSimilarities(sd.poolnet,collect(sd.colnet.spec));
+    SDsPoolWithoutCol,specIdsPoolWithoutCol = modifiedSDSimilarities(sd.poolnet,collect(setdiff(sd.poolnet.spec,sd.colnet.spec)));
+    SDsPoolOnlyEats,specIdsPoolOnlyEats = modifiedSDSimilarities(sd.poolnet,:eat);
+    SDsColOnlyEats,specIdsColOnlyEats = modifiedSDSimilarities(sd.colnet,:eat);
+    SDsColInPoolOnlyEats,specIdsColInPoolOnlyEats = modifiedSDSimilarities(sd.poolnet,collect(sd.colnet.spec),:eat);
+    SDsPoolWithoutColOnlyEats,specIdsPoolWithoutColOnlyEats = modifiedSDSimilarities(sd.poolnet,collect(setdiff(sd.poolnet.spec,sd.colnet.spec)),:eat);
+    
+    nanmean(SDsPool)
+    nanmean(SDsPoolOnlyEats)
+    nanmean(SDsCol)
+    nanmean(SDsColOnlyEats)
+    nanmean(SDsColInPool)
+    nanmean(SDsColInPoolOnlyEats)
+    nanmean(SDsPoolWithoutCol)
+    nanmean(SDsPoolWithoutColOnlyEats)
+    nanstd(SDsPool)
+    nanstd(SDsPoolOnlyEats)
+    nanstd(SDsCol)
+    nanstd(SDsColOnlyEats)
+    nanstd(SDsColInPool)
+    nanstd(SDsColInPoolOnlyEats)
+    nanstd(SDsPoolWithoutCol)
+    nanstd(SDsPoolWithoutColOnlyEats)
+
+
