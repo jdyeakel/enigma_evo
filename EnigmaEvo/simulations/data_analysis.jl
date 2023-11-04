@@ -1,3 +1,5 @@
+#a chaotic file used to try stuff; best ignored
+
 simulation_name = "vary_cn_no_engineers_20_000_it_restrict_col";
 
 avg_freqe, avg_freqe_pool, avg_freqn, avg_freqn_pool, avg_sprich, avg_pool  = 
@@ -403,30 +405,74 @@ poolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
 @time simulationData,_ = sd,extraData = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
     assemblyevo(poolnet, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization, createLog = true);
 
-    SDsPool,specIdsPool = modifiedSDSimilarities(poolnet);
-    SDsCol,specIdsCol = modifiedSDSimilarities(sd.colnet);
-    SDsColInPool,specIdsColInPool = modifiedSDSimilarities(sd.poolnet,collect(sd.colnet.spec));
-    SDsPoolWithoutCol,specIdsPoolWithoutCol = modifiedSDSimilarities(sd.poolnet,collect(setdiff(sd.poolnet.spec,sd.colnet.spec)));
-    SDsPoolOnlyEats,specIdsPoolOnlyEats = modifiedSDSimilarities(sd.poolnet,:eat);
-    SDsColOnlyEats,specIdsColOnlyEats = modifiedSDSimilarities(sd.colnet,:eat);
-    SDsColInPoolOnlyEats,specIdsColInPoolOnlyEats = modifiedSDSimilarities(sd.poolnet,collect(sd.colnet.spec),:eat);
-    SDsPoolWithoutColOnlyEats,specIdsPoolWithoutColOnlyEats = modifiedSDSimilarities(sd.poolnet,collect(setdiff(sd.poolnet.spec,sd.colnet.spec)),:eat);
+SDsPool,specIdsPool = modifiedSDSimilarities(poolnet);
+SDsCol,specIdsCol = modifiedSDSimilarities(sd.colnet);
+SDsColInPool,specIdsColInPool = modifiedSDSimilarities(sd.poolnet,collect(sd.colnet.spec));
+SDsPoolWithoutCol,specIdsPoolWithoutCol = modifiedSDSimilarities(sd.poolnet,collect(setdiff(sd.poolnet.spec,sd.colnet.spec)));
+SDsPoolOnlyEats,specIdsPoolOnlyEats = modifiedSDSimilarities(sd.poolnet,:eat);
+SDsColOnlyEats,specIdsColOnlyEats = modifiedSDSimilarities(sd.colnet,:eat);
+SDsColInPoolOnlyEats,specIdsColInPoolOnlyEats = modifiedSDSimilarities(sd.poolnet,collect(sd.colnet.spec),:eat);
+SDsPoolWithoutColOnlyEats,specIdsPoolWithoutColOnlyEats = modifiedSDSimilarities(sd.poolnet,collect(setdiff(sd.poolnet.spec,sd.colnet.spec)),:eat);
     
-    nanmean(SDsPool)
-    nanmean(SDsPoolOnlyEats)
-    nanmean(SDsCol)
-    nanmean(SDsColOnlyEats)
-    nanmean(SDsColInPool)
-    nanmean(SDsColInPoolOnlyEats)
-    nanmean(SDsPoolWithoutCol)
-    nanmean(SDsPoolWithoutColOnlyEats)
-    nanstd(SDsPool)
-    nanstd(SDsPoolOnlyEats)
-    nanstd(SDsCol)
-    nanstd(SDsColOnlyEats)
-    nanstd(SDsColInPool)
-    nanstd(SDsColInPoolOnlyEats)
-    nanstd(SDsPoolWithoutCol)
-    nanstd(SDsPoolWithoutColOnlyEats)
+nanmean(SDsPool)
+nanmean(SDsPoolOnlyEats)
+nanmean(SDsCol)
+nanmean(SDsColOnlyEats)
+nanmean(SDsColInPool)
+nanmean(SDsColInPoolOnlyEats)
+nanmean(SDsPoolWithoutCol)
+nanmean(SDsPoolWithoutColOnlyEats)
+nanstd(SDsPool)
+nanstd(SDsPoolOnlyEats)
+nanstd(SDsCol)
+nanstd(SDsColOnlyEats)
+nanstd(SDsColInPool)
+nanstd(SDsColInPoolOnlyEats)
+nanstd(SDsPoolWithoutCol)
+nanstd(SDsPoolWithoutColOnlyEats)
+
+simulationName = "rEvoInDepth";
 
 
+SDmeans, SDstds = 
+    load("data/$(simulationName)/similarityResults.jld2", "SDmeans", "SDstds");
+maxResults, meanResults, runFinished = 
+    load("data/$(simulationName)/results.jld2", "maxResults", "meanResults", "runFinished");
+
+categories = Symbol[:SDsPool,:SDsCol,:SDsColInPool,:SDsPoolWithoutCol,:SDsPoolOnlyEats,:SDsColOnlyEats,:SDsColInPoolOnlyEats,:SDsPoolWithoutColOnlyEats]
+categoryLongNames = Dict{Symbol,String}(
+    :SDsPool => "Species in pool",
+    :SDsCol => "Species in colony",
+    :SDsColInPool => "Species in colony as subset of pool",
+    :SDsPoolWithoutCol => "Species in pool without species in colony",
+    :SDsPoolOnlyEats => "Species in pool reduced to eats",
+    :SDsColOnlyEats => "Species in colony reduced to eats",
+    :SDsColInPoolOnlyEats => "Species in colony as subset of pool reduced to eats",
+    :SDsPoolWithoutColOnlyEats => "Species in pool without species in colony reduced to eats")
+
+primVals = [3.5]
+nPrimVals = length(primVals)
+secVals = [1.,10.]
+nSecVals = length(secVals)
+evoVals = exp10.(range(log10(0.005), stop=log10(2), length=40))[1:37];
+evoInds = [6,28,37];
+nEvoInds = length(evoInds)
+nRepets = 50;
+repets = 1:nRepets;
+    
+loop_vars = [(primInd,rPrimExt,secInd,rSecExt,evoIndInd,evoInd,repetition) for (primInd,rPrimExt) in enumerate(primVals)
+    for (secInd,rSecExt) in enumerate(secVals) for (evoIndInd,evoInd) in enumerate(evoInds) for repetition in repets];
+    
+specRichnesses = meanResults[:specRich][:,1:37,:,:] 
+
+specRichnesses[1,37,1,:]
+
+scatter(specRichnesses[:,13,:,:][:],SDmeans[:SDsCol][:,13,:,:][:])
+cor(specRichnesses[:,1:34,:,:][:],SDmeans[:SDsCol][:,1:34,:,:][:])
+evoInd = 2
+
+corSec1 = [NaNStatistics.nancor(specRichnesses[1,evoInd,1,:],SDmeans[:SDsCol][1,evoInd,1,:]) for evoInd in 1:length(evoVals)]
+corSec10 = [NaNStatistics.nancor(specRichnesses[1,evoInd,2,:],SDmeans[:SDsCol][1,evoInd,2,:]) for evoInd in 1:length(evoVals)]
+
+plot(evoVals,[corSec1,corSec10], xaxis = :log)
+cor(specRichnesses[1,evoInd,1,:],SDmeans[:SDsCol][1,evoInd,1,:])

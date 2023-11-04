@@ -29,8 +29,8 @@ function setUpPool(S, lambda, numBasalResources, SSProbs, SMProbs, diverse)
     potMods = [ENIgMaVert() for i in 1:numMakes];   #create vector of potential modifiers. Add them to poolnet later if they are made by a species
 
     for i in 1:numMakes                     #now create all the makes
-        engineerId = rand(poolnet.spec)
-        createdMod = rand(potMods)
+        createdMod = rand(potMods)                   
+        engineerId = rand(setdiff(poolnet.spec,potMods.need))
         addn!(createdMod,engineerId)        #for now only save the reciprocal need of the modifier as the id of the modifier isnt yet specified
     end
 

@@ -24,11 +24,21 @@ using Plots
 @everywhere using CodecZlib #used for compression by JLD2
 @everywhere using Phylo
 
+using LaTeXStrings
+import CairoMakie   #alternative plot library; only imported in order to avoid name conflicts with "Plots" library 
+CM = CairoMakie     #alias for easier access to CairoMakie library
+
 @everywhere include("ENIgMaGraphs.jl")
 @everywhere using .ENIgMaGraphs
 @everywhere include("average_time_series.jl")
 @everywhere include("extinction_size.jl")
 include("plots.jl")
+
+# #workaround for weird error probably caused by renaming of type in Base library in julia update
+# @static if !@isdefined(Base.InvasiveLinkedList)
+#     Base.InvasiveLinkedList = Base.IntrusiveLinkedList
+# end
+
 
 #=
 @everywhere include("smartpath.jl")

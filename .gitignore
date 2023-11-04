@@ -11,3 +11,4 @@ data/
 tutorial.jld2
 EnigmaEvo/rEvo_dip.jld2
 EnigmaEvo/rEvo_dip_lowEvo.jld2
+EnigmaEvo/simulations/plotTests.jl

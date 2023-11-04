@@ -32,7 +32,7 @@ n_t::Float64 = 1.; #always set to 1
 #revo = Evolutionary rate
 #rext = Global extinction rate
 rates0::NamedTuple{(:rc, :rprimext, :rsecext, :reo, :revo, :rext), NTuple{6, Float64}} =
-    (rc = 1., rprimext = 3.5, rsecext = 10., reo = 1., revo = .01, rext = .005);
+    (rc = 1., rprimext = 3.5, rsecext = 10., reo = 1., revo = 0.08, rext = .0397);
 
 #Turn diversification dynamic on or off
 # 0 = off
@@ -43,4 +43,5 @@ diverse::Int = 1;
 #otherwise all species can colonize
 restrict_colonization::Bool = true;
 
+#set false to reduce amount of data collected in runs
 logging::Bool = true;

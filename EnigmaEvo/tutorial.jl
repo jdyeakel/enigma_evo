@@ -1,4 +1,4 @@
-# get path to local src directory
+<<# get path to local src directory
 if homedir() == "/home/z840"    #for downward compatibility ;)
     localpath::String = "$(homedir())/2019_Lego_Evo/EnigmaEvo/src/";
 elseif isfile("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl")
@@ -35,22 +35,6 @@ plot(sd.clock[10:10:end],[mean.(sd.trophLevels),maximum.(sd.trophLevels)], size=
 
 plot(sd.clock,[sd.specRich,sd.pool,sd.nColonizers,sd.specRich + sd.nColonizers,sd.nSecExtSpec,sd.nPrimExtSpec, sd.specRich - sd.nSecExtSpec - sd.nPrimExtSpec], size = (1920,1080),
     label = ["species richness" "pool spec richness" "#potential colonizers" "specRich + colonizers"  "#secondary ext. species" "#primary ext. species" "specRich - nPrimExt - n SecExt"])
-
-@time begin eatMatrix = ENIgMaGraphs.convertToEatMatrix(sd.colnet);
-    
-R"""
-    library(MASS)  
-    library(NetIndices)
-    rtl<-TrophInd(t($eatMatrix))
-""";
-@rget rtl;
-maximum(rtl[:,:TL]);
-end
-sd.trophLevels[end]
-Plots.plot(sd.clock,[mean.(sd.trophLevels),maximum.(sd.trophLevels)],labels=["mean","max"], xlabel = "clock time", ylabel = "trophic level")
-
-#use functions of the Graphs package on ENIgMaGraphs
-#@enter strongly_connected_components(colnet)
 
 #what happens after a certain sort of events to species richness?
 #here: what happens after ignore to need mutations
