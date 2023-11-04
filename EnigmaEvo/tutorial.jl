@@ -1,4 +1,5 @@
-<<# get path to local src directory
+#some how tos at end of file
+# get path to local src directory
 if homedir() == "/home/z840"    #for downward compatibility ;)
     localpath::String = "$(homedir())/2019_Lego_Evo/EnigmaEvo/src/";
 elseif isfile("$(homedir())/Dropbox/PostDoc/2019_Lego_Evo/EnigmaEvo/src/loadfuncs.jl")
@@ -18,7 +19,9 @@ include(localpath*"set_up_params.jl");
 poolnet::ENIgMaGraph = setUpPool(S,lambda,nBasalRes,SSprobs,SOprobs,diverse);
 
 # run a simulation with parameters given (always use a freshly initialized poolnet as the poolnet is changed during assembly)
-@time simulationData,_ = sd,extraData = #results are stored in a ENIgMaSimulationData subtype (sd shorthand alias)
+#results are stored in a ENIgMaSimulationData subtype (sd shorthand alias) (see assemblyevo3.jl for definitions)
+# a second return value can be used to return extra data, that might be temporarily be of interest 
+@time simulationData,_ = sd,extraData = 
     assemblyevo(poolnet, rates0, maxits, cm,cn,ce,cpred, diverse, restrict_colonization, createLog = true);
 
 #plot some results:
@@ -31,24 +34,25 @@ plotSimulation(sd,offset=2000,show=true)
 #plot the phylogeny
 plotPhylogeny(sd.phyloTree,sorted=true)
 
-plot(sd.clock[10:10:end],[mean.(sd.trophLevels),maximum.(sd.trophLevels)], size=(1920,1080), xlabel = "clock time", ylabel="maximum trophic level")
+#plot mean and max trophic level (as computation via R is slow the trophic level is not computed every itteration and sometimes only in the last few thousand itterations at all)
+plot(sd.clock[28_500:30:end],[mean.(sd.trophLevels),maximum.(sd.trophLevels)], xlabel = "clock time", ylabel="trophic level", label=["mean trophic level" "maximal trophic level"])
 
+#plot some more properties
 plot(sd.clock,[sd.specRich,sd.pool,sd.nColonizers,sd.specRich + sd.nColonizers,sd.nSecExtSpec,sd.nPrimExtSpec, sd.specRich - sd.nSecExtSpec - sd.nPrimExtSpec], size = (1920,1080),
     label = ["species richness" "pool spec richness" "#potential colonizers" "specRich + colonizers"  "#secondary ext. species" "#primary ext. species" "specRich - nPrimExt - n SecExt"])
 
+#following paragraph: early attempts to track triggers of extinction cascades; can probably be ignored as not very well documented 
 #what happens after a certain sort of events to species richness?
-#here: what happens after ignore to need mutations
+#here: what happens to the species richenss S after ignore to need mutations (here within .8 time units)
 evos = findall(ev -> isMutationType(ev,ignoreInteraction,needInteraction), sd.events)
-ΔSPre,ΔSPost = deltaSPrePostEvents(ds.sprich, evos, ds.clock, .8, offset=1000 )
+ΔSPre,ΔSPost = deltaSPrePostEvents(sd.specRich, evos, sd.clock, .8, offset=1000 )
 Plots.histogram(ΔSPre, alpha=.5, normalize=true,yaxis=:log,xaxis="ΔS pre and post event", label="pre event", title = "Ignore to need mutations")
 Plots.histogram!(ΔSPost, alpha=.5, normalize=true,yaxis=:log, label="post event")
-#bar(pairs(preDist), label = "pre event")
-#bar!( pairs(postDist), label = "post event", alpha = .5)
 
 # save everything you want to use later in file 
 compress = true;    #should data be compressed?
 #put all variable to be saved after semicolon, order doesnt matter, name of variable will be identifier in file
-jldsave("data/exponentialSpecGrowth.jld2",compress;simulationData,rates0)
+jldsave("tutorial.jld2",compress;simulationData,rates0)
 
 #for loading use eg the following
 simulationData_loaded = load("tutorial.jld2", "simulationData");
@@ -67,7 +71,7 @@ exists = sd.colnet.hasv[3]
 #check if a species with id is in the network/if the vertex with that id is a species
 isspec = sd.colnet.hasspec[3]
 
-#reconstruct the state of the colony at a certain itteration
+#reconstruct the state of the colony at a certain itteration (not finally tested)
 colnet_it_100 = recreatecolnetdiverse(sd,100)
 
 #get number of species in a network
